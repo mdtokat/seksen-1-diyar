@@ -364,7 +364,7 @@ Bir bölge bossu yenildiğinde, o bölgenin yemeklerinden oluşan bir sofra kuru
 
 | Faz | Başlık | Durum |
 |---|---|---|
-| 0 | Proje kurulumu | ⬜ |
+| 0 | Proje kurulumu | ✅ |
 | 1 | Veri katmanı | ⬜ |
 | 2 | Harita ve seyahat | ⬜ |
 | 3 | Karakter ve savaş motoru | ⬜ |
@@ -383,15 +383,15 @@ Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 ### Faz 0 — Proje Kurulumu
 **Hedef:** Boş ama çalışan, test edilebilen ve yayınlanabilen bir proje iskeleti.
 
-- [ ] Vite + vanilla JS projesini kur. `npm run dev`, `npm run build` ve `npm run test` komutları çalışmalı.
-- [ ] Vitest'i kur ve örnek bir test ekle.
-- [ ] Bölüm 3'teki klasör yapısını boş modüllerle oluştur.
-- [ ] `index.html` içine `lang="tr"`, viewport meta etiketi ve başlığı ekle. Ekranda "Seksen Bir Diyar" başlık ekranı görünsün.
-- [ ] `ana.css` içinde renk değişkenlerini (Bölüm 3 paleti), fontları ve temel mobil düzeni tanımla.
-- [ ] `vite.config.js` içinde GitHub Pages için `base` ayarını yap.
-- [ ] `.github/workflows/deploy.yml` ile `main` dalına her push'ta GitHub Pages'e otomatik yayın ayarla.
-- [ ] `README.md` yaz: oyunun kısa tanımı, kurulum ve çalıştırma komutları, plan.md'ye bağlantı.
-- [ ] `.gitignore` ekle.
+- [x] Vite + vanilla JS projesini kur. `npm run dev`, `npm run build` ve `npm run test` komutları çalışmalı.
+- [x] Vitest'i kur ve örnek bir test ekle.
+- [x] Bölüm 3'teki klasör yapısını boş modüllerle oluştur.
+- [x] `index.html` içine `lang="tr"`, viewport meta etiketi ve başlığı ekle. Ekranda "Seksen Bir Diyar" başlık ekranı görünsün.
+- [x] `ana.css` içinde renk değişkenlerini (Bölüm 3 paleti), fontları ve temel mobil düzeni tanımla.
+- [x] `vite.config.js` içinde GitHub Pages için `base` ayarını yap.
+- [x] `.github/workflows/deploy.yml` ile `main` dalına her push'ta GitHub Pages'e otomatik yayın ayarla.
+- [x] `README.md` yaz: oyunun kısa tanımı, kurulum ve çalıştırma komutları, plan.md'ye bağlantı.
+- [x] `.gitignore` ekle.
 
 **Kabul kriterleri:** `npm run dev` ile başlık ekranı açılıyor. Test ve build hatasız geçiyor. Telefon genişliğinde (375px) düzen bozulmuyor.
 

@@ -1,0 +1,18 @@
+{
+  "name": "seksen-bir-diyar",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Türkiye'nin 81 ilinde geçen, tarayıcıda oynanan sıra tabanlı bir RPG.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:izle": "vitest"
+  },
+  "devDependencies": {
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  }
+}
