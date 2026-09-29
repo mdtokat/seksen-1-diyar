@@ -128,9 +128,9 @@ Bölgeler aşağıdaki **sırayla** açılır:
 | 2 | Ege | 8 | 8–18 | Manisa (45) | Yelbegen | İzmir (35) |
 | 3 | Akdeniz | 8 | 15–25 | Antalya (07) | Şahmeran | Mersin (33) |
 | 4 | İç Anadolu | 13 | 20–32 | Konya (42) | Albastı | Nevşehir (50) |
-| 6 | Karadeniz | 18 | 28–40 | Bolu (14) | Karakoncolos | Trabzon (61) |
-| 7 | Güneydoğu | 9 | 35–45 | Gaziantep (27) | Tepegöz | Şanlıurfa (63) |
-| 8 | Doğu Anadolu | 14 | 42–50 | Malatya (44) | Van Gölü Canavarı | Van (65) |
+| 7 | Karadeniz | 18 | 28–40 | Bolu (14) | Karakoncolos | Trabzon (61) |
+| 8 | Güneydoğu | 9 | 35–45 | Gaziantep (27) | Tepegöz | Şanlıurfa (63) |
+| 9 | Doğu Anadolu | 14 | 42–50 | Malatya (44) | Van Gölü Canavarı | Van (65) |
 | Final | — | — | 48+ | — | **Zülmet** | Ağrı (04) |
 
 Bölge bossları tanrı değildir. Hepsi Zülmet'in sihriyle azmış mahlûklardır.
@@ -220,7 +220,7 @@ Bu formüller ilk sürüm içindir. Faz 3'te dengelendi; hesaplar `src/oyun/kara
 ### Savaş akışı
 - Her turda oyuncu **Saldır / Yetenek / Yemek / Kaç** seçeneklerinden birini seçer, ardından düşman hamlesini yapar.
 - Savaş günlüğü kısa, edepli ve Türkçe cümlelerle ekranda akar.
-- **Bayılma** durumunda oyuncu, en son uğradığı kervansaraya (Faz 7'den önce bulunduğu ilin merkezine) döner ve akçesinin %10'unu (aşağı yuvarlanır) kaybeder. Kendine geldiğinde canı ve nefesi dolar.
+- **Bayılma** durumunda oyuncu, en son uğradığı kervansaraya (Faz 8'den önce bulunduğu ilin merkezine) döner ve akçesinin %10'unu (aşağı yuvarlanır) kaybeder. Kendine geldiğinde canı ve nefesi dolar.
 
 ---
 
@@ -385,10 +385,11 @@ Bir bölge bossu yenildiğinde, o bölgenin yemeklerinden oluşan bir sofra kuru
 | 3 | Karakter ve savaş motoru | ✅ |
 | 4 | Keşif, yemekler ve kayıt (**oynanabilir ilk sürüm**) | ✅ |
 | 5 | Görsel yenileme (SVG çizimler, savaş sahnesi, il sınırlı harita) | ✅ |
-| 6 | Bosslar ve bölge ilerlemesi | ⬜ |
-| 7 | Arasta, Ahi esnafı, ekipman ve kervansaray | ⬜ |
-| 8 | Görevler ve itibar | ⬜ |
-| 9 | Final, ses, animasyon ve cila | ⬜ |
+| 6 | İl içi gezinti (kuşbakışı yürüme, haritada düşmanlar) | ⬜ |
+| 7 | Bosslar ve bölge ilerlemesi | ⬜ |
+| 8 | Arasta, Ahi esnafı, ekipman ve kervansaray | ⬜ |
+| 9 | Görevler ve itibar | ⬜ |
+| 10 | Final, ses, animasyon ve cila | ⬜ |
 
 Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 
@@ -524,7 +525,27 @@ Kullanıcı kararı: 3D yerine **güçlendirilmiş 2D** (SVG + CSS). Oyun mantı
 
 ---
 
-### Faz 6 — Bosslar ve Bölge İlerlemesi
+### Faz 6 — İl İçi Gezinti
+**Hedef:** Oyuncunun karakterini kendisi yürüterek illerin içinde gezmesi; düşmanlarla haritada karşılaşması.
+
+Kullanıcı kararları: kuşbakışı görünüm; düşmanlar haritada görünür; il haritaları koddan üretilir; telefonda hem dokun-yürü hem de ekran yön tuşları (masaüstünde ok tuşları ve WASD).
+
+- [ ] `gezinti.js`: her il için sabit tohumla üretilen karo harita (her açılışta aynı). Bölgeye göre doku ve engeller (Karadeniz'de köknar ve dere, İç Anadolu'da bozkır ve peri bacaları, Güneydoğu'da kum ve kümbet evler, Doğu'da kar ve göl vb.).
+- [ ] Her ilde il meydanı (çeşme, ilin yemeğini satan esnaf tezgâhı, il tabelası) ve her komşu ile giden, komşunun gerçek yönüne yerleştirilmiş bir çıkış yolu. Tüm çıkışlar meydandan yürünerek erişilebilir.
+- [ ] Yürüme: haritaya dokununca en kısa yoldan yürüme, ekran yön tuşları, ok tuşları ve WASD. Kamera oyuncuyu izler.
+- [ ] Çıkış yoluna yürüyünce komşu ile geçilir (seyahat kuralları aynen geçerli; kilitli bölgenin yolu sihirli bir engelle kapalıdır). Yeni ile, geri dönen yolun ağzından girilir.
+- [ ] Düşmanlar ilin havuzundan ve seviye aralığından üretilip haritada dolaşır; oyuncu yaklaşınca peşine düşer, temas edince sıra tabanlı savaş başlar. Meydan güvenli bölgedir, düşmanlar giremez.
+- [ ] Yenilen düşman haritadan kalkar, bir süre sonra başka bir yerde yenisi belirir. Kaçınca oyuncu kısa süre dokunulmaz olur. Bayılınca il meydanında kendine gelir.
+- [ ] "Keşfe Çık" yerine ilde gezinti; il bilgisi tabeladan ve üst çubuktan açılır.
+- [ ] Testleri yaz: harita üretiminin tekrarlanabilirliği, 81 ilin tamamında çıkış sayısı ve erişilebilirliği, yol bulma, düşman yerleşimi ve hareket kuralları.
+
+**Kabul kriterleri:** Oyuncu İstanbul meydanından yürüyerek Kocaeli'ye geçebiliyor. Düşmanlar haritada görünüyor ve temas edince savaş başlıyor. Telefonda (375px) dokunarak ve yön tuşlarıyla rahat oynanıyor.
+
+**Commit:** `Faz 6: il içi gezinti`
+
+---
+
+### Faz 7 — Bosslar ve Bölge İlerlemesi
 **Hedef:** Bölgelerin sırayla açılması ve boss savaşları.
 
 - [ ] `ilerleme.js`: boss açılma koşulu şu olsun: bölgedeki illerin ortalama arınması en az %60 **ve** oyuncu seviyesi en az (bölge üst seviyesi − 1). Açılınca bildirim göster.
@@ -536,11 +557,11 @@ Kullanıcı kararı: 3D yerine **güçlendirilmiş 2D** (SVG + CSS). Oyun mantı
 
 **Kabul kriterleri:** Marmara'dan başlayarak bölgeler sırayla açılıyor. Kilitli bölgeye erişilemiyor.
 
-**Commit:** `Faz 6: bosslar ve bölge ilerlemesi`
+**Commit:** `Faz 7: bosslar ve bölge ilerlemesi`
 
 ---
 
-### Faz 7 — Arasta, Ahi Esnafı, Ekipman ve Kervansaray
+### Faz 8 — Arasta, Ahi Esnafı, Ekipman ve Kervansaray
 **Hedef:** Ekonomi, ekipman ve rahat seyahat.
 
 - [ ] **Arasta:** her ilde o ilin yöresel yemeği ve komşu illerden 1–2 yemek satılsın.
@@ -554,11 +575,11 @@ Kullanıcı kararı: 3D yerine **güçlendirilmiş 2D** (SVG + CSS). Oyun mantı
 
 **Kabul kriterleri:** Akçenin anlamlı bir kullanımı var. Ekipman güç farkı hissediliyor. Uzak bölgelere yürümek zorunlu değil.
 
-**Commit:** `Faz 7: arasta, ahi esnafı, ekipman ve kervansaray`
+**Commit:** `Faz 8: arasta, ahi esnafı, ekipman ve kervansaray`
 
 ---
 
-### Faz 8 — Görevler ve İtibar
+### Faz 9 — Görevler ve İtibar
 **Hedef:** İllere hikâye ve anlam katmak.
 
 - [ ] Görev sistemi: köy muhtarları ve Ahi Babalar görev verir. Türleri şunlar olsun: belirli düşmandan N tane yen, bir ili belirli yüzdeye kadar arındır, bir yemeği başka bir ile ulaştır.
@@ -569,11 +590,11 @@ Kullanıcı kararı: 3D yerine **güçlendirilmiş 2D** (SVG + CSS). Oyun mantı
 
 **Kabul kriterleri:** Oyuncunun her bölgede savaş dışında da yapacak anlamlı işleri var.
 
-**Commit:** `Faz 8: görevler ve itibar`
+**Commit:** `Faz 9: görevler ve itibar`
 
 ---
 
-### Faz 9 — Final, Ses, Animasyon ve Cila
+### Faz 10 — Final, Ses, Animasyon ve Cila
 **Hedef:** Oyunu tamamlamak ve parlatmak.
 
 - [ ] **Final:** Van Gölü Canavarı yenilip seviye 48'e ulaşınca Ağrı'daki kale açılsın. Zülmet ile üç evreli final savaşı yapılsın. Ardından hikâyeyi kapatan bir bitiş sahnesi ve 81 ilin özeti gelsin.
@@ -587,7 +608,7 @@ Kullanıcı kararı: 3D yerine **güçlendirilmiş 2D** (SVG + CSS). Oyun mantı
 
 **Kabul kriterleri:** Oyun baştan sona bitirilebiliyor. Kırmızı çizgiler (Bölüm 2) son bir kez tüm metin ve verilerde kontrol edildi.
 
-**Commit:** `Faz 9: final, ses, animasyon ve cila`
+**Commit:** `Faz 10: final, ses, animasyon ve cila`
 
 ---
 
