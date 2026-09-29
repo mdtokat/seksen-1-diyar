@@ -127,9 +127,9 @@ Bölgeler aşağıdaki **sırayla** açılır:
 | 2 | Ege | 8 | 8–18 | Manisa (45) | Yelbegen | İzmir (35) |
 | 3 | Akdeniz | 8 | 15–25 | Antalya (07) | Şahmeran | Mersin (33) |
 | 4 | İç Anadolu | 13 | 20–32 | Konya (42) | Albastı | Nevşehir (50) |
-| 5 | Karadeniz | 18 | 28–40 | Bolu (14) | Karakoncolos | Trabzon (61) |
-| 6 | Güneydoğu | 9 | 35–45 | Gaziantep (27) | Tepegöz | Şanlıurfa (63) |
-| 7 | Doğu Anadolu | 14 | 42–50 | Malatya (44) | Van Gölü Canavarı | Van (65) |
+| 6 | Karadeniz | 18 | 28–40 | Bolu (14) | Karakoncolos | Trabzon (61) |
+| 7 | Güneydoğu | 9 | 35–45 | Gaziantep (27) | Tepegöz | Şanlıurfa (63) |
+| 8 | Doğu Anadolu | 14 | 42–50 | Malatya (44) | Van Gölü Canavarı | Van (65) |
 | Final | — | — | 48+ | — | **Zülmet** | Ağrı (04) |
 
 Bölge bossları tanrı değildir. Hepsi Zülmet'in sihriyle azmış mahlûklardır.
@@ -219,7 +219,7 @@ Bu formüller ilk sürüm içindir. Faz 3'te dengelendi; hesaplar `src/oyun/kara
 ### Savaş akışı
 - Her turda oyuncu **Saldır / Yetenek / Yemek / Kaç** seçeneklerinden birini seçer, ardından düşman hamlesini yapar.
 - Savaş günlüğü kısa, edepli ve Türkçe cümlelerle ekranda akar.
-- **Bayılma** durumunda oyuncu, en son uğradığı kervansaraya (Faz 6'dan önce bulunduğu ilin merkezine) döner ve akçesinin %10'unu (aşağı yuvarlanır) kaybeder. Kendine geldiğinde canı ve nefesi dolar.
+- **Bayılma** durumunda oyuncu, en son uğradığı kervansaraya (Faz 7'den önce bulunduğu ilin merkezine) döner ve akçesinin %10'unu (aşağı yuvarlanır) kaybeder. Kendine geldiğinde canı ve nefesi dolar.
 
 ---
 
@@ -383,10 +383,11 @@ Bir bölge bossu yenildiğinde, o bölgenin yemeklerinden oluşan bir sofra kuru
 | 2 | Harita ve seyahat | ✅ |
 | 3 | Karakter ve savaş motoru | ✅ |
 | 4 | Keşif, yemekler ve kayıt (**oynanabilir ilk sürüm**) | ⬜ |
-| 5 | Bosslar ve bölge ilerlemesi | ⬜ |
-| 6 | Arasta, Ahi esnafı, ekipman ve kervansaray | ⬜ |
-| 7 | Görevler ve itibar | ⬜ |
-| 8 | Final, ses, animasyon ve cila | ⬜ |
+| 5 | Görsel yenileme (SVG çizimler, savaş sahnesi, il sınırlı harita) | ⬜ |
+| 6 | Bosslar ve bölge ilerlemesi | ⬜ |
+| 7 | Arasta, Ahi esnafı, ekipman ve kervansaray | ⬜ |
+| 8 | Görevler ve itibar | ⬜ |
+| 9 | Final, ses, animasyon ve cila | ⬜ |
 
 Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 
@@ -491,7 +492,24 @@ Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 
 ---
 
-### Faz 5 — Bosslar ve Bölge İlerlemesi
+### Faz 5 — Görsel Yenileme
+**Hedef:** Emojiye bağlı kalmayan, tutarlı, çini paletine uygun ve telefonda akıcı bir 2D görsel dil.
+
+Kullanıcı kararı: 3D yerine **güçlendirilmiş 2D** (SVG + CSS). Oyun mantığı (`src/oyun/`) ve veriler (`src/veri/`) bu fazdan etkilenmez; yalnızca arayüz değişir.
+
+- [ ] **Özgün SVG çizimler:** 3 sınıf ve tüm düşmanlar (bosslar dahil) için stilize, edepli SVG çizimler. Emojiler savaşçıları temsil etmez. Çizimler harici dosya değil, koddan üretilir; aynı türden yaratıklar ortak bir iskeletten türetilip renk ve ayrıntıyla ayrışabilir.
+- [ ] **Bölge arka planları:** 7 bölgenin her biri için katmanlı SVG savaş arka planı (ör. Marmara: Boğaz ve kıyı; İç Anadolu: bozkır ve peri bacaları; Karadeniz: sisli yayla).
+- [ ] **Savaş sahnesi:** oyuncu ve düşman karşı karşıya durur. Hasar sayıları, vurulanın sarsılması ve vuruş efekti. `prefers-reduced-motion` açıksa hareket azaltılır.
+- [ ] **Gerçek il sınırlı harita:** OpenStreetMap il sınırları sadeleştirilip SVG yollarına çevrilir, iller şekilleriyle boyanır (kilitli, açık, arınmış renkleri korunur). Seyahat kuralları ve komşuluklar değişmez. OSM atfı (© OpenStreetMap katkıcıları, ODbL) haritada ve README'de gösterilir.
+- [ ] Testleri yaz: her sınıf ve düşman için çizim var; her bölge için arka plan var; il sınır verisi 81 ili kapsıyor ve plakalar eşleşiyor.
+
+**Kabul kriterleri:** Hiçbir savaşçı emojiyle gösterilmiyor. Harita il şekilleriyle tanınır biçimde Türkiye'yi veriyor. Telefon genişliğinde (375px) düzen bozulmuyor, animasyonlar akıcı.
+
+**Commit:** `Faz 5: görsel yenileme`
+
+---
+
+### Faz 6 — Bosslar ve Bölge İlerlemesi
 **Hedef:** Bölgelerin sırayla açılması ve boss savaşları.
 
 - [ ] `ilerleme.js`: boss açılma koşulu şu olsun: bölgedeki illerin ortalama arınması en az %60 **ve** oyuncu seviyesi en az (bölge üst seviyesi − 1). Açılınca bildirim göster.
@@ -503,11 +521,11 @@ Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 
 **Kabul kriterleri:** Marmara'dan başlayarak bölgeler sırayla açılıyor. Kilitli bölgeye erişilemiyor.
 
-**Commit:** `Faz 5: bosslar ve bölge ilerlemesi`
+**Commit:** `Faz 6: bosslar ve bölge ilerlemesi`
 
 ---
 
-### Faz 6 — Arasta, Ahi Esnafı, Ekipman ve Kervansaray
+### Faz 7 — Arasta, Ahi Esnafı, Ekipman ve Kervansaray
 **Hedef:** Ekonomi, ekipman ve rahat seyahat.
 
 - [ ] **Arasta:** her ilde o ilin yöresel yemeği ve komşu illerden 1–2 yemek satılsın.
@@ -521,11 +539,11 @@ Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 
 **Kabul kriterleri:** Akçenin anlamlı bir kullanımı var. Ekipman güç farkı hissediliyor. Uzak bölgelere yürümek zorunlu değil.
 
-**Commit:** `Faz 6: arasta, ahi esnafı, ekipman ve kervansaray`
+**Commit:** `Faz 7: arasta, ahi esnafı, ekipman ve kervansaray`
 
 ---
 
-### Faz 7 — Görevler ve İtibar
+### Faz 8 — Görevler ve İtibar
 **Hedef:** İllere hikâye ve anlam katmak.
 
 - [ ] Görev sistemi: köy muhtarları ve Ahi Babalar görev verir. Türleri şunlar olsun: belirli düşmandan N tane yen, bir ili belirli yüzdeye kadar arındır, bir yemeği başka bir ile ulaştır.
@@ -536,25 +554,25 @@ Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 
 **Kabul kriterleri:** Oyuncunun her bölgede savaş dışında da yapacak anlamlı işleri var.
 
-**Commit:** `Faz 7: görevler ve itibar`
+**Commit:** `Faz 8: görevler ve itibar`
 
 ---
 
-### Faz 8 — Final, Ses, Animasyon ve Cila
+### Faz 9 — Final, Ses, Animasyon ve Cila
 **Hedef:** Oyunu tamamlamak ve parlatmak.
 
 - [ ] **Final:** Van Gölü Canavarı yenilip seviye 48'e ulaşınca Ağrı'daki kale açılsın. Zülmet ile üç evreli final savaşı yapılsın. Ardından hikâyeyi kapatan bir bitiş sahnesi ve 81 ilin özeti gelsin.
 - [ ] Oyun sonrası: oyuncu kalan illeri arındırmaya devam edebilsin.
 - [ ] **Başarımlar:** örneğin "İlk İl Arındı", "Bir Bölge Tamam", "81 Diyar", "Sofra Ustası" (tüm yemekleri toplamak), "Yiğit" (hiç bayılmadan bir bossu yenmek).
 - [ ] **Ses:** Web Audio API ile sentezlenmiş sade efektler (vuruş, kritik, seviye atlama, yemek). Ses açma/kapama ayarı olsun. Müzik eklenecekse telifsiz ve geleneksel çalgı tınılı olsun.
-- [ ] **Animasyonlar:** hasar sayıları, düşmanın sarsılması, seviye atlama parıltısı, harita geçişleri.
+- [ ] **Animasyonlar:** seviye atlama parıltısı, harita geçişleri (hasar sayıları ve sarsılma Faz 5'te yapıldı).
 - [ ] Erişilebilirlik: butonlar yeterince büyük, renkler yeterince kontrastlı, sadece renkle anlam taşınmıyor.
 - [ ] Genel dengeleme turu. Bir bölgenin ortalama 30–60 dakikada bitmesi hedeflenir.
 - [ ] README'yi güncelle: ekran görüntüleri, oyun rehberi ve yayın linki.
 
 **Kabul kriterleri:** Oyun baştan sona bitirilebiliyor. Kırmızı çizgiler (Bölüm 2) son bir kez tüm metin ve verilerde kontrol edildi.
 
-**Commit:** `Faz 8: final, ses, animasyon ve cila`
+**Commit:** `Faz 9: final, ses, animasyon ve cila`
 
 ---
 

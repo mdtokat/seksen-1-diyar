@@ -305,7 +305,7 @@ export function oyuncuEylemi(savas, eylem, rng) {
 
 // ── Savaş sonu ───────────────────────────────────────────
 
-// Bayılma (plan.md Bölüm 5): oyuncu il merkezinde (Faz 6'dan sonra en son
+// Bayılma (plan.md Bölüm 5): oyuncu il merkezinde (Faz 7'den sonra en son
 // uğradığı kervansarayda) kendine gelir, canı ve nefesi dolar, akçesinin
 // %10'unu kaybeder. Sonuç: { durum, akceKaybi }.
 export function bayilmaUygula(durum) {
