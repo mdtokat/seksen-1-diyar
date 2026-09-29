@@ -2,6 +2,7 @@
 // SVG metnine çevrilir, sonra yalnızca kamera kayar. Renk ve biçimler bölgeye göre
 // değişir (plan.md Faz 6). Kırmızı çizgiler: ibadethane çizilmez.
 import { GENISLIK, YUKSEKLIK, KARO } from '../../oyun/gezinti.js';
+import { bolgeler } from '../../veri/bolgeler.js';
 
 export const KARO_BOYU = 16;
 const T = KARO_BOYU;
@@ -98,6 +99,20 @@ function tabela(x, y) {
     <path d="M${x + 4} ${y + 4} h8 M${x + 4} ${y + 6.5} h6" stroke="#1b2a5c" stroke-width=".8"/>`;
 }
 
+// Boss ya da mini bossun beklediği in: dikili taşlardan bir halka.
+function inCizimi(p, x, y) {
+  const cx = x + T / 2;
+  const cy = y + T / 2;
+  const taslar = Array.from({ length: 8 }, (_, i) => {
+    const a = (i / 8) * Math.PI * 2;
+    const tx = cx + Math.cos(a) * 20;
+    const ty = cy + Math.sin(a) * 14;
+    return `<path d="M${(tx - 2).toFixed(1)} ${(ty + 3).toFixed(1)} L${(tx - 1.5).toFixed(1)} ${(ty - 4).toFixed(1)} L${(tx + 1.5).toFixed(1)} ${(ty - 5).toFixed(1)} L${(tx + 2).toFixed(1)} ${(ty + 3).toFixed(1)} Z" fill="${p.kayaRenk}" ${CIZGI}/>`;
+  }).join('');
+  return `<ellipse cx="${cx}" cy="${cy + 2}" rx="21" ry="15" fill="#1b2a5c" opacity=".12"/>
+    <ellipse cx="${cx}" cy="${cy + 2}" rx="17" ry="11" fill="none" stroke="#6a4c93" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>${taslar}`;
+}
+
 // Haritanın sabit katmanı (zemin, yol, su, meydan, doğa, yapılar) — SVG içeriği.
 export function haritaKatmani(harita) {
   const p = PALET[harita.bolge];
@@ -141,6 +156,10 @@ export function haritaKatmani(harita) {
   // Meydanın çini kenarı
   const m = harita.meydan;
   parcalar.push(`<rect x="${m.x1 * T}" y="${m.y1 * T}" width="${(m.x2 - m.x1 + 1) * T}" height="${(m.y2 - m.y1 + 1) * T}" fill="none" stroke="#2aa7a7" stroke-width="1.5" stroke-dasharray="4 2"/>`);
+  const bolge = bolgeler.find((b) => b.anahtar === harita.bolge);
+  if (harita.in && (bolge.bossIli === harita.plaka || bolge.miniBossIlleri.includes(harita.plaka))) {
+    parcalar.push(inCizimi(p, harita.in.x * T, harita.in.y * T));
+  }
   return parcalar.join('') + ustler.join('');
 }
 

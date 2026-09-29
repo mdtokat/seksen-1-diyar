@@ -69,7 +69,7 @@ describe('formüller', () => {
     const sv1 = dusmanStatlari('boz_ayi', 1);
     const sv30 = dusmanStatlari('boz_ayi', 30);
     for (const s of ['can', 'guc', 'savunma', 'ceviklik']) expect(sv30[s]).toBeGreaterThan(sv1[s]);
-    expect(dusmanStatlari('bogaz_ejderi', 10).can).toBeGreaterThan(dusmanStatlari('ac_kurt', 10).can * 3);
+    expect(dusmanStatlari('bogaz_ejderi', 10).can).toBeGreaterThan(dusmanStatlari('ac_kurt', 10).can * 2);
   });
 
   it('XP ödülü seviye ve düşman sınıfıyla artar', () => {

@@ -5,7 +5,10 @@
 // açılışta aynı görünür. Harita GENISLIK × YUKSEKLIK karodan oluşur, karolar satır
 // satır tek bir dizide tutulur (sira = y × GENISLIK + x).
 import { iller } from '../veri/iller.js';
+import { bolgeler } from '../veri/bolgeler.js';
 import { karsilasmaUret } from './kesif.js';
+import { dusmanOlustur } from './savas.js';
+import { bossDurumu, miniBossVarMi } from './ilerleme.js';
 import { rastgeleUreteci, tamSayi, sans } from './rastgele.js';
 
 export const GENISLIK = 25;
@@ -217,7 +220,38 @@ export function ilHaritasiUret(plaka) {
       if (yurunurMu(harita, x, y) && !ulasilan.has(y * G + x)) koy(x, y, doga.kenar);
     }
   }
+
+  // 8. İn: meydandan yürüyerek en uzak açık karo (çıkışlardan uzakta). Boss ve mini
+  // bosslar burada bekler.
+  harita.in = enUzakKaro(harita);
   return harita;
+}
+
+function enUzakKaro(harita) {
+  const uzaklik = new Map([[harita.dogus.y * GENISLIK + harita.dogus.x, 0]]);
+  const kuyruk = [harita.dogus];
+  let enIyi = harita.dogus;
+  let enIyiUzaklik = -1;
+  while (kuyruk.length) {
+    const p = kuyruk.shift();
+    const u = uzaklik.get(p.y * GENISLIK + p.x);
+    const t = karo(harita, p.x, p.y);
+    const uygun = (t === KARO.CIM || t === KARO.YABANI) && !harita.kapilar.some((k) => mesafe(k, p) < 4);
+    if (uygun && u > enIyiUzaklik) {
+      enIyi = p;
+      enIyiUzaklik = u;
+    }
+    for (const { dx, dy } of YONLER) {
+      const x = p.x + dx;
+      const y = p.y + dy;
+      const s = y * GENISLIK + x;
+      if (icinde(x, y) && !uzaklik.has(s) && yurunurMu(harita, x, y)) {
+        uzaklik.set(s, u + 1);
+        kuyruk.push({ x, y });
+      }
+    }
+  }
+  return { x: enIyi.x, y: enIyi.y };
 }
 
 // Bir noktadan yürünerek ulaşılabilen karoların sıra numaraları.
@@ -316,6 +350,7 @@ export function dogusNoktalari(harita) {
       const meydanaUzaklik = Math.max(m.x1 - x, x - m.x2, 0) + Math.max(m.y1 - y, y - m.y2, 0);
       if (meydanaUzaklik < 4) continue;
       if (harita.kapilar.some((k) => mesafe(k, { x, y }) < 3)) continue;
+      if (harita.in && mesafe(harita.in, { x, y }) < 4) continue;
       noktalar.push({ x, y, yabani: t === KARO.YABANI });
     }
   }
@@ -353,6 +388,7 @@ export function dusmanlariYurut(harita, dusmanlar, oyuncu, rng, { dokunulmaz = f
   const dolu = (x, y, ben) =>
     (x === oyuncu.x && y === oyuncu.y) || sonuc.some((d) => d !== ben && d.x === x && d.y === y);
   for (const d of sonuc) {
+    if (d.sabit) continue; // boss ve mini bosslar ininden ayrılmaz
     let hedef = null;
     if (!dokunulmaz && !meydandaMi(harita, oyuncu) && mesafe(d, oyuncu) <= KOVALAMA_MENZILI) {
       const yol = yolBul(harita, d, oyuncu, { yurur: dusmanYurunurMu });
@@ -375,4 +411,29 @@ export function dusmanlariYurut(harita, dusmanlar, oyuncu, rng, { dokunulmaz = f
 export function temasEdenDusman(harita, dusmanlar, oyuncu) {
   if (meydandaMi(harita, oyuncu)) return null;
   return dusmanlar.find((d) => mesafe(d, oyuncu) <= 1) ?? null;
+}
+
+// ── Boss ve mini boss inleri (plan.md Faz 7) ─────────────
+
+// Bu ilin ininde bekleyen boss ya da mini boss (sabit düşman kaydı), yoksa boş dizi.
+// Bölge bossu, yenilene dek (mühürlü olsa da) bossun ilinde görünür; mini boss ise
+// ilin arınması eşiği geçince ortaya çıkar.
+export function ozelDusmanlar(harita, durum) {
+  const il = ilHaritasi.get(harita.plaka);
+  const bolge = bolgeler.find((b) => b.anahtar === il.bolge);
+  const kayit = (id, anahtar, seviye, tur) => ({
+    id, dusman: dusmanOlustur(anahtar, seviye), x: harita.in.x, y: harita.in.y,
+    evX: harita.in.x, evY: harita.in.y, sabit: true, tur, yon: -1,
+  });
+  if (bolge.bossIli === harita.plaka && bossDurumu(durum, bolge.anahtar) !== 'yenildi') {
+    return [kayit('boss', bolge.boss, bolge.seviye[1], 'boss')];
+  }
+  if (miniBossVarMi(durum, harita.plaka)) {
+    return [kayit('mini', bolge.miniBoss, il.seviye[1] + 1, 'mini')];
+  }
+  return [];
+}
+
+export function siradanDusmanSayisi(dusmanlar) {
+  return dusmanlar.filter((d) => !d.sabit).length;
 }

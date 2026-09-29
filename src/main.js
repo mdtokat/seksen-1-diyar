@@ -4,8 +4,10 @@ import { metinler } from './veri/metinler.js';
 import { yeniOyunDurumu, durumDeposu } from './oyun/durum.js';
 import { rastgeleUreteci, yeniTohum } from './oyun/rastgele.js';
 import { kesifSonucunuUygula } from './oyun/kesif.js';
-import { ilHaritasiUret, girisNoktasi, dusmanlariYerlestir } from './oyun/gezinti.js';
-import { arinmaYuzdesi, seyahatEt } from './oyun/ilerleme.js';
+import { ilHaritasiUret, girisNoktasi, dusmanlariYerlestir, ozelDusmanlar } from './oyun/gezinti.js';
+import { arinmaYuzdesi, seyahatEt, yeniAcilanBosslar } from './oyun/ilerleme.js';
+import { bolgeler } from './veri/bolgeler.js';
+import { dusmanlar } from './veri/dusmanlar.js';
 import { kaydet, yukle } from './oyun/kayit.js';
 import { iller } from './veri/iller.js';
 import { siniflar } from './veri/siniflar.js';
@@ -89,6 +91,19 @@ function oyunuBaslat(durum) {
   };
   depo.abone(kaydetVeUyar);
   kaydetVeUyar(durum);
+
+  // Bir bossun mührü çözülünce oyuncuya haber verilir.
+  let onceki = durum;
+  depo.abone((d) => {
+    for (const anahtar of yeniAcilanBosslar(onceki, d)) {
+      const b = bolgeler.find((x) => x.anahtar === anahtar);
+      bildirimGoster(document.body, sablon(metinler.boss.acildi, {
+        boss: dusmanlar[b.boss].ad,
+        il: iller.find((il) => il.plaka === b.bossIli).ad,
+      }), { tur: 'kutlama', sure: 6000 });
+    }
+    onceki = d;
+  });
 }
 
 function baslikGoster() {
@@ -132,7 +147,12 @@ function yeniOyunGoster() {
 // haritası üretilir; komşu ilden gelindiyse o ile giden yolun ağzından girilir.
 function gezintiHazirla() {
   const durum = depo.al();
-  if (gezinti?.plaka === durum.konum) return gezinti;
+  if (gezinti?.plaka === durum.konum) {
+    // İnde bekleyen boss ya da mini boss güncel duruma göre yenilenir
+    // (mini boss belirmiş, boss yenilmiş olabilir).
+    gezinti.dusmanlar = [...gezinti.dusmanlar.filter((d) => !d.sabit), ...ozelDusmanlar(gezinti.harita, durum)];
+    return gezinti;
+  }
   const harita = ilHaritasiUret(durum.konum);
   const oyuncu = gezinti ? girisNoktasi(harita, gezinti.plaka) : { ...harita.dogus };
   gezinti = {
@@ -140,7 +160,10 @@ function gezintiHazirla() {
     harita,
     oyuncu,
     yon: 1,
-    dusmanlar: dusmanlariYerlestir(harita, arinmaYuzdesi(durum, durum.konum), rng, { oyuncu }),
+    dusmanlar: [
+      ...dusmanlariYerlestir(harita, arinmaYuzdesi(durum, durum.konum), rng, { oyuncu }),
+      ...ozelDusmanlar(harita, durum),
+    ],
     sonrakiId: 100,
     dogusSayaclari: [],
     dokunulmaz: 0,
@@ -216,7 +239,7 @@ function savasGoster(kayit) {
     const g = gezinti;
     if (sonuc === 'zafer') {
       g.dusmanlar = g.dusmanlar.filter((d) => d.id !== kayit.id);
-      g.dogusSayaclari.push(YENIDEN_DOGUS_ADIMI);
+      if (!kayit.sabit) g.dogusSayaclari.push(YENIDEN_DOGUS_ADIMI);
       g.dokunulmaz = 2;
     } else if (sonuc === 'kacis') {
       g.dokunulmaz = 8;

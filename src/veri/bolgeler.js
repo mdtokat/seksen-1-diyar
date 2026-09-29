@@ -1,6 +1,8 @@
 // Bölgeler. Yalnızca veri — mantık kodu yok.
 // Bölgeler `sira` alanına göre sırayla açılır (plan.md Bölüm 4).
 // `giris` ve `bossIli` il plakasıdır, `boss` dusmanlar.js anahtarıdır.
+// `miniBoss` bölgenin mini bossu, `miniBossIlleri` onun ortaya çıktığı illerdir
+// (ilin arınması %50'yi geçince, plan.md Faz 7).
 // `yemekCarpani`, yöresel yemeklerin güç ve fiyat çarpanıdır (plan.md Bölüm 7).
 
 export const bolgeler = [
@@ -12,6 +14,8 @@ export const bolgeler = [
     giris: 34,
     boss: 'bogaz_ejderi',
     bossIli: 34,
+    miniBoss: 'gulyabani',
+    miniBossIlleri: [16, 22],
     renk: '#2aa7a7',
     yemekCarpani: 1.0,
   },
@@ -23,6 +27,8 @@ export const bolgeler = [
     giris: 45,
     boss: 'yelbegen',
     bossIli: 35,
+    miniBoss: 'carsamba_karisi',
+    miniBossIlleri: [20, 48],
     renk: '#3b7dc4',
     yemekCarpani: 1.5,
   },
@@ -34,6 +40,8 @@ export const bolgeler = [
     giris: 7,
     boss: 'sahmeran',
     bossIli: 33,
+    miniBoss: 'yilan_beyi',
+    miniBossIlleri: [1, 32],
     renk: '#d9483b',
     yemekCarpani: 2.2,
   },
@@ -45,6 +53,8 @@ export const bolgeler = [
     giris: 42,
     boss: 'albasti',
     bossIli: 50,
+    miniBoss: 'golge_albasti',
+    miniBossIlleri: [38, 58],
     renk: '#d4a537',
     yemekCarpani: 3.0,
   },
@@ -56,6 +66,8 @@ export const bolgeler = [
     giris: 14,
     boss: 'karakoncolos',
     bossIli: 61,
+    miniBoss: 'yayla_devi',
+    miniBossIlleri: [37, 53],
     renk: '#7b5236',
     yemekCarpani: 4.0,
   },
@@ -67,6 +79,8 @@ export const bolgeler = [
     giris: 27,
     boss: 'tepegoz',
     bossIli: 63,
+    miniBoss: 'tepegozun_muhafizi',
+    miniBossIlleri: [21, 47],
     renk: '#c9772f',
     yemekCarpani: 5.0,
   },
@@ -78,6 +92,8 @@ export const bolgeler = [
     giris: 44,
     boss: 'van_golu_canavari',
     bossIli: 65,
+    miniBoss: 'tipi_ifriti',
+    miniBossIlleri: [25, 36],
     renk: '#6a4c93',
     yemekCarpani: 6.0,
   },

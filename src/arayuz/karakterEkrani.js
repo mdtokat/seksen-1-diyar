@@ -52,6 +52,7 @@ function icerik(durum) {
     </section>
     <section class="kart">
       <h3>${M.xp}</h3>
+      ${durum.sofra?.kalan > 0 ? `<p class="kart-not arinmis-not">🍽️ ${sablon(metinler.boss.sofraDurumu, { kalan: durum.sofra.kalan })}</p>` : ''}
       ${degerCubugu(o.xp, gereken, { etiket: 'XP', renk: 'var(--altin)' })}
       <div class="cubuk-grubu">
         ${degerCubugu(o.can, s.can, { etiket: metinler.statAdlari.can, renk: 'var(--mercan)' })}

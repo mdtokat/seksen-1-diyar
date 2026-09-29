@@ -8,7 +8,7 @@ import { yemekler } from '../veri/yemekler.js';
 import { STATLAR } from './karakter.js';
 
 export const KAYIT_ANAHTARI = 'seksen-bir-diyar/kayit';
-export const KAYIT_SURUMU = 1;
+export const KAYIT_SURUMU = 2;
 
 function varsayilanDepo() {
   try {
@@ -22,13 +22,20 @@ export function kayitVerisi(durum) {
   return { surum: KAYIT_SURUMU, durum };
 }
 
-// Eski sürümdeki bir kaydı güncel şemaya taşır. Tanınmayan sürüm → null.
-// Yeni bir sürüm eklenirse buraya `if (veri.surum === 1) veri = birdenIkiye(veri)`
-// gibi adımlar yazılır.
+// Sürüm 1 → 2 (Faz 7): yenilen bosslar, mini bosslar ve zafer sofrası eklendi.
+function birdenIkiye(veri) {
+  return {
+    surum: 2,
+    durum: { yenilenBosslar: [], yenilenMiniBosslar: [], sofra: null, ...veri.durum },
+  };
+}
+
+// Eski sürümdeki bir kaydı adım adım güncel şemaya taşır. Tanınmayan sürüm → null.
 export function goc(veri) {
-  if (!veri || typeof veri !== 'object') return null;
-  if (veri.surum !== KAYIT_SURUMU) return null;
-  return veri;
+  if (!veri || typeof veri !== 'object' || !veri.durum) return null;
+  let v = veri;
+  if (v.surum === 1) v = birdenIkiye(v);
+  return v.surum === KAYIT_SURUMU ? v : null;
 }
 
 const plakalar = new Set(iller.map((il) => il.plaka));
@@ -41,6 +48,8 @@ export function durumGecerliMi(d) {
   if (!Array.isArray(d.acikBolgeler) || d.acikBolgeler.length === 0) return false;
   if (!d.arinma || typeof d.arinma !== 'object') return false;
   if (!sayiMi(d.akce) || d.akce < 0) return false;
+  if (!Array.isArray(d.yenilenBosslar) || !Array.isArray(d.yenilenMiniBosslar)) return false;
+  if (d.sofra !== null && !(d.sofra && sayiMi(d.sofra.kalan))) return false;
   if (!Array.isArray(d.heybe) || !d.heybe.every((y) => yemekler[y?.anahtar] && sayiMi(y.adet) && y.adet > 0)) return false;
   const o = d.oyuncu;
   if (!o || !siniflar[o.sinif] || typeof o.ad !== 'string') return false;

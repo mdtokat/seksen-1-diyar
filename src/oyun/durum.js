@@ -15,6 +15,9 @@ export function yeniOyunDurumu({ ad, sinif } = {}) {
     oyuncu: sinif ? yeniKarakter(ad, sinif) : null,
     akce: 0,
     heybe: BASLANGIC_HEYBESI.map((y) => ({ ...y })),
+    yenilenBosslar: [], // bölge anahtarları
+    yenilenMiniBosslar: [], // il plakaları
+    sofra: null, // { bolge, kalan } — zafer sofrasının kalan savaş sayısı
   };
 }
 

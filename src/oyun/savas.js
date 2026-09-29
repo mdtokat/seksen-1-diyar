@@ -8,13 +8,17 @@ import {
   dusmanlar,
   OZEL_HAMLELER,
   OZEL_HAMLE_SANSI,
+  BOSS_OZEL_HAMLE_SANSI,
+  EVRE_OZEL_HAMLE_SANSI,
+  EVRE_GUC_CARPANI,
   SINIF_XP_CARPANI,
 } from '../veri/dusmanlar.js';
 import { siniflar } from '../veri/siniflar.js';
 import { yemekler } from '../veri/yemekler.js';
 import { yemekAdedi, yemekCikar, yemekEtkisi } from './envanter.js';
 import { statlar, acikYetenekler, xpEkle, tamIyilestir } from './karakter.js';
-import { aralik, sans } from './rastgele.js';
+import { aralik, sans, sec } from './rastgele.js';
+import { sofraTuket } from './ilerleme.js';
 
 // ── Formüller (plan.md Bölüm 5) ──────────────────────────
 
@@ -89,7 +93,8 @@ export function dusmanOlustur(anahtar, seviye) {
 
 // Oyuncu karakteri ve oluşturulmuş bir düşmanla yeni savaş.
 // `heybe`: savaşta yenebilecek yemekler; savaş sonunda oyun durumuna geri yazılır.
-export function savasBaslat(oyuncu, dusman, heybe = []) {
+// `gucCarpani`: savaş boyunca oyuncunun gücüne uygulanan çarpan (ör. zafer sofrası).
+export function savasBaslat(oyuncu, dusman, heybe = [], { gucCarpani = 1 } = {}) {
   const s = statlar(oyuncu);
   return {
     oyuncu: {
@@ -100,7 +105,8 @@ export function savasBaslat(oyuncu, dusman, heybe = []) {
       can: Math.min(oyuncu.can, s.can),
       nefesEnCok: s.nefes,
       nefes: Math.min(oyuncu.nefes, s.nefes),
-      guc: s.guc,
+      guc: Math.round(s.guc * gucCarpani),
+      gucCarpani,
       savunma: s.savunma,
       ceviklik: s.ceviklik,
       yetenekler: acikYetenekler(oyuncu).map((y) => y.anahtar),
@@ -109,6 +115,7 @@ export function savasBaslat(oyuncu, dusman, heybe = []) {
     heybe,
     etkiler: [], // { hedef: 'oyuncu', etki, deger, kalan }
     tur: 1,
+    evre: false, // bölge bossu güçlenme evresine girdi mi
     gunluk: [{ tip: 'baslangic' }],
     sonuc: null, // null | 'zafer' | 'yenilgi' | 'kacis'
     xpOdulu: xpOdulu(dusman.anahtar, dusman.seviye),
@@ -217,12 +224,34 @@ function yemekYe(s, anahtar) {
   return { tip: 'yemek', kim: 'oyuncu', yemek: anahtar, yenilenen: tur, miktar };
 }
 
-// Düşman yapay zekâsı: çoğunlukla saldırır, bazen türüne özgü özel hamle yapar.
+// Düşmanın özel hamleleri: bosslar ve mini bosslar kendi listelerini, diğerleri
+// türlerinin hamlesini kullanır.
+export function ozelHamleler(dusman) {
+  return dusmanlar[dusman.anahtar]?.ozelHamleler ?? [OZEL_HAMLELER[dusman.tur]].filter(Boolean);
+}
+
+function ozelHamleSansi(s) {
+  if (s.evre) return EVRE_OZEL_HAMLE_SANSI;
+  return s.dusman.sinif === 'siradan' ? OZEL_HAMLE_SANSI : BOSS_OZEL_HAMLE_SANSI;
+}
+
+// Bölge bossu (ve Zülmet) canı yarının altına düşünce bir kez güçlenir.
+function evreKontrol(s) {
+  const d = s.dusman;
+  const bossMu = d.sinif === 'bolge_bossu' || d.sinif === 'final';
+  if (!bossMu || s.evre || d.can <= 0 || d.can * 2 >= d.canEnCok) return null;
+  s.evre = true;
+  d.guc = Math.round(d.guc * EVRE_GUC_CARPANI);
+  return { tip: 'evre', kim: 'dusman' };
+}
+
+// Düşman yapay zekâsı: çoğunlukla saldırır, bazen özel hamle yapar.
 function dusmanHamlesi(s, rng) {
   const o = s.oyuncu;
   const d = s.dusman;
-  const ozel = OZEL_HAMLELER[d.tur];
-  const ozelMi = Boolean(ozel) && sans(rng, OZEL_HAMLE_SANSI);
+  const hamleler = ozelHamleler(d);
+  const ozelMi = hamleler.length > 0 && sans(rng, ozelHamleSansi(s));
+  const ozel = ozelMi ? sec(rng, hamleler) : null;
 
   if (ozelMi && ozel.etki === 'zayiflatma') {
     etkiEkle(s, 'oyuncu', 'zayiflatma', ozel.deger, ozel.sure);
@@ -287,6 +316,8 @@ export function oyuncuEylemi(savas, eylem, rng) {
     s.sonuc = 'zafer';
     olaylar.push({ tip: 'zafer', xp: s.xpOdulu });
   }
+  const evre = s.sonuc ? null : evreKontrol(s);
+  if (evre) olaylar.push(evre);
   if (!s.sonuc) {
     olaylar.push(dusmanHamlesi(s, rng));
     if (s.oyuncu.can <= 0) {
@@ -316,11 +347,12 @@ export function bayilmaUygula(durum) {
 
 // Biten savaşın sonucunu oyun durumuna yansıtır: can ve nefes aktarılır,
 // zaferde XP eklenir (seviye atlama dahil), yenilgide bayılma uygulanır.
+// Zafer sofrası varsa süresinden bir savaş düşer.
 // Sonuç: { durum, ozet: { sonuc, xp, seviyeler, yeniYetenekler, akceKaybi } }.
 export function savasSonucunuUygula(durum, savas) {
   if (!savas.sonuc) return { durum, ozet: null };
   let yeni = {
-    ...durum,
+    ...sofraTuket(durum),
     heybe: savas.heybe,
     oyuncu: { ...durum.oyuncu, can: savas.oyuncu.can, nefes: savas.oyuncu.nefes },
   };

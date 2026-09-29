@@ -12,6 +12,8 @@ import {
   ilDurumu,
   arinmaYuzdesi,
 } from '../oyun/ilerleme.js';
+import { bossDurumu, bossKosullari } from '../oyun/ilerleme.js';
+import { dusmanlar } from '../veri/dusmanlar.js';
 import { sablon, kacis, ilerlemeCubugu, bildirimGoster } from './bilesenler.js';
 import { karakterDugmesiniCiz } from './karakterDugmesi.js';
 
@@ -353,8 +355,19 @@ export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, ilGoster }
         <div><dt>${M.seviye}</dt><dd>${sablon(M.seviyeDegeri, { en_az: il.seviye[0], en_cok: il.seviye[1] })}</dd></div>
         <div><dt>${M.yemek}</dt><dd><span aria-hidden="true">${yemek.ikon}</span> ${kacis(yemek.ad)}<small>${kacis(yemek.aciklama)}</small></dd></div>
         <div><dt>${M.arinma}</dt><dd>${ilerlemeCubugu(yuzde, { etiket: M.arinma, renk: 'var(--arinmis)' })}</dd></div>
+        ${bossSatiri(durum, il, bolge)}
       </dl>
       <div class="kart-eylem">${eylem}</div>`;
+  }
+
+  // Bossun ilinde: bossun adı ve mühür durumu.
+  function bossSatiri(durum, il, bolge) {
+    if (bolge.bossIli !== il.plaka) return '';
+    const B = metinler.boss;
+    const hal = bossDurumu(durum, bolge.anahtar);
+    const ek = hal === 'muhurlu' ? `<small>${sablon(B.kosul, bossKosullari(durum, bolge.anahtar))}</small>` : '';
+    const etiket = B.durum[hal] ?? '';
+    return `<div><dt>${B.kartBasligi}</dt><dd>${kacis(dusmanlar[bolge.boss].ad)}${etiket ? ` — ${etiket}` : ''}${ek}</dd></div>`;
   }
 
   function ilSec(plaka) {

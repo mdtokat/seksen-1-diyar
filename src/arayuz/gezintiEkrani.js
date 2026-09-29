@@ -9,7 +9,7 @@ import { iller } from '../veri/iller.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { yemekler } from '../veri/yemekler.js';
 import { metinler } from '../veri/metinler.js';
-import { arinmaYuzdesi, seyahatKontrol, bolgeAcikMi } from '../oyun/ilerleme.js';
+import { arinmaYuzdesi, seyahatKontrol, bolgeAcikMi, bossDurumu, bossKosullari } from '../oyun/ilerleme.js';
 import {
   GENISLIK,
   YUKSEKLIK,
@@ -21,6 +21,7 @@ import {
   temasEdenDusman,
   dusmanDogur,
   dusmanSayisi,
+  siradanDusmanSayisi,
 } from '../oyun/gezinti.js';
 import { sablon, kacis, bildirimGoster } from './bilesenler.js';
 import { karakterDugmesiniCiz } from './karakterDugmesi.js';
@@ -143,17 +144,25 @@ export function gezintiEkrani(kap, depo, secenekler) {
   figurKatmani.appendChild(oyuncuFiguru);
   const dusmanFigurleri = new Map();
 
+  // Figür karosunun ortasına, ayakları karonun altına gelecek biçimde yerleşir.
+  // Boss ve mini boss figürleri daha büyüktür.
   function figurKonumla(el, x, y) {
-    el.style.transform = `translate3d(${(x - 0.3) * T}px, ${(y - 0.75) * T}px, 0)`;
+    const boy = el.classList.contains('ozel-figur') ? 2.2 : 1.6;
+    el.style.transform = `translate3d(${(x + 0.5 - boy / 2) * T}px, ${(y + 0.85 - boy) * T}px, 0)`;
     el.style.zIndex = String(10 + y); // aşağıdaki figür öndekidir
   }
 
   function dusmanFiguruOlustur(d) {
     const el = document.createElement('div');
-    el.className = 'harita-figuru dusman-figuru';
+    el.className = `harita-figuru dusman-figuru${d.sabit ? ` ozel-figur ozel-${d.tur}` : ''}`;
     el.dataset.id = d.id;
+    const B = metinler.boss;
+    const rozet = d.sabit
+      ? `${d.tur === 'boss' ? B.rozet : B.miniRozet} · ${sablon(metinler.savas.seviye, { seviye: d.dusman.seviye })}`
+      : sablon(metinler.savas.seviye, { seviye: d.dusman.seviye });
     el.innerHTML = `<div class="figur-ic">${dusmanCizimi(d.dusman.anahtar)}</div>
-      <span class="figur-rozeti">${sablon(metinler.savas.seviye, { seviye: d.dusman.seviye })}</span>`;
+      <span class="figur-rozeti">${rozet}</span>
+      ${d.tur === 'boss' ? `<span class="muhur" aria-hidden="true"></span>` : ''}`;
     el.title = d.dusman.ad;
     figurKatmani.appendChild(el);
     dusmanFigurleri.set(d.id, el);
@@ -171,6 +180,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     for (const d of g.dusmanlar) {
       const el = dusmanFigurleri.get(d.id) ?? dusmanFiguruOlustur(d);
       el.classList.toggle('saga', d.yon === 1);
+      if (d.tur === 'boss') el.classList.toggle('muhurlu', bossMuhurluMu());
       figurKonumla(el, d.x, d.y);
     }
   }
@@ -247,10 +257,26 @@ export function gezintiEkrani(kap, depo, secenekler) {
     setTimeout(() => secenekler.ileGec?.(kapi.plaka), 260);
   }
 
+  function bossMuhurluMu() {
+    return bossDurumu(depo.al(), il.bolge) === 'muhurlu';
+  }
+
+  // Mühürlü bossa yaklaşınca koşullar bir kez söylenir; uzaklaşınca yeniden söylenebilir.
+  let muhurUyarildi = false;
+  function muhurUyarisi(d) {
+    if (muhurUyarildi) return;
+    muhurUyarildi = true;
+    kuyruk = [];
+    const k = bossKosullari(depo.al(), il.bolge);
+    bildirimGoster(ekran, sablon(metinler.boss.muhurlu, { boss: d.dusman.ad, bolge: bolge.ad, ...k }), { tur: 'uyari', sure: 5000 });
+  }
+
   function temasKontrol() {
     if (mesgul || g.dokunulmaz > 0) return;
     const d = temasEdenDusman(harita, g.dusmanlar, g.oyuncu);
+    if (!d || d.tur !== 'boss') muhurUyarildi = false;
     if (!d) return;
+    if (d.tur === 'boss' && bossMuhurluMu()) return muhurUyarisi(d);
     mesgul = true;
     kuyruk = [];
     tutulanYon = null;
@@ -266,7 +292,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     const hazir = g.dogusSayaclari.filter((s) => s <= 0).length;
     g.dogusSayaclari = g.dogusSayaclari.filter((s) => s > 0);
     const enCok = dusmanSayisi(arinmaYuzdesi(depo.al(), g.plaka));
-    for (let i = 0; i < hazir && g.dusmanlar.length < enCok; i++) {
+    for (let i = 0; i < hazir && siradanDusmanSayisi(g.dusmanlar) < enCok; i++) {
       const d = dusmanDogur(harita, g.plaka, rng, { dolu: g.dusmanlar, oyuncu: g.oyuncu, enAzUzaklik: 7, id: g.sonrakiId++ });
       if (d) g.dusmanlar.push(d);
     }
@@ -293,6 +319,13 @@ export function gezintiEkrani(kap, depo, secenekler) {
     }
     if (yon.dx) g.yon = yon.dx;
     const hedef = { x: g.oyuncu.x + yon.dx, y: g.oyuncu.y + yon.dy };
+    if (g.dusmanlar.some((d) => d.x === hedef.x && d.y === hedef.y)) {
+      // Düşmanın içinden geçilmez; değmek savaşı (ya da mühür uyarısını) başlatır
+      kuyruk = [];
+      oyuncuyuCiz();
+      temasKontrol();
+      return;
+    }
     if (!yurunurMu(harita, hedef.x, hedef.y)) {
       kuyruk = [];
       oyuncuyuCiz();

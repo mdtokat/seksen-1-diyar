@@ -3,6 +3,8 @@ import { iller } from '../veri/iller.js';
 import { dusmanlar, SINIF_XP_CARPANI } from '../veri/dusmanlar.js';
 import { dusmanOlustur, savasSonucunuUygula } from './savas.js';
 import { yemekEkle } from './envanter.js';
+import { bossYenildi, MINI_BOSS_ARINMA_ESIGI } from './ilerleme.js';
+import { bolgeler } from '../veri/bolgeler.js';
 import { aralik, sans, sec, tamSayi } from './rastgele.js';
 
 export const ARINMA_ARTISI = [8, 12]; // zafer başına % (iki uç dahil)
@@ -44,7 +46,8 @@ export function ganimetUret(dusman, plaka, rng) {
 // Keşif savaşının sonucunu uygular: savaş sonucu (XP, seviye, bayılma) +
 // zaferde arınma artışı, akçe ve yemek. Sonuç: { durum, ozet }.
 // ozet, savasSonucunuUygula özetine ek olarak:
-//   { arinmaArtisi, arinma, arindi, akce, yemek, yemekSigmadi }
+//   { arinmaArtisi, arinma, arindi, akce, yemek, yemekSigmadi,
+//     bossYenildi (bölge anahtarı | null), acilanBolge, miniBossYenildi, miniBossBelirdi }
 export function kesifSonucunuUygula(durum, savas, plaka, rng) {
   const r = savasSonucunuUygula(durum, savas);
   if (!r.ozet) return r;
@@ -57,8 +60,13 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
     akce: 0,
     yemek: null,
     yemekSigmadi: false,
+    bossYenildi: null,
+    acilanBolge: null,
+    miniBossYenildi: false,
+    miniBossBelirdi: null,
   };
   if (savas.sonuc !== 'zafer') return { durum: yeni, ozet };
+  const onceArinma = yeni.arinma[plaka] ?? 0;
 
   const a = arinmaArtir(yeni, plaka, rng);
   yeni = a.durum;
@@ -72,6 +80,24 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
     yeni = { ...yeni, heybe: e.heybe };
     ozet.yemek = g.yemek;
     ozet.yemekSigmadi = e.eklenen === 0;
+  }
+
+  const sinif = dusmanlar[savas.dusman.anahtar].sinif;
+  if (sinif === 'bolge_bossu') {
+    const b = bossYenildi(yeni, dusmanlar[savas.dusman.anahtar].bolge);
+    yeni = b.durum;
+    ozet.bossYenildi = dusmanlar[savas.dusman.anahtar].bolge;
+    ozet.acilanBolge = b.acilanBolge;
+  } else if (sinif === 'mini_boss') {
+    yeni = { ...yeni, yenilenMiniBosslar: [...new Set([...(yeni.yenilenMiniBosslar ?? []), plaka])] };
+    ozet.miniBossYenildi = true;
+  }
+
+  // İlin arınması eşiği geçtiyse ve bu ilde mini boss varsa ortaya çıkar
+  const bolge = bolgeler.find((b) => b.anahtar === ilHaritasi.get(plaka).bolge);
+  if (onceArinma <= MINI_BOSS_ARINMA_ESIGI && ozet.arinma > MINI_BOSS_ARINMA_ESIGI
+      && bolge.miniBossIlleri.includes(plaka) && !(yeni.yenilenMiniBosslar ?? []).includes(plaka)) {
+    ozet.miniBossBelirdi = bolge.miniBoss;
   }
   return { durum: yeni, ozet };
 }

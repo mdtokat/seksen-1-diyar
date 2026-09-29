@@ -386,7 +386,7 @@ Bir bölge bossu yenildiğinde, o bölgenin yemeklerinden oluşan bir sofra kuru
 | 4 | Keşif, yemekler ve kayıt (**oynanabilir ilk sürüm**) | ✅ |
 | 5 | Görsel yenileme (SVG çizimler, savaş sahnesi, il sınırlı harita) | ✅ |
 | 6 | İl içi gezinti (kuşbakışı yürüme, haritada düşmanlar) | ✅ |
-| 7 | Bosslar ve bölge ilerlemesi | ⬜ |
+| 7 | Bosslar ve bölge ilerlemesi | ✅ |
 | 8 | Arasta, Ahi esnafı, ekipman ve kervansaray | ⬜ |
 | 9 | Görevler ve itibar | ⬜ |
 | 10 | Final, ses, animasyon ve cila | ⬜ |
@@ -556,12 +556,21 @@ Kullanıcı kararları: kuşbakışı görünüm; düşmanlar haritada görünü
 ### Faz 7 — Bosslar ve Bölge İlerlemesi
 **Hedef:** Bölgelerin sırayla açılması ve boss savaşları.
 
-- [ ] `ilerleme.js`: boss açılma koşulu şu olsun: bölgedeki illerin ortalama arınması en az %60 **ve** oyuncu seviyesi en az (bölge üst seviyesi − 1). Açılınca bildirim göster.
-- [ ] Boss savaşları: bosslardan kaçılamaz. Her bossun en az bir özel hamlesi ve can yarının altına düşünce güçlenme evresi olsun.
-- [ ] Boss yenilince sonraki bölge açılsın ve harita güncellensin. Kısa bir hikâye metni göster.
-- [ ] Zafer sofrasını uygula (Bölüm 7).
-- [ ] Her bölgeye 1–2 mini boss yerleştir (Bölüm 6). Mini bosslar ilin arınması %50'yi geçince çıksın.
-- [ ] Testleri yaz: boss açılma koşulu, bölge kilidi açılışı, zafer sofrası etkisi.
+- [x] `ilerleme.js`: boss açılma koşulu şu olsun: bölgedeki illerin ortalama arınması en az %60 **ve** oyuncu seviyesi en az (bölge üst seviyesi − 1). Açılınca bildirim göster.
+- [x] Boss savaşları: bosslardan kaçılamaz. Her bossun en az bir özel hamlesi ve can yarının altına düşünce güçlenme evresi olsun.
+- [x] Boss yenilince sonraki bölge açılsın ve harita güncellensin. Kısa bir hikâye metni göster.
+- [x] Zafer sofrasını uygula (Bölüm 7).
+- [x] Her bölgeye 1–2 mini boss yerleştir (Bölüm 6). Mini bosslar ilin arınması %50'yi geçince çıksın.
+- [x] Testleri yaz: boss açılma koşulu, bölge kilidi açılışı, zafer sofrası etkisi.
+
+**Faz 7 kararları:**
+- **Boss ini:** her ilin meydandan yürüyerek en uzak açık karosu. Bölge bossu, yenilene dek kendi ilinin ininde bekler; koşullar sağlanana dek mühürlüdür (yaklaşınca eksik koşullar söylenir). Mühür çözülünce bildirim gelir. Boss ve mini bosslar ininden ayrılmaz.
+- **Eşik:** ortalama arınma yuvarlanmadan karşılaştırılır (%59,5 yetmez); ekranda aşağı yuvarlanmış değer gösterilir.
+- **Boss savaşı:** bossların ve mini bossların kendi özel hamleleri vardır (bir güçlü vuruş, bir zayıflatma), özel hamle şansı %30. Bölge bossu canı yarının altına düşünce bir kez güçlenir: güç ×1,3, özel hamle şansı %40.
+- **Mini boss illeri:** Marmara: Bursa, Edirne · Ege: Denizli, Muğla · Akdeniz: Adana, Isparta · İç Anadolu: Kayseri, Sivas · Karadeniz: Kastamonu, Rize · Güneydoğu: Diyarbakır, Mardin · Doğu Anadolu: Erzurum, Kars. Mini boss seviyesi: ilin üst seviyesi + 1.
+- **Zafer sofrası:** bölgenin tüm yemeklerinden kurulur; can ve nefes dolar, sonraki 10 savaş (sonucu ne olursa olsun) boyunca güç ×1,1.
+- **Denge (simülasyonla):** oyuncu mührün açıldığı seviyede, stat puanları dağıtılmış ve heybesinde bölgenin yemekleriyle; bosslar ~10–16 turda, sınıfa göre %74–98 zaferle; mini bosslar 6–20 turda %78–100 zaferle yenilir. Boss çarpanları: can 2,4 (Marmara) → 4,4 (Doğu), güç 1,05 (Van Gölü Canavarı 1,1); mini boss canı ×1,3, gücü ×1,1.
+- **Kayıt:** şema sürüm 2 (`yenilenBosslar`, `yenilenMiniBosslar`, `sofra`). Sürüm 1 kayıtlar otomatik taşınır.
 
 **Kabul kriterleri:** Marmara'dan başlayarak bölgeler sırayla açılıyor. Kilitli bölgeye erişilemiyor.
 

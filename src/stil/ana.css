@@ -2173,3 +2173,76 @@ h3 {
     animation: none;
   }
 }
+
+/* ── Bosslar ve bölge ilerlemesi (Faz 7) ──────────────── */
+.ozel-figur {
+  width: calc(var(--karo, 36px) * 2.2);
+  height: calc(var(--karo, 36px) * 2.2);
+}
+
+.ozel-figur .figur-rozeti {
+  background: #6a4c93;
+  border: 1px solid var(--altin);
+  font-size: 0.66rem;
+}
+
+.ozel-boss .figur-rozeti {
+  background: var(--mercan);
+}
+
+.muhur {
+  display: none;
+  position: absolute;
+  inset: 12% 8% 4%;
+  border-radius: 50%;
+  border: 3px dashed #b79ce0;
+  background: radial-gradient(circle, rgba(106, 76, 147, 0.15), rgba(106, 76, 147, 0.45));
+  animation: muhur-don 6s linear infinite;
+  pointer-events: none;
+}
+
+.muhurlu .muhur {
+  display: block;
+}
+
+.muhurlu .figur-ic {
+  filter: grayscale(0.6) brightness(0.8);
+}
+
+@keyframes muhur-don {
+  to { transform: rotate(360deg); }
+}
+
+.etki-sofra {
+  background: rgba(212, 165, 55, 0.25);
+  border-color: var(--altin);
+}
+
+.evre-parilti {
+  animation: evre-parilti 0.9s ease-in-out;
+}
+
+@keyframes evre-parilti {
+  50% { filter: drop-shadow(0 0 14px #d9483b) saturate(1.6); }
+}
+
+.savas-sonu .hikaye {
+  display: block;
+  margin: 0.4rem 0;
+  padding: 0.5rem 0.7rem;
+  font-family: var(--font-baslik);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  text-align: left;
+  color: var(--lacivert);
+  background: rgba(42, 167, 167, 0.1);
+  border-left: 4px solid var(--turkuaz);
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .muhur,
+  .evre-parilti {
+    animation: none;
+  }
+}

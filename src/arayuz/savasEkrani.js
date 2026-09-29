@@ -1,6 +1,7 @@
 // Savaş ekranı: can ve nefes çubukları, eylem butonları ve savaş günlüğü.
 import { iller } from '../veri/iller.js';
 import { yemekler } from '../veri/yemekler.js';
+import { dusmanlar as dusmanVerisi } from '../veri/dusmanlar.js';
 import { metinler } from '../veri/metinler.js';
 import {
   savasBaslat,
@@ -11,6 +12,8 @@ import {
   savasSonucunuUygula,
 } from '../oyun/savas.js';
 import { gerekenXp } from '../oyun/karakter.js';
+import { sofraGucCarpani, SOFRA } from '../oyun/ilerleme.js';
+import { bolgeler } from '../veri/bolgeler.js';
 import { yemekAdedi, yemekGucu } from '../oyun/envanter.js';
 import { kacis, sablon, degerCubugu, bildirimGoster } from './bilesenler.js';
 import { sinifCizimi } from './cizimler/karakterler.js';
@@ -20,6 +23,7 @@ import { bolgeArkaPlani } from './cizimler/arkaplanlar.js';
 const M = metinler.savas;
 const G = M.gunluk;
 const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
+const dusmanAdi = (anahtar) => dusmanVerisi[anahtar].ad;
 
 // Savaş günlüğündeki bir olayı Türkçe cümleye çevirir.
 // Sonuç: { metin, sinif } — sinif: 'oyuncu' | 'dusman' | 'bilgi' | 'zafer' | 'yenilgi'.
@@ -84,6 +88,8 @@ export function olayMetni(olay, savas) {
       };
     case 'zafer':
       return { sinif: 'zafer', metin: sablon(M.dagilma[d.tur], { dusman: d.ad }) };
+    case 'evre':
+      return { sinif: 'dusman', metin: sablon(G.evre, { dusman: d.ad }) };
     case 'yenilgi':
       return { sinif: 'yenilgi', metin: G.yenilgi };
     default:
@@ -133,7 +139,10 @@ function vurusGoster(figur) {
 export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucunuUygula, bitince, karakterGoster } = {}) {
   const baslangic = depo.al();
   const il = ilHaritasi.get(baslangic.konum);
-  let savas = savasBaslat(baslangic.oyuncu, dusman, baslangic.heybe ?? []);
+  let savas = savasBaslat(baslangic.oyuncu, dusman, baslangic.heybe ?? [], {
+    gucCarpani: sofraGucCarpani(baslangic),
+  });
+  const sofraKalan = baslangic.sofra?.kalan ?? 0;
   let panel = 'ana'; // 'ana' | 'yetenek' | 'yemek' | 'son'
   let ozet = null;
   let sonDurum = null;
@@ -159,6 +168,11 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
 
   const ekran = kap.querySelector('.savas-ekrani');
   const figurDusman = ekran.querySelector('.figur-dusman');
+  // Giriş animasyonu bitince sınıf kaldırılır; yoksa sonraki animasyonları (sarsılma,
+  // dağılma) ezer. Hareket azaltılmışsa animasyon hiç çalışmayabilir.
+  const girisBitti = () => figurDusman.classList.remove('giris');
+  figurDusman.addEventListener('animationend', girisBitti, { once: true });
+  setTimeout(girisBitti, 600);
   const figurOyuncu = ekran.querySelector('.figur-oyuncu');
   const plakaDusman = ekran.querySelector('.bilgi-plakasi-dusman');
   const plakaOyuncu = ekran.querySelector('.bilgi-plakasi-oyuncu');
@@ -176,7 +190,7 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
     const etkiler = savas.etkiler
       .filter((e) => e.hedef === 'oyuncu')
       .map((e) => `<li class="etki etki-${e.etki}">${sablon(M.etkiler[e.etki], { kalan: e.kalan })}</li>`)
-      .join('');
+      .join('') + (sofraKalan > 0 ? `<li class="etki etki-sofra">${sablon(M.etkiler.sofra, { kalan: sofraKalan })}</li>` : '');
     plakaOyuncu.innerHTML = `
       <h2>${kacis(o.ad)} <span class="rozet">${sablon(M.seviye, { seviye: o.seviye })}</span></h2>
       ${degerCubugu(gosterilen.oyuncuCan, o.canEnCok, { etiket: metinler.statAdlari.can, renk: 'var(--mercan)' })}
@@ -234,6 +248,10 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
       else titret(figurOyuncu, 'sarsil', 420);
     } else if (olay.tip === 'zafer') {
       figurDusman.classList.add('dagil');
+    } else if (olay.tip === 'evre') {
+      titret(figurDusman, 'sarsil', 420);
+      titret(figurDusman, 'evre-parilti', 900);
+      yaziUcur(figurDusman, M.sahne.guclendi, 'kritik');
     } else if (olay.tip === 'yenilgi') {
       figurOyuncu.classList.add('bayil');
     }
@@ -308,6 +326,23 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
       }
       if (ozet.arinmaArtisi) satirlar.push(sablon(S.arinma, { artis: ozet.arinmaArtisi, yuzde: ozet.arinma }));
       if (ozet.arindi) satirlar.push(`<strong class="kutlama">${sablon(S.arindi, { il: kacis(il.ad) })}</strong>`);
+      const B = metinler.boss;
+      if (ozet.miniBossYenildi) satirlar.push(`<strong>${sablon(B.miniYenildi, { boss: kacis(savas.dusman.ad) })}</strong>`);
+      if (ozet.miniBossBelirdi) {
+        satirlar.push(`<strong class="kutlama">${sablon(B.miniBelirdi, { boss: kacis(dusmanAdi(ozet.miniBossBelirdi)) })}</strong>`);
+      }
+      if (ozet.bossYenildi) {
+        const bolge = bolgeler.find((b) => b.anahtar === ozet.bossYenildi);
+        const sofraYemekleri = Object.values(yemekler)
+          .filter((y) => ilHaritasi.get(y.il).bolge === bolge.anahtar)
+          .map((y) => `${y.ikon} ${y.ad}`);
+        satirlar.push(`<em class="hikaye">${metinler.hikaye[bolge.anahtar]}</em>`);
+        satirlar.push(sablon(B.sofra, { yemekler: kacis(sofraYemekleri.join(', ')), savas: SOFRA.savas }));
+        if (ozet.acilanBolge) {
+          const yeni = bolgeler.find((b) => b.anahtar === ozet.acilanBolge);
+          satirlar.push(`<strong class="kutlama">🗺️ ${sablon(B.yeniBolge, { bolge: yeni.ad, il: kacis(ilHaritasi.get(yeni.giris).ad) })}</strong>`);
+        }
+      }
     } else if (ozet.sonuc === 'yenilgi') {
       satirlar.push(sablon(S.bayilma, { il: kacis(il.ad) }));
       if (ozet.akceKaybi > 0) satirlar.push(sablon(S.akceKaybi, { akce: ozet.akceKaybi }));
@@ -344,6 +379,9 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
     sonDurum = r.durum;
     depo.ayarla(r.durum);
     panel = 'son';
+    if (ozet.bossYenildi) {
+      bildirimGoster(ekran, sablon(M.dagilma.boss, { dusman: savas.dusman.ad }), { tur: 'kutlama', sure: 3500 });
+    }
     if (ozet.arindi) {
       bildirimGoster(ekran, sablon(M.sonuc.arindi, { il: il.ad }), { tur: 'kutlama', sure: 3500 });
     }

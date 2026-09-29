@@ -8,6 +8,37 @@ export const metinler = {
     'Zalim sihirbaz Zülmet, yasak sihirle cinleri ve ifritleri Anadolu\'ya saldı. ' +
     'Yollar kesildi, kervanlar yağmalandı. Mazlumu korumak için bir yiğit yola çıkıyor.',
 
+  boss: {
+    muhurlu: '{boss} mühürlü. Mührü çözmek için {bolge} illerinin ortalama arınması %{gerekenArinma} (şimdi %{arinma}), seviyen de en az {gerekenSeviye} (şimdi {seviye}) olmalı.',
+    acildi: 'Mühür çözüldü! {boss} artık {il} ilindeki ininde seni bekliyor.',
+    miniBelirdi: '{boss} ortaya çıktı! Bu ildeki ininde seni bekliyor.',
+    miniYenildi: '{boss} dağılıp gitti; bu ilin halkı derin bir nefes aldı.',
+    sofra: 'Zafer sofrası kuruldu: {yemekler}. Canın ve nefesin doldu; {savas} savaş boyunca gücün %10 arttı.',
+    yeniBolge: 'Yeni bölge açıldı: {bolge}. Yolun {il} ilinden geçiyor.',
+    rozet: 'Boss',
+    miniRozet: 'Mini boss',
+    muhurRozeti: 'Mühürlü',
+    kartBasligi: 'Bölge bossu',
+    durum: {
+      muhurlu: 'Mühürlü',
+      acik: 'Mührü çözüldü',
+      yenildi: 'Yenildi ✓',
+    },
+    kosul: 'Arınma %{arinma}/%{gerekenArinma} · Sv {seviye}/{gerekenSeviye}',
+    sofraDurumu: 'Zafer sofrası: {kalan} savaş boyunca gücün %10 fazla.',
+  },
+
+  // Bölge bossu yenilince gösterilen kısa hikâye (plan.md Faz 7).
+  hikaye: {
+    marmara: 'Boğaz\'ın suları duruldu; kayıklar yeniden denize açıldı, halk sevinçle kıyılara indi. Ama Zülmet\'in sihri güneye, Ege\'nin zeytinliklerine uzanıyor.',
+    ege: 'Yelbegen\'in üç başı da sustu; Ege yolları yeniden kervanlara açıldı, zeytinlikler rahat bir nefes aldı. Toros\'ların ardında ise Şahmeran\'ın gözleri parlıyor.',
+    akdeniz: 'Şahmeran\'ın aklı sihirden arındı; yılanlar mağaralarına çekildi, Akdeniz limanları yeniden şenlendi. Bozkırdan ise soğuk bir rüzgâr esiyor.',
+    ic_anadolu: 'Albastı\'nın gölgesi bozkırdan çekildi; peri bacalarının arasına yeniden güneş doğdu. Kuzeyde, sisli yaylalardan bir uğultu yükseliyor.',
+    karadeniz: 'Karakoncolos\'un kışı sona erdi; yaylalara bahar geldi, çay bahçeleri yeşerdi. Güneydoğunun kızgın ovalarında ise Tepegöz uyanmış.',
+    guneydogu: 'Tepegöz\'ün sihri bozuldu; ovalarda yeniden harman kalktı, kervanlar yola koyuldu. Doğunun karlı dağlarında ise Van Gölü\'nün suları kabarıyor.',
+    dogu_anadolu: 'Van Gölü\'nün suları sakinleşti. Ağrı Dağı\'nın eteklerinde, Zülmet\'in kalesine giden yolun izleri belirmeye başladı…',
+  },
+
   baslik: {
     devamEt: 'Devam Et',
     yeniOyun: 'Yeni Oyun',
@@ -154,8 +185,10 @@ export const metinler = {
     nefesYetersiz: 'Nefesin yetmiyor.',
     sahne: {
       siyrildi: 'Sıyrıldı',
+      guclendi: 'Güçlendi!',
     },
     etkiler: {
+      sofra: '🍽️ Zafer sofrası ({kalan})',
       savunma: '🛡️ Korunma ({kalan})',
       guclenme: '💪 Güç ({kalan})',
       kritik: '🦅 Keskin göz ({kalan})',
@@ -181,6 +214,7 @@ export const metinler = {
       korundu: 'Duruşun hasarı azalttı.',
       kacisBasarili: 'Geri çekilip yoluna devam ettin.',
       kacisBasarisiz: 'Kaçamadın! {dusman} yolunu kesti.',
+      evre: '{dusman} üzerindeki sihir kabardı; daha da güçlendi!',
       yenilgi: 'Gözlerin karardı, bayıldın…',
     },
     // Yenilen düşmanlar ölmez: kaçar, dağılır ya da sihri bozulur (plan.md Bölüm 2).
