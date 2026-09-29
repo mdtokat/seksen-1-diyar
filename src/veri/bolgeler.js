@@ -1,3 +1,91 @@
-// Yalnızca veri — mantık kodu yok. İçerik Faz 1'de eklenecek.
+// Bölgeler. Yalnızca veri — mantık kodu yok.
+// Bölgeler `sira` alanına göre sırayla açılır (plan.md Bölüm 4).
+// `giris` ve `bossIli` il plakasıdır, `boss` dusmanlar.js anahtarıdır.
+// `yemekCarpani`, yöresel yemeklerin güç ve fiyat çarpanıdır (plan.md Bölüm 7).
 
-export {};
+export const bolgeler = [
+  {
+    anahtar: 'marmara',
+    ad: 'Marmara',
+    sira: 1,
+    seviye: [1, 10],
+    giris: 34,
+    boss: 'bogaz_ejderi',
+    bossIli: 34,
+    renk: '#2aa7a7',
+    yemekCarpani: 1.0,
+  },
+  {
+    anahtar: 'ege',
+    ad: 'Ege',
+    sira: 2,
+    seviye: [8, 18],
+    giris: 45,
+    boss: 'yelbegen',
+    bossIli: 35,
+    renk: '#3b7dc4',
+    yemekCarpani: 1.5,
+  },
+  {
+    anahtar: 'akdeniz',
+    ad: 'Akdeniz',
+    sira: 3,
+    seviye: [15, 25],
+    giris: 7,
+    boss: 'sahmeran',
+    bossIli: 33,
+    renk: '#d9483b',
+    yemekCarpani: 2.2,
+  },
+  {
+    anahtar: 'ic_anadolu',
+    ad: 'İç Anadolu',
+    sira: 4,
+    seviye: [20, 32],
+    giris: 42,
+    boss: 'albasti',
+    bossIli: 50,
+    renk: '#d4a537',
+    yemekCarpani: 3.0,
+  },
+  {
+    anahtar: 'karadeniz',
+    ad: 'Karadeniz',
+    sira: 5,
+    seviye: [28, 40],
+    giris: 14,
+    boss: 'karakoncolos',
+    bossIli: 61,
+    renk: '#3d8b4f',
+    yemekCarpani: 4.0,
+  },
+  {
+    anahtar: 'guneydogu',
+    ad: 'Güneydoğu Anadolu',
+    sira: 6,
+    seviye: [35, 45],
+    giris: 27,
+    boss: 'tepegoz',
+    bossIli: 63,
+    renk: '#c9772f',
+    yemekCarpani: 5.0,
+  },
+  {
+    anahtar: 'dogu_anadolu',
+    ad: 'Doğu Anadolu',
+    sira: 7,
+    seviye: [42, 50],
+    giris: 44,
+    boss: 'van_golu_canavari',
+    bossIli: 65,
+    renk: '#6a4c93',
+    yemekCarpani: 6.0,
+  },
+];
+
+// Final savaşı: Ağrı Dağı'ndaki kalede Zülmet.
+export const final = {
+  boss: 'zulmet',
+  il: 4,
+  seviye: 48,
+};

@@ -151,12 +151,15 @@ Bölge bossları tanrı değildir. Hepsi Zülmet'in sihriyle azmış mahlûklard
 - Komşuluk, illerin **gerçek kara sınırlarına** göre belirlenir. Deniz geçişi yoktur.
 - Komşuluk **simetrik** olmalıdır: A, B'nin komşusuysa B de A'nın komşusudur.
 - Tüm iller tek bir bağlı çizge oluşturmalıdır.
+- Komşuluklar OpenStreetMap il sınırlarıyla karşılaştırılarak doğrulandı (Faz 1). OSM'deki deniz (karasuları) sınırları — İstanbul–Yalova, İstanbul–Bursa, Balıkesir–Tekirdağ — komşuluk sayılmaz.
 - Doğrulama testleri yazılır. Örnek kontroller:
   - İstanbul'un komşuları tam olarak {Kırklareli, Tekirdağ, Kocaeli} olmalı.
   - Ankara'nın komşuları tam olarak {Çankırı, Kırıkkale, Kırşehir, Aksaray, Konya, Eskişehir, Bolu} olmalı.
 
 ### İl seviyeleri
 Her bölgede, giriş iline yakın iller düşük seviyeli, uzak iller yüksek seviyeli olur. Mesafe, bölge içinde giriş ilinden başlayan BFS ile hesaplanır. Seviye aralıkları bölgenin genel aralığını kademeli olarak kaplar.
+
+Formül (Faz 1): bölge aralığı `[a, b]`, en uzak mesafe `D` ve `kademe = (b − a) / (D + 1)` olmak üzere, `d` mesafedeki ilin aralığı `[a + round(d × kademe), a + round((d + 1) × kademe)]` olur. Hesap `src/oyun/ilerleme.js` içindedir, sonuçlar `iller.js`'e yazılıdır ve testlerle eşitliği denetlenir.
 
 ### Harita
 - İller, `lat`/`lon` değerlerinden basit bir izdüşümle SVG koordinatına çevrilir: `x = (lon − 25.5) × k × cos(39°)`, `y = (42.2 − lat) × k`.
@@ -237,6 +240,8 @@ Her ilin meşhur yemeği, o ilde düşmanlardan düşer ve arastada satılır.
 - **Nefes (N)** yemekleri nefesi yeniler. Tatlılar, içecekler, meyveler ve bal bu gruptadır.
 
 Yemeğin gücü bölge çarpanıyla belirlenir. Can yemeklerinin taban değeri 30, nefes yemeklerinin taban değeri 15'tir.
+
+Taban fiyat: can yemekleri 20 akçe, nefes yemekleri 15 akçe (kullanıcı kararı, Faz 1).
 
 | Bölge | Marmara | Ege | Akdeniz | İç Anadolu | Karadeniz | Güneydoğu | Doğu |
 |---|---|---|---|---|---|---|---|
@@ -365,7 +370,7 @@ Bir bölge bossu yenildiğinde, o bölgenin yemeklerinden oluşan bir sofra kuru
 | Faz | Başlık | Durum |
 |---|---|---|
 | 0 | Proje kurulumu | ✅ |
-| 1 | Veri katmanı | ⬜ |
+| 1 | Veri katmanı | ✅ |
 | 2 | Harita ve seyahat | ⬜ |
 | 3 | Karakter ve savaş motoru | ⬜ |
 | 4 | Keşif, yemekler ve kayıt (**oynanabilir ilk sürüm**) | ⬜ |
@@ -402,13 +407,13 @@ Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 ### Faz 1 — Veri Katmanı
 **Hedef:** 81 ilin, bölgelerin, yemeklerin, düşmanların ve sınıfların doğrulanmış verisi.
 
-- [ ] `bolgeler.js`: 7 bölgeyi anahtar, ad, sıra, seviye aralığı, giriş ili, boss, boss ili, renk ve yemek çarpanıyla tanımla (Bölüm 4 ve 7).
-- [ ] `iller.js`: 81 ili Bölüm 4'teki şemayla tanımla. Plaka, ad, bölge, yaklaşık koordinat ve gerçek kara komşulukları eksiksiz olmalı.
-- [ ] İllerin seviye aralıklarını Bölüm 4'teki BFS kuralıyla hesaplayan bir yardımcı yaz (ya da hesaplanmış değerleri veriye yaz).
-- [ ] `yemekler.js`: Bölüm 7'deki 81 yemeği ad, tür (`can`/`nefes`), il plakası ve kısa açıklamayla tanımla. Güç ve fiyat bölge çarpanından hesaplansın. ⚠ işaretli yemekleri kodda `teyit: false` alanıyla işaretle.
-- [ ] `dusmanlar.js`: Bölüm 6'daki düşmanları anahtar, ad, tür, bölge, stat çarpanları ve kısa açıklamayla tanımla. Bölge bosslarını ve Zülmet'i de ekle.
-- [ ] `siniflar.js`: 3 sınıfı başlangıç statları, seviye başı artışları ve yetenekleriyle tanımla (Bölüm 5).
-- [ ] Veri doğrulama testlerini yaz:
+- [x] `bolgeler.js`: 7 bölgeyi anahtar, ad, sıra, seviye aralığı, giriş ili, boss, boss ili, renk ve yemek çarpanıyla tanımla (Bölüm 4 ve 7).
+- [x] `iller.js`: 81 ili Bölüm 4'teki şemayla tanımla. Plaka, ad, bölge, yaklaşık koordinat ve gerçek kara komşulukları eksiksiz olmalı.
+- [x] İllerin seviye aralıklarını Bölüm 4'teki BFS kuralıyla hesaplayan bir yardımcı yaz (ya da hesaplanmış değerleri veriye yaz).
+- [x] `yemekler.js`: Bölüm 7'deki 81 yemeği ad, tür (`can`/`nefes`), il plakası ve kısa açıklamayla tanımla. Güç ve fiyat bölge çarpanından hesaplansın. ⚠ işaretli yemekleri kodda `teyit: false` alanıyla işaretle.
+- [x] `dusmanlar.js`: Bölüm 6'daki düşmanları anahtar, ad, tür, bölge, stat çarpanları ve kısa açıklamayla tanımla. Bölge bosslarını ve Zülmet'i de ekle.
+- [x] `siniflar.js`: 3 sınıfı başlangıç statları, seviye başı artışları ve yetenekleriyle tanımla (Bölüm 5).
+- [x] Veri doğrulama testlerini yaz:
   - Tam 81 il var ve plakalar 1–81 arası, tekrarsız.
   - Bölge başına il sayıları doğru (11, 8, 8, 13, 18, 9, 14).
   - Komşuluk simetrik ve çizge bağlı.
