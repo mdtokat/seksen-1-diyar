@@ -1,4 +1,5 @@
 // Bölge ilerlemesi. Saf oyun mantığı — DOM'a dokunmaz.
+import { iller as ilVerisi } from '../veri/iller.js';
 
 // Bölge içinde, giriş ilinden başlayarak yalnızca aynı bölgedeki komşular
 // üzerinden BFS ile her ilin mesafesini hesaplar. Sonuç: { plaka: mesafe }.
@@ -39,4 +40,39 @@ export function ilSeviyeleriniHesapla(iller, bolgeler) {
     }
   }
   return sonuc;
+}
+
+// ── Bölge kilitleri ve seyahat ───────────────────────────
+
+const ilHaritasi = new Map(ilVerisi.map((il) => [il.plaka, il]));
+
+export function bolgeAcikMi(durum, bolgeAnahtari) {
+  return durum.acikBolgeler.includes(bolgeAnahtari);
+}
+
+export function arinmaYuzdesi(durum, plaka) {
+  return durum.arinma[plaka] ?? 0;
+}
+
+// Haritadaki görünüm durumu: 'kilitli' | 'acik' | 'arinmis'.
+export function ilDurumu(durum, plaka) {
+  if (!bolgeAcikMi(durum, ilHaritasi.get(plaka).bolge)) return 'kilitli';
+  if (arinmaYuzdesi(durum, plaka) >= 100) return 'arinmis';
+  return 'acik';
+}
+
+// Bulunulan ilden hedef ile gidilebilir mi? Yalnızca açık bölgelerdeki
+// komşu illere gidilebilir. Sonuç: { olur: true } ya da { olur: false, neden }.
+// neden: 'ayni_il' | 'kilitli_bolge' | 'komsu_degil'
+export function seyahatKontrol(durum, hedef) {
+  if (hedef === durum.konum) return { olur: false, neden: 'ayni_il' };
+  if (!bolgeAcikMi(durum, ilHaritasi.get(hedef).bolge)) return { olur: false, neden: 'kilitli_bolge' };
+  if (!ilHaritasi.get(durum.konum).komsular.includes(hedef)) return { olur: false, neden: 'komsu_degil' };
+  return { olur: true };
+}
+
+// Seyahat edilebiliyorsa yeni durumu, edilemiyorsa aynı durumu döndürür.
+export function seyahatEt(durum, hedef) {
+  if (!seyahatKontrol(durum, hedef).olur) return durum;
+  return { ...durum, konum: hedef };
 }

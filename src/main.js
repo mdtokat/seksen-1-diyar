@@ -1,6 +1,8 @@
 // Giriş noktası ve ekran yönetimi.
 import './stil/ana.css';
 import { metinler } from './veri/metinler.js';
+import { yeniOyunDurumu, durumDeposu } from './oyun/durum.js';
+import { haritaEkrani } from './arayuz/harita.js';
 
 // Sekiz köşeli Selçuklu yıldızı: biri 45° döndürülmüş iki karenin birleşimi.
 const yildiz = (sinif) => `
@@ -18,9 +20,31 @@ function baslikEkrani() {
         <p class="alt-baslik">${metinler.altBaslik}</p>
         <div class="ayrac" aria-hidden="true">${yildiz('yildiz')}</div>
         <p class="giris-metni">${metinler.giris}</p>
-        <p class="yakinda">${metinler.yakinda}</p>
+        <button class="buton buton-ana" data-eylem="yola-cik">${metinler.yolaCik}</button>
       </div>
     </main>`;
 }
 
-document.querySelector('#uygulama').innerHTML = baslikEkrani();
+// ── Ekran yönetimi ──
+const uygulama = document.querySelector('#uygulama');
+let temizle = null;
+let depo = null;
+
+function ekranGoster(kur) {
+  temizle?.();
+  temizle = kur(uygulama) ?? null;
+}
+
+function baslikGoster() {
+  ekranGoster((kap) => {
+    kap.innerHTML = baslikEkrani();
+    kap.querySelector('[data-eylem="yola-cik"]').addEventListener('click', haritaGoster);
+  });
+}
+
+function haritaGoster() {
+  depo ??= durumDeposu(yeniOyunDurumu());
+  ekranGoster((kap) => haritaEkrani(kap, depo, { baslikaDon: baslikGoster }));
+}
+
+baslikGoster();

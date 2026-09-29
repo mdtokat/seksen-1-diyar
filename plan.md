@@ -164,7 +164,7 @@ Formül (Faz 1): bölge aralığı `[a, b]`, en uzak mesafe `D` ve `kademe = (b 
 ### Harita
 - İller, `lat`/`lon` değerlerinden basit bir izdüşümle SVG koordinatına çevrilir: `x = (lon − 25.5) × k × cos(39°)`, `y = (42.2 − lat) × k`.
 - Her il bir düğüm, her komşuluk bir çizgi olarak çizilir.
-- Düğüm renkleri: kilitli (gri), açık (bölge rengi), bulunulan il (altın halka), %100 arınmış (yeşil).
+- Düğüm renkleri: kilitli (gri), açık (bölge rengi), bulunulan il (altın halka), %100 arınmış (yeşil). Yeşil yalnızca arınmış iller için kullanılır; bu yüzden Karadeniz'in bölge rengi fındık kahvesidir. Arınmış iller renge ek olarak ✓ işaretiyle de gösterilir.
 - Harita mobilde parmakla kaydırılabilir ve yakınlaştırılabilir olmalıdır.
 
 ---
@@ -371,7 +371,7 @@ Bir bölge bossu yenildiğinde, o bölgenin yemeklerinden oluşan bir sofra kuru
 |---|---|---|
 | 0 | Proje kurulumu | ✅ |
 | 1 | Veri katmanı | ✅ |
-| 2 | Harita ve seyahat | ⬜ |
+| 2 | Harita ve seyahat | ✅ |
 | 3 | Karakter ve savaş motoru | ⬜ |
 | 4 | Keşif, yemekler ve kayıt (**oynanabilir ilk sürüm**) | ⬜ |
 | 5 | Bosslar ve bölge ilerlemesi | ⬜ |
@@ -430,14 +430,14 @@ Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 ### Faz 2 — Harita ve Seyahat
 **Hedef:** Türkiye haritasında illeri görmek ve komşu iller arasında gezmek.
 
-- [ ] `durum.js`: tek bir oyun durumu nesnesi ve abonelik mekanizması kur.
-- [ ] `harita.js`: illeri koordinatlarına göre SVG düğümleri, komşulukları çizgiler olarak çiz.
-- [ ] Düğüm renklerini uygula: kilitli, açık, bulunulan il, arınmış (Bölüm 4).
-- [ ] Bir ile dokununca bilgi kartı açılsın: il adı, bölge, seviye aralığı, meşhur yemek, arınma yüzdesi.
-- [ ] Yalnızca **bulunulan ilin komşularına** ve yalnızca **açık bölgelere** gidilebilsin. Diğerleri için neden gidilemediğini açıklayan bir mesaj göster.
-- [ ] Başlangıçta yalnızca Marmara açık olsun, oyuncu İstanbul'da başlasın.
-- [ ] Mobilde parmakla kaydırma ve yakınlaştırma çalışsın.
-- [ ] Seyahat kurallarının testlerini yaz.
+- [x] `durum.js`: tek bir oyun durumu nesnesi ve abonelik mekanizması kur.
+- [x] `harita.js`: illeri koordinatlarına göre SVG düğümleri, komşulukları çizgiler olarak çiz.
+- [x] Düğüm renklerini uygula: kilitli, açık, bulunulan il, arınmış (Bölüm 4).
+- [x] Bir ile dokununca bilgi kartı açılsın: il adı, bölge, seviye aralığı, meşhur yemek, arınma yüzdesi.
+- [x] Yalnızca **bulunulan ilin komşularına** ve yalnızca **açık bölgelere** gidilebilsin. Diğerleri için neden gidilemediğini açıklayan bir mesaj göster.
+- [x] Başlangıçta yalnızca Marmara açık olsun, oyuncu İstanbul'da başlasın.
+- [x] Mobilde parmakla kaydırma ve yakınlaştırma çalışsın.
+- [x] Seyahat kurallarının testlerini yaz.
 
 **Kabul kriterleri:** Harita Türkiye şeklini tanınır biçimde veriyor. İstanbul'dan Kocaeli'ye gidilebiliyor, Ankara'ya gidilemiyor. Telefonda rahat kullanılıyor.
 

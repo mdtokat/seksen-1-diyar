@@ -56,7 +56,7 @@ export const bolgeler = [
     giris: 14,
     boss: 'karakoncolos',
     bossIli: 61,
-    renk: '#3d8b4f',
+    renk: '#7b5236',
     yemekCarpani: 4.0,
   },
   {
