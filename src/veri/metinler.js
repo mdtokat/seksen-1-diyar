@@ -133,6 +133,9 @@ export const metinler = {
     heybeBos: 'Heybende yemek yok.',
     kacilamaz: 'Bu mahlûktan kaçılamaz.',
     nefesYetersiz: 'Nefesin yetmiyor.',
+    sahne: {
+      siyrildi: 'Sıyrıldı',
+    },
     etkiler: {
       savunma: '🛡️ Korunma ({kalan})',
       guclenme: '💪 Güç ({kalan})',
@@ -140,7 +143,7 @@ export const metinler = {
       zayiflatma: '😨 Ürkmüş ({kalan})',
     },
     gunluk: {
-      baslangic: '{ikon} {dusman} (Sv {seviye}) yolunu kesti!',
+      baslangic: '{dusman} (Sv {seviye}) yolunu kesti!',
       saldiri: 'Saldırdın: {hasar} hasar.',
       yetenekHasar: '{yetenek}: {hasar} hasar.',
       kritik: 'Kritik vuruş!',

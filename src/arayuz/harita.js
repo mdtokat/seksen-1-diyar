@@ -4,7 +4,7 @@
 import { iller } from '../veri/iller.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { yemekler } from '../veri/yemekler.js';
-import { siniflar } from '../veri/siniflar.js';
+import { ilSinirlari, IL_SINIRLARI_KAYNAK } from '../veri/ilSinirlari.js';
 import { metinler } from '../veri/metinler.js';
 import {
   seyahatKontrol,
@@ -14,6 +14,7 @@ import {
 } from '../oyun/ilerleme.js';
 import { statlar } from '../oyun/karakter.js';
 import { sablon, kacis, ilerlemeCubugu, bildirimGoster } from './bilesenler.js';
+import { sinifCizimi } from './cizimler/karakterler.js';
 
 const M = metinler.harita;
 const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
@@ -137,11 +138,9 @@ const KOMSULUKLAR = iller.flatMap((il) =>
 );
 
 function svgOlustur() {
-  const hale = iller
-    .map((il) => {
-      const { x, y } = KONUM.get(il.plaka);
-      return `<circle class="hale" data-plaka="${il.plaka}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="46" />`;
-    })
+  // İllerin gerçek sınırları (OpenStreetMap). Dokunulunca il seçilir.
+  const sekiller = iller
+    .map((il) => `<path class="il-sekil" data-plaka="${il.plaka}" d="${ilSinirlari[il.plaka]}" />`)
     .join('');
 
   const denizler = DENIZLER.map((d) => {
@@ -174,7 +173,13 @@ function svgOlustur() {
 
   return `
     <svg class="harita-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Türkiye haritası">
-      <g class="haleler">${hale}</g>
+      <defs>
+        <pattern id="arinmis-desen" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="8" height="8" fill="#cfe6c9" />
+          <path d="M0 0 V8" stroke="#2e9e4f" stroke-width="2.5" opacity=".55" />
+        </pattern>
+      </defs>
+      <g class="il-sekilleri">${sekiller}</g>
       <g class="denizler" aria-hidden="true">${denizler}</g>
       <g class="yollar" aria-hidden="true">${cizgiler}</g>
       <g class="iller">${dugumler}</g>
@@ -214,6 +219,7 @@ export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, ilGoster }
         </div>
         ${lejant()}
         <p class="harita-ipucu">${M.ipucu}</p>
+        <p class="harita-atif">${IL_SINIRLARI_KAYNAK}</p>
       </div>
       <section class="il-karti" hidden aria-live="polite"></section>
     </div>`;
@@ -227,8 +233,8 @@ export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, ilGoster }
   const dugumler = new Map(
     [...svg.querySelectorAll('g.il')].map((g) => [Number(g.dataset.plaka), g]),
   );
-  const haleler = new Map(
-    [...svg.querySelectorAll('.hale')].map((c) => [Number(c.dataset.plaka), c]),
+  const sekiller = new Map(
+    [...svg.querySelectorAll('.il-sekil')].map((p) => [Number(p.dataset.plaka), p]),
   );
   const yollar = [...svg.querySelectorAll('line.yol')];
 
@@ -289,7 +295,13 @@ export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, ilGoster }
       g.classList.toggle('gidilebilir', seyahatKontrol(durum, plaka).olur);
       g.classList.toggle('secili', plaka === secili);
       g.style.setProperty('--bolge-rengi', renk);
-      haleler.get(plaka).style.fill = renk;
+      const sekil = sekiller.get(plaka);
+      sekil.style.setProperty('--bolge-rengi', renk);
+      sekil.classList.remove('kilitli', 'acik', 'arinmis');
+      sekil.classList.add(hal);
+      sekil.classList.toggle('bulunulan', plaka === durum.konum);
+      sekil.classList.toggle('gidilebilir', seyahatKontrol(durum, plaka).olur);
+      sekil.classList.toggle('secili', plaka === secili);
     }
     for (const cizgi of yollar) {
       const a = Number(cizgi.dataset.a);
@@ -321,7 +333,7 @@ export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, ilGoster }
     karakterDugmesi.setAttribute('aria-label', etiket);
     karakterDugmesi.title = etiket;
     karakterDugmesi.innerHTML = `
-      <span class="karakter-dugmesi-ikon" aria-hidden="true">${siniflar[o.sinif].ikon}</span>
+      <span class="karakter-dugmesi-ikon">${sinifCizimi(o.sinif)}</span>
       <span class="karakter-dugmesi-bilgi">
         <strong>${sablon(K.seviye, { seviye: o.seviye })}</strong>
         <span class="mini-cubuk" aria-hidden="true"><span style="width:${canYuzde}%"></span></span>
@@ -437,7 +449,7 @@ export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, ilGoster }
     svg.setPointerCapture(e.pointerId);
     isaretciler.set(e.pointerId, yerel(e));
     if (isaretciler.size === 1) {
-      const g = e.target.closest?.('g.il');
+      const g = e.target.closest?.('g.il, .il-sekil');
       dokunus = { ...yerel(e), plaka: g ? Number(g.dataset.plaka) : null, hareket: false };
     } else if (dokunus) {
       dokunus.hareket = true;

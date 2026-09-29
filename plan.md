@@ -111,7 +111,8 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 - Renk paleti İznik ve Kütahya çinisinden esinlenir: turkuaz, lacivert, mercan kırmızısı, altın ve krem zemin.
 - Çerçevelerde ve ayraçlarda sade geometrik (Selçuklu yıldızı tarzı) motifler kullanılır. Bunlar CSS veya SVG ile çizilir, harici görsel kullanılmaz.
 - Başlıklarda Türkçe karakter destekli bir serif font, metinlerde okunaklı bir sans-serif font kullanılır.
-- Karakter ve düşmanlar sade SVG ikonlar veya emoji ile temsil edilir. İnsan figürleri edepli ve stilize olur.
+- Karakter ve düşmanlar koddan üretilen stilize SVG çizimlerle temsil edilir (Faz 5; `src/arayuz/cizimler/`). Emojiler yalnızca yemek ve arayüz simgelerinde kullanılır. İnsan figürleri edepli ve stilize olur.
+- Savaş arka planlarında ibadethane silueti ve tanrı heykeli ya da put bulunmaz.
 
 ---
 
@@ -164,8 +165,8 @@ Formül (Faz 1): bölge aralığı `[a, b]`, en uzak mesafe `D` ve `kademe = (b 
 
 ### Harita
 - İller, `lat`/`lon` değerlerinden basit bir izdüşümle SVG koordinatına çevrilir: `x = (lon − 25.5) × k × cos(39°)`, `y = (42.2 − lat) × k`.
-- Her il bir düğüm, her komşuluk bir çizgi olarak çizilir.
-- Düğüm renkleri: kilitli (gri), açık (bölge rengi), bulunulan il (altın halka), %100 arınmış (yeşil). Yeşil yalnızca arınmış iller için kullanılır; bu yüzden Karadeniz'in bölge rengi fındık kahvesidir. Arınmış iller renge ek olarak ✓ işaretiyle de gösterilir.
+- İller gerçek sınırlarıyla (OpenStreetMap, `src/veri/ilSinirlari.js`) boyanır; üzerlerinde her il bir düğüm, her komşuluk bir çizgi olarak çizilir.
+- Düğüm renkleri: kilitli (gri), açık (bölge rengi), bulunulan il (altın halka), %100 arınmış (yeşil). Yeşil yalnızca arınmış iller için kullanılır; bu yüzden Karadeniz'in bölge rengi fındık kahvesidir. Arınmış iller renge ek olarak düğümde ✓ işaretiyle ve il şeklinde çizgili desenle de gösterilir.
 - Harita mobilde parmakla kaydırılabilir ve yakınlaştırılabilir olmalıdır.
 
 ---
@@ -383,7 +384,7 @@ Bir bölge bossu yenildiğinde, o bölgenin yemeklerinden oluşan bir sofra kuru
 | 2 | Harita ve seyahat | ✅ |
 | 3 | Karakter ve savaş motoru | ✅ |
 | 4 | Keşif, yemekler ve kayıt (**oynanabilir ilk sürüm**) | ✅ |
-| 5 | Görsel yenileme (SVG çizimler, savaş sahnesi, il sınırlı harita) | ⬜ |
+| 5 | Görsel yenileme (SVG çizimler, savaş sahnesi, il sınırlı harita) | ✅ |
 | 6 | Bosslar ve bölge ilerlemesi | ⬜ |
 | 7 | Arasta, Ahi esnafı, ekipman ve kervansaray | ⬜ |
 | 8 | Görevler ve itibar | ⬜ |
@@ -505,11 +506,17 @@ Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 
 Kullanıcı kararı: 3D yerine **güçlendirilmiş 2D** (SVG + CSS). Oyun mantığı (`src/oyun/`) ve veriler (`src/veri/`) bu fazdan etkilenmez; yalnızca arayüz değişir.
 
-- [ ] **Özgün SVG çizimler:** 3 sınıf ve tüm düşmanlar (bosslar dahil) için stilize, edepli SVG çizimler. Emojiler savaşçıları temsil etmez. Çizimler harici dosya değil, koddan üretilir; aynı türden yaratıklar ortak bir iskeletten türetilip renk ve ayrıntıyla ayrışabilir.
-- [ ] **Bölge arka planları:** 7 bölgenin her biri için katmanlı SVG savaş arka planı (ör. Marmara: Boğaz ve kıyı; İç Anadolu: bozkır ve peri bacaları; Karadeniz: sisli yayla).
-- [ ] **Savaş sahnesi:** oyuncu ve düşman karşı karşıya durur. Hasar sayıları, vurulanın sarsılması ve vuruş efekti. `prefers-reduced-motion` açıksa hareket azaltılır.
-- [ ] **Gerçek il sınırlı harita:** OpenStreetMap il sınırları sadeleştirilip SVG yollarına çevrilir, iller şekilleriyle boyanır (kilitli, açık, arınmış renkleri korunur). Seyahat kuralları ve komşuluklar değişmez. OSM atfı (© OpenStreetMap katkıcıları, ODbL) haritada ve README'de gösterilir.
-- [ ] Testleri yaz: her sınıf ve düşman için çizim var; her bölge için arka plan var; il sınır verisi 81 ili kapsıyor ve plakalar eşleşiyor.
+- [x] **Özgün SVG çizimler:** 3 sınıf ve tüm düşmanlar (bosslar dahil) için stilize, edepli SVG çizimler. Emojiler savaşçıları temsil etmez. Çizimler harici dosya değil, koddan üretilir; aynı türden yaratıklar ortak bir iskeletten türetilip renk ve ayrıntıyla ayrışabilir.
+- [x] **Bölge arka planları:** 7 bölgenin her biri için katmanlı SVG savaş arka planı (ör. Marmara: Boğaz ve kıyı; İç Anadolu: bozkır ve peri bacaları; Karadeniz: sisli yayla).
+- [x] **Savaş sahnesi:** oyuncu ve düşman karşı karşıya durur. Hasar sayıları, vurulanın sarsılması ve vuruş efekti. `prefers-reduced-motion` açıksa hareket azaltılır.
+- [x] **Gerçek il sınırlı harita:** OpenStreetMap il sınırları sadeleştirilip SVG yollarına çevrilir, iller şekilleriyle boyanır (kilitli, açık, arınmış renkleri korunur). Seyahat kuralları ve komşuluklar değişmez. OSM atfı (© OpenStreetMap katkıcıları, ODbL) haritada ve README'de gösterilir.
+- [x] Testleri yaz: her sınıf ve düşman için çizim var; her bölge için arka plan var; il sınır verisi 81 ili kapsıyor ve plakalar eşleşiyor.
+
+**Faz 5 kararları:**
+- **Sınır verisi:** OSM kaynaklı geoBoundaries (gbOpen TUR ADM1, 2023) sadeleştirilmiş sürümü, mapshaper ile komşu kenarlar korunarak %8'e indirildi (~43 KB, gzip ile ~15 KB). OSM servislerine bu ortamdan doğrudan erişilemediği için geoBoundaries'in GitHub'daki kopyası kullanıldı.
+- **Çizimler:** 22 beden iskeleti; 36 düşman renk ve ayrıntıyla ayrışır. Bölge bossları ve Zülmet sihir halesiyle çizilir.
+- **Savaş sahnesi:** olaylar sırayla oynatılır (vuruş ~0,5 sn); oynatma sırasında butonlar beklemeye alınır. Hareket azaltma açıkken figürler kıpırdamaz, yalnızca sayılar kısa süre görünür.
+- **Arınmış il:** haritada çizgili yeşil desen (yalnızca renge dayanmaz).
 
 **Kabul kriterleri:** Hiçbir savaşçı emojiyle gösterilmiyor. Harita il şekilleriyle tanınır biçimde Türkiye'yi veriyor. Telefon genişliğinde (375px) düzen bozulmuyor, animasyonlar akıcı.
 

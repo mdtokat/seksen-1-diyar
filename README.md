@@ -26,3 +26,7 @@ npm run preview  # derlenmiş paketi yerelde önizle
 ## Teknoloji
 
 Vite, vanilla JavaScript (ES modülleri), Vitest, SVG ve localStorage.
+
+## Harita verisi ve atıf
+
+İl sınırları © [OpenStreetMap](https://www.openstreetmap.org/copyright) katkıcıları (ODbL) verisinden, [geoBoundaries](https://www.geoboundaries.org) (gbOpen TUR ADM1) aracılığıyla alınmış ve sadeleştirilmiştir (`src/veri/ilSinirlari.js`). Atıf, oyunun haritasında da gösterilir.

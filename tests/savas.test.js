@@ -362,7 +362,7 @@ describe('tam savaş (sabit tohum)', () => {
 describe('savaş günlüğü metinleri', () => {
   it('olaylar Türkçe cümlelere çevrilir', () => {
     const s = savasBaslat(yeniKarakter('A', 'akinci'), dusmanOlustur('yol_kesen_cin', 2));
-    expect(olayMetni({ tip: 'baslangic' }, s).metin).toBe('👤 Yol Kesen Cin (Sv 2) yolunu kesti!');
+    expect(olayMetni({ tip: 'baslangic' }, s).metin).toBe('Yol Kesen Cin (Sv 2) yolunu kesti!');
     expect(olayMetni({ tip: 'saldiri', kim: 'oyuncu', hasar: 9, kritik: true }, s).metin).toBe('Saldırdın: 9 hasar. Kritik vuruş!');
     expect(olayMetni({ tip: 'saldiri', kim: 'dusman', hasar: 4 }, s).metin).toBe('Yol Kesen Cin saldırdı: 4 hasar aldın.');
     expect(olayMetni({ tip: 'yetenek', yetenek: 'kilic_darbesi', hasar: 14 }, s).metin).toBe('Kılıç Darbesi: 14 hasar.');

@@ -3,6 +3,7 @@ import { siniflar } from '../veri/siniflar.js';
 import { metinler } from '../veri/metinler.js';
 import { AD_EN_FAZLA, VARSAYILAN_AD, STATLAR } from '../oyun/karakter.js';
 import { kacis, sablon } from './bilesenler.js';
+import { sinifCizimi } from './cizimler/karakterler.js';
 
 const M = metinler.yeniOyun;
 
@@ -13,7 +14,7 @@ function sinifKarti(anahtar, sinif) {
   return `
     <button type="button" class="sinif-karti" data-sinif="${anahtar}" aria-pressed="false"
             aria-label="${kacis(sablon(M.sinifSec, { sinif: sinif.ad }))}">
-      <span class="sinif-ikon" aria-hidden="true">${sinif.ikon}</span>
+      <span class="sinif-ikon">${sinifCizimi(anahtar)}</span>
       <span class="sinif-ad">${kacis(sinif.ad)}</span>
       <span class="sinif-tarif">${kacis(sinif.tarif)}</span>
       <dl class="stat-tablosu">${statSatirlari}</dl>

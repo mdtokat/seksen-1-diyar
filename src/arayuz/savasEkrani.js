@@ -1,6 +1,5 @@
 // Savaş ekranı: can ve nefes çubukları, eylem butonları ve savaş günlüğü.
 import { iller } from '../veri/iller.js';
-import { siniflar } from '../veri/siniflar.js';
 import { yemekler } from '../veri/yemekler.js';
 import { metinler } from '../veri/metinler.js';
 import {
@@ -14,6 +13,9 @@ import {
 import { gerekenXp } from '../oyun/karakter.js';
 import { yemekAdedi, yemekGucu } from '../oyun/envanter.js';
 import { kacis, sablon, degerCubugu, bildirimGoster } from './bilesenler.js';
+import { sinifCizimi } from './cizimler/karakterler.js';
+import { dusmanCizimi } from './cizimler/dusmanlar.js';
+import { bolgeArkaPlani } from './cizimler/arkaplanlar.js';
 
 const M = metinler.savas;
 const G = M.gunluk;
@@ -26,7 +28,7 @@ export function olayMetni(olay, savas) {
   const ek = (...parcalar) => parcalar.filter(Boolean).join(' ');
   switch (olay.tip) {
     case 'baslangic':
-      return { sinif: 'bilgi', metin: sablon(G.baslangic, { ikon: d.ikon, dusman: d.ad, seviye: d.seviye }) };
+      return { sinif: 'bilgi', metin: sablon(G.baslangic, { dusman: d.ad, seviye: d.seviye }) };
     case 'saldiri':
       if (olay.kim === 'oyuncu') {
         return {
@@ -89,6 +91,41 @@ export function olayMetni(olay, savas) {
   }
 }
 
+// ── Sahne efektleri ──────────────────────────────────────
+
+const VURUS = `<svg viewBox="-20 -20 40 40" aria-hidden="true"><polygon points="0,-18 4,-6 17,-8 7,1 13,14 0,6 -13,14 -7,1 -17,-8 -4,-6" /></svg>`;
+
+const hareketAzMi = () =>
+  typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const bekle = (ms) => new Promise((coz) => setTimeout(coz, ms));
+
+// Bir öğeye kısa süreli animasyon sınıfı ekler.
+function titret(oge, sinif, sure = 450) {
+  oge.classList.remove(sinif);
+  void oge.getBoundingClientRect(); // animasyon baştan başlasın
+  oge.classList.add(sinif);
+  setTimeout(() => oge.classList.remove(sinif), sure);
+}
+
+// Figürün üzerinde yükselip kaybolan sayı ya da kısa yazı.
+function yaziUcur(figur, metin, tur) {
+  const y = document.createElement('span');
+  y.className = `ucan-yazi ucan-${tur}`;
+  y.textContent = metin;
+  y.setAttribute('aria-hidden', 'true');
+  figur.appendChild(y);
+  setTimeout(() => y.remove(), 1100);
+}
+
+function vurusGoster(figur) {
+  const v = document.createElement('span');
+  v.className = 'vurus';
+  v.innerHTML = VURUS;
+  figur.appendChild(v);
+  setTimeout(() => v.remove(), 450);
+}
+
 // Ekranı `kap` içine kurar. Savaş bitince sonuç depoya yazılır.
 // secenekler: { dusman, rng, sonucuUygula, bitince, karakterGoster }
 // sonucuUygula(durum, savas) → { durum, ozet }: varsayılanı savasSonucunuUygula;
@@ -96,69 +133,113 @@ export function olayMetni(olay, savas) {
 export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucunuUygula, bitince, karakterGoster } = {}) {
   const baslangic = depo.al();
   const il = ilHaritasi.get(baslangic.konum);
-  const sinif = siniflar[baslangic.oyuncu.sinif];
   let savas = savasBaslat(baslangic.oyuncu, dusman, baslangic.heybe ?? []);
   let panel = 'ana'; // 'ana' | 'yetenek' | 'yemek' | 'son'
   let ozet = null;
   let sonDurum = null;
+  let oynatiliyor = false;
+  // Çubuklarda gösterilen değerler; olaylar oynatıldıkça adım adım güncellenir.
+  const gosterilen = { dusmanCan: savas.dusman.can, oyuncuCan: savas.oyuncu.can, oyuncuNefes: savas.oyuncu.nefes };
 
   kap.innerHTML = `
     <div class="savas-ekrani">
       <header class="ust-cubuk">
         <h1 class="ust-baslik">⚔️ ${M.baslik} <span class="ust-alt">${kacis(il.ad)}</span></h1>
       </header>
-      <main class="savas-alani">
-        <section class="savasci savasci-dusman" aria-label="${kacis(dusman.ad)}"></section>
-        <ol class="savas-gunlugu" aria-live="polite"></ol>
-        <section class="savasci savasci-oyuncu" aria-label="${kacis(baslangic.oyuncu.ad)}"></section>
-      </main>
+      <section class="sahne">
+        ${bolgeArkaPlani(il.bolge)}
+        <div class="figur figur-dusman giris">${dusmanCizimi(dusman.anahtar, { etiket: kacis(dusman.ad) })}</div>
+        <div class="figur figur-oyuncu">${sinifCizimi(baslangic.oyuncu.sinif, { etiket: kacis(baslangic.oyuncu.ad) })}</div>
+        <div class="bilgi-plakasi bilgi-plakasi-dusman" aria-label="${kacis(dusman.ad)}"></div>
+        <div class="bilgi-plakasi bilgi-plakasi-oyuncu" aria-label="${kacis(baslangic.oyuncu.ad)}"></div>
+      </section>
+      <ol class="savas-gunlugu" aria-live="polite"></ol>
       <nav class="eylem-paneli"></nav>
     </div>`;
 
   const ekran = kap.querySelector('.savas-ekrani');
-  const dusmanAlani = ekran.querySelector('.savasci-dusman');
-  const oyuncuAlani = ekran.querySelector('.savasci-oyuncu');
+  const figurDusman = ekran.querySelector('.figur-dusman');
+  const figurOyuncu = ekran.querySelector('.figur-oyuncu');
+  const plakaDusman = ekran.querySelector('.bilgi-plakasi-dusman');
+  const plakaOyuncu = ekran.querySelector('.bilgi-plakasi-oyuncu');
   const gunluk = ekran.querySelector('.savas-gunlugu');
   const eylemPaneli = ekran.querySelector('.eylem-paneli');
-  let yazilanOlay = 0;
+  const azHareket = hareketAzMi();
 
-  function dusmanCiz() {
+  function plakalariCiz() {
     const d = savas.dusman;
-    dusmanAlani.innerHTML = `
-      <span class="savasci-ikon" aria-hidden="true">${d.ikon}</span>
-      <div class="savasci-bilgi">
-        <h2>${kacis(d.ad)} <span class="rozet">${sablon(M.seviye, { seviye: d.seviye })}</span></h2>
-        <p class="savasci-tur">${metinler.dusmanTurleri[d.tur]}</p>
-        ${degerCubugu(d.can, d.canEnCok, { etiket: metinler.statAdlari.can, renk: 'var(--mercan)' })}
-      </div>`;
-  }
-
-  function oyuncuCiz() {
     const o = savas.oyuncu;
+    plakaDusman.innerHTML = `
+      <h2>${kacis(d.ad)} <span class="rozet">${sablon(M.seviye, { seviye: d.seviye })}</span></h2>
+      <p class="savasci-tur">${metinler.dusmanTurleri[d.tur]}</p>
+      ${degerCubugu(gosterilen.dusmanCan, d.canEnCok, { etiket: metinler.statAdlari.can, renk: 'var(--mercan)' })}`;
     const etkiler = savas.etkiler
       .filter((e) => e.hedef === 'oyuncu')
       .map((e) => `<li class="etki etki-${e.etki}">${sablon(M.etkiler[e.etki], { kalan: e.kalan })}</li>`)
       .join('');
-    oyuncuAlani.innerHTML = `
-      <span class="savasci-ikon" aria-hidden="true">${sinif.ikon}</span>
-      <div class="savasci-bilgi">
-        <h2>${kacis(o.ad)} <span class="rozet">${sablon(M.seviye, { seviye: o.seviye })}</span></h2>
-        ${degerCubugu(o.can, o.canEnCok, { etiket: metinler.statAdlari.can, renk: 'var(--mercan)' })}
-        ${degerCubugu(o.nefes, o.nefesEnCok, { etiket: metinler.statAdlari.nefes, renk: 'var(--turkuaz)' })}
-        ${etkiler ? `<ul class="etki-listesi">${etkiler}</ul>` : ''}
-      </div>`;
+    plakaOyuncu.innerHTML = `
+      <h2>${kacis(o.ad)} <span class="rozet">${sablon(M.seviye, { seviye: o.seviye })}</span></h2>
+      ${degerCubugu(gosterilen.oyuncuCan, o.canEnCok, { etiket: metinler.statAdlari.can, renk: 'var(--mercan)' })}
+      ${degerCubugu(gosterilen.oyuncuNefes, o.nefesEnCok, { etiket: metinler.statAdlari.nefes, renk: 'var(--turkuaz)' })}
+      ${etkiler ? `<ul class="etki-listesi">${etkiler}</ul>` : ''}`;
   }
 
-  function gunlukCiz() {
-    for (; yazilanOlay < savas.gunluk.length; yazilanOlay++) {
-      const { metin, sinif: tur } = olayMetni(savas.gunluk[yazilanOlay], savas);
-      if (!metin) continue;
-      const satir = document.createElement('li');
-      satir.className = `gunluk-${tur}`;
-      satir.textContent = metin;
-      gunluk.appendChild(satir);
-    }
+  function gunlugeYaz(olay) {
+    const { metin, sinif: tur } = olayMetni(olay, savas);
+    if (!metin) return;
+    const satir = document.createElement('li');
+    satir.className = `gunluk-${tur}`;
+    satir.textContent = metin;
+    gunluk.appendChild(satir);
     gunluk.scrollTop = gunluk.scrollHeight;
+  }
+
+  // Bir olayı sahnede canlandırır ve gösterilen değerleri günceller.
+  async function olayiOynat(olay) {
+    const oyuncudan = olay.kim === 'oyuncu';
+    const hasarli = (olay.tip === 'saldiri' || olay.tip === 'ozel_hamle' || (olay.tip === 'yetenek' && olay.hasar !== undefined));
+    if (olay.tip === 'yetenek') gosterilen.oyuncuNefes -= yetenekBul(savas.oyuncu.sinif, olay.yetenek).nefes;
+
+    if (hasarli && olay.etki !== 'zayiflatma') {
+      const saldiran = oyuncudan ? figurOyuncu : figurDusman;
+      const hedef = oyuncudan ? figurDusman : figurOyuncu;
+      if (olay.tip === 'ozel_hamle') yaziUcur(saldiran, olay.hamle, 'bilgi');
+      titret(saldiran, oyuncudan ? 'hamle-sag' : 'hamle-sol', 400);
+      if (!azHareket) await bekle(180);
+      if (olay.kacindi) {
+        titret(hedef, 'siyril', 450);
+        yaziUcur(hedef, M.sahne.siyrildi, 'bilgi');
+      } else {
+        vurusGoster(hedef);
+        titret(hedef, 'sarsil', 420);
+        yaziUcur(hedef, `-${olay.hasar}${olay.kritik ? '!' : ''}`, olay.kritik ? 'kritik' : 'hasar');
+        if (oyuncudan) gosterilen.dusmanCan = Math.max(0, gosterilen.dusmanCan - olay.hasar);
+        else gosterilen.oyuncuCan = Math.max(0, gosterilen.oyuncuCan - olay.hasar);
+      }
+    } else if (olay.tip === 'yetenek' || olay.tip === 'yemek') {
+      titret(figurOyuncu, 'parilti', 600);
+      if (olay.etki === 'sifa' || olay.tip === 'yemek') {
+        const nefes = olay.yenilenen === 'nefes';
+        if (nefes) gosterilen.oyuncuNefes += olay.miktar;
+        else gosterilen.oyuncuCan += olay.miktar;
+        yaziUcur(figurOyuncu, `+${olay.miktar}`, nefes ? 'nefes' : 'sifa');
+      } else {
+        yaziUcur(figurOyuncu, yetenekBul(savas.oyuncu.sinif, olay.yetenek).ad, 'bilgi');
+      }
+    } else if (olay.tip === 'ozel_hamle') {
+      yaziUcur(figurDusman, olay.hamle, 'bilgi');
+      titret(figurOyuncu, 'urkme', 500);
+    } else if (olay.tip === 'kacis') {
+      if (olay.basarili) figurOyuncu.classList.add('geri-cekil');
+      else titret(figurOyuncu, 'sarsil', 420);
+    } else if (olay.tip === 'zafer') {
+      figurDusman.classList.add('dagil');
+    } else if (olay.tip === 'yenilgi') {
+      figurOyuncu.classList.add('bayil');
+    }
+    gunlugeYaz(olay);
+    plakalariCiz();
+    await bekle(azHareket ? 120 : 520);
   }
 
   function anaPanel() {
@@ -257,13 +338,6 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
     eylemPaneli.querySelector('button:not([disabled])')?.focus({ preventScroll: true });
   }
 
-  function ciz() {
-    dusmanCiz();
-    oyuncuCiz();
-    gunlukCiz();
-    panelCiz();
-  }
-
   function savasBitti() {
     const r = sonucuUygula(depo.al(), savas);
     ozet = r.ozet;
@@ -274,6 +348,7 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
       bildirimGoster(ekran, sablon(M.sonuc.arindi, { il: il.ad }), { tur: 'kutlama', sure: 3500 });
     }
     if (ozet.seviyeler.length) {
+      titret(figurOyuncu, 'seviye-parilti', 1200);
       bildirimGoster(ekran, sablon(M.sonuc.seviyeAtladin, { seviye: ozet.seviyeler.at(-1) }), { tur: 'kutlama', sure: 3500 });
       for (const y of ozet.yeniYetenekler) {
         bildirimGoster(ekran, sablon(M.sonuc.yeniYetenek, { yetenek: y.ad }), { tur: 'kutlama', sure: 3500 });
@@ -281,18 +356,29 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
     }
   }
 
-  function eylemYap(eylem) {
+  // Oyuncu eylemini uygular, ortaya çıkan olayları sırayla sahnede oynatır.
+  async function eylemYap(eylem) {
+    if (oynatiliyor) return;
     const yeni = oyuncuEylemi(savas, eylem, rng);
     if (yeni === savas) return;
+    const olaylar = yeni.gunluk.slice(savas.gunluk.length);
     savas = yeni;
+    oynatiliyor = true;
+    eylemPaneli.classList.add('bekliyor');
     panel = 'ana';
+    panelCiz();
+    for (const olay of olaylar) await olayiOynat(olay);
+    Object.assign(gosterilen, { dusmanCan: savas.dusman.can, oyuncuCan: savas.oyuncu.can, oyuncuNefes: savas.oyuncu.nefes });
+    plakalariCiz();
     if (savas.sonuc) savasBitti();
-    ciz();
+    oynatiliyor = false;
+    eylemPaneli.classList.remove('bekliyor');
+    panelCiz();
   }
 
   ekran.addEventListener('click', (e) => {
     const b = e.target.closest('button');
-    if (!b || b.disabled) return;
+    if (!b || b.disabled || oynatiliyor) return;
     if (b.dataset.yetenek) return eylemYap({ tur: 'yetenek', anahtar: b.dataset.yetenek });
     if (b.dataset.yemek) return eylemYap({ tur: 'yemek', anahtar: b.dataset.yemek });
     switch (b.dataset.eylem) {
@@ -306,5 +392,7 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
     }
   });
 
-  ciz();
+  plakalariCiz();
+  gunlugeYaz(savas.gunluk[0]);
+  panelCiz();
 }

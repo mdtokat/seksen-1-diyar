@@ -3,6 +3,7 @@ import { siniflar, STAT_PUANI_DEGERI } from '../veri/siniflar.js';
 import { metinler } from '../veri/metinler.js';
 import { statlar, gerekenXp, statPuaniDagit, STATLAR } from '../oyun/karakter.js';
 import { kacis, sablon, degerCubugu } from './bilesenler.js';
+import { sinifCizimi } from './cizimler/karakterler.js';
 
 const M = metinler.karakter;
 
@@ -43,7 +44,7 @@ function icerik(durum) {
 
   return `
     <section class="kart karakter-ozet">
-      <span class="karakter-ikon" aria-hidden="true">${sinif.ikon}</span>
+      <span class="karakter-ikon">${sinifCizimi(o.sinif)}</span>
       <div>
         <h2>${kacis(o.ad)}</h2>
         <p class="karakter-alt">${kacis(sinif.ad)} · <strong>${sablon(M.seviye, { seviye: o.seviye })}</strong> · ${M.akce}: ${durum.akce ?? 0}</p>
