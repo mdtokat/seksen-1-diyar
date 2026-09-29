@@ -3,8 +3,8 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { iller } from '../src/veri/iller.js';
 import { bolgeler, final } from '../src/veri/bolgeler.js';
 import { yemekler, YEMEK_TABANI } from '../src/veri/yemekler.js';
-import { dusmanlar, DUSMAN_TURLERI } from '../src/veri/dusmanlar.js';
-import { siniflar } from '../src/veri/siniflar.js';
+import { dusmanlar, DUSMAN_TURLERI, OZEL_HAMLELER, SINIF_XP_CARPANI } from '../src/veri/dusmanlar.js';
+import { siniflar, STAT_PUANI_DEGERI } from '../src/veri/siniflar.js';
 import { metinler } from '../src/veri/metinler.js';
 import { ilSeviyeleriniHesapla, bolgeIciMesafeler } from '../src/oyun/ilerleme.js';
 
@@ -236,6 +236,23 @@ describe('düşmanlar', () => {
       expect(bolgeninki.filter((d) => d.sinif === 'bolge_bossu'), b.ad).toHaveLength(1);
     }
   });
+
+  it('her düşman türünün geçerli bir özel hamlesi var', () => {
+    for (const tur of DUSMAN_TURLERI) {
+      const h = OZEL_HAMLELER[tur];
+      expect(h, tur).toBeDefined();
+      expect(h.ad.length, tur).toBeGreaterThan(3);
+      expect(['hasar', 'zayiflatma'], tur).toContain(h.etki);
+      if (h.etki === 'hasar') expect(h.carpan, tur).toBeGreaterThan(1);
+      else expect(h.sure, tur).toBeGreaterThan(0);
+    }
+  });
+
+  it('her düşman sınıfının XP çarpanı var', () => {
+    for (const d of Object.values(dusmanlar)) {
+      expect(SINIF_XP_CARPANI[d.sinif], d.ad).toBeGreaterThan(0);
+    }
+  });
 });
 
 describe('sınıflar', () => {
@@ -255,12 +272,21 @@ describe('sınıflar', () => {
       expect(sinif.yetenekler.map((y) => y.seviye)).toEqual([1, 5, 12, 20, 32]);
       expect(sinif.yetenekler.map((y) => y.ad)).toEqual(beklenenAdlar[anahtar]);
       for (const y of sinif.yetenekler) {
-        expect(['hasar', 'savunma', 'sifa', 'guclenme'], y.ad).toContain(y.etki);
+        expect(['hasar', 'savunma', 'sifa', 'guclenme', 'kritik'], y.ad).toContain(y.etki);
+        if (y.etki === 'hasar') expect(y.carpan, y.ad).toBeGreaterThan(1);
+        if (['savunma', 'guclenme', 'kritik'].includes(y.etki)) expect(y.sure, y.ad).toBeGreaterThan(0);
+        if (y.etki !== 'hasar') expect(y.deger, y.ad).toBeGreaterThan(0);
         expect(y.nefes, y.ad).toBeGreaterThan(0);
       }
       for (const stat of ['can', 'nefes', 'guc', 'savunma', 'ceviklik']) {
         expect(sinif.seviyeArtisi[stat], `${anahtar}.${stat}`).toBeGreaterThan(0);
       }
+    }
+  });
+
+  it('her stat için stat puanı değeri tanımlı', () => {
+    for (const stat of ['can', 'nefes', 'guc', 'savunma', 'ceviklik']) {
+      expect(STAT_PUANI_DEGERI[stat], stat).toBeGreaterThan(0);
     }
   });
 
@@ -272,7 +298,7 @@ describe('sınıflar', () => {
 });
 
 describe('kırmızı çizgiler (plan.md Bölüm 2)', () => {
-  const tumVeri = JSON.stringify({ iller, bolgeler, final, yemekler, dusmanlar, siniflar, metinler });
+  const tumVeri = JSON.stringify({ iller, bolgeler, final, yemekler, dusmanlar, OZEL_HAMLELER, siniflar, metinler });
   const kelimeler = tumVeri.toLocaleLowerCase('tr').split(/[^\p{L}]+/u).filter(Boolean);
   const metin = kelimeler.join(' ');
 

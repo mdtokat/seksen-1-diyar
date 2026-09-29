@@ -1,14 +1,18 @@
 // Oyun durumu ve abonelik. Saf oyun mantığı — DOM'a dokunmaz.
 import { bolgeler } from '../veri/bolgeler.js';
+import { yeniKarakter } from './karakter.js';
 
 // Yeni bir oyunun başlangıç durumu: yalnızca ilk bölge açık,
 // oyuncu o bölgenin giriş ilinde (İstanbul).
-export function yeniOyunDurumu() {
+// `ad` ve `sinif` verilirse karakter de oluşturulur.
+export function yeniOyunDurumu({ ad, sinif } = {}) {
   const ilkBolge = bolgeler.find((b) => b.sira === 1);
   return {
     konum: ilkBolge.giris,
     acikBolgeler: [ilkBolge.anahtar],
     arinma: {}, // { plaka: 0–100 }
+    oyuncu: sinif ? yeniKarakter(ad, sinif) : null,
+    akce: 0,
   };
 }
 

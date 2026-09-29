@@ -4,6 +4,7 @@
 import { iller } from '../veri/iller.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { yemekler } from '../veri/yemekler.js';
+import { siniflar } from '../veri/siniflar.js';
 import { metinler } from '../veri/metinler.js';
 import {
   seyahatKontrol,
@@ -11,6 +12,7 @@ import {
   ilDurumu,
   arinmaYuzdesi,
 } from '../oyun/ilerleme.js';
+import { statlar } from '../oyun/karakter.js';
 import { sablon, kacis, ilerlemeCubugu, bildirimGoster } from './bilesenler.js';
 
 const M = metinler.harita;
@@ -193,12 +195,14 @@ function lejant() {
 // ── Harita ekranı ────────────────────────────────────────
 
 // Harita ekranını `kap` içine kurar. Temizlik fonksiyonu döndürür.
-export function haritaEkrani(kap, depo, { baslikaDon } = {}) {
+// secenekler: { baslikaDon, karakterGoster, savasBaslat(plaka) }
+export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, savasBaslat } = {}) {
   kap.innerHTML = `
     <div class="harita-ekrani">
       <header class="ust-cubuk">
         <button class="simge-buton" data-eylem="baslik" aria-label="${M.baslikEkrani}" title="${M.baslikEkrani}">←</button>
         <div class="konum-bilgisi" aria-live="polite"></div>
+        <button class="karakter-dugmesi" data-eylem="karakter" hidden></button>
       </header>
       <div class="harita-kap">
         ${svgOlustur()}
@@ -219,6 +223,7 @@ export function haritaEkrani(kap, depo, { baslikaDon } = {}) {
   const svg = ekran.querySelector('.harita-svg');
   const kart = ekran.querySelector('.il-karti');
   const konumBilgisi = ekran.querySelector('.konum-bilgisi');
+  const karakterDugmesi = ekran.querySelector('.karakter-dugmesi');
   const dugumler = new Map(
     [...svg.querySelectorAll('g.il')].map((g) => [Number(g.dataset.plaka), g]),
   );
@@ -301,7 +306,27 @@ export function haritaEkrani(kap, depo, { baslikaDon } = {}) {
       <span class="konum-etiket">${M.konum}</span>
       <strong>📍 ${kacis(il.ad)}</strong>
       <span class="konum-bolge">${kacis(bolgeHaritasi.get(il.bolge).ad)}</span>`;
+    karakterDugmesiniCiz(durum);
     if (secili !== null) kartiDoldur(durum, secili);
+  }
+
+  // Üst çubukta karakter özeti: sınıf simgesi, seviye ve can çubuğu.
+  function karakterDugmesiniCiz(durum) {
+    const o = durum.oyuncu;
+    karakterDugmesi.hidden = !o;
+    if (!o) return;
+    const K = metinler.karakter;
+    const canYuzde = Math.round((o.can / statlar(o).can) * 100);
+    const etiket = sablon(K.ustCubukDugmesi, { ad: o.ad, seviye: o.seviye });
+    karakterDugmesi.setAttribute('aria-label', etiket);
+    karakterDugmesi.title = etiket;
+    karakterDugmesi.innerHTML = `
+      <span class="karakter-dugmesi-ikon" aria-hidden="true">${siniflar[o.sinif].ikon}</span>
+      <span class="karakter-dugmesi-bilgi">
+        <strong>${sablon(K.seviye, { seviye: o.seviye })}</strong>
+        <span class="mini-cubuk" aria-hidden="true"><span style="width:${canYuzde}%"></span></span>
+      </span>
+      ${o.statPuani > 0 ? '<span class="puan-isareti" aria-hidden="true"></span>' : ''}`;
   }
 
   // ── İl kartı ──
@@ -323,6 +348,9 @@ export function haritaEkrani(kap, depo, { baslikaDon } = {}) {
       });
       const sinif = kontrol.neden === 'ayni_il' ? 'kart-not buradasin' : 'kart-not engel';
       eylem = `<p class="${sinif}">${kacis(kontrol.neden === 'ayni_il' ? M.buradasin : mesaj)}</p>`;
+      if (kontrol.neden === 'ayni_il' && durum.oyuncu && savasBaslat) {
+        eylem += `<button class="buton buton-ana" data-eylem="savas">⚔️ ${metinler.savas.dusmanlaKarsilas}</button>`;
+      }
     }
 
     kart.innerHTML = `
@@ -375,6 +403,8 @@ export function haritaEkrani(kap, depo, { baslikaDon } = {}) {
       case 'tumu': gorunumAyarla(sigdir(HARITA_KUTUSU, boyut.g, boyut.y)); break;
       case 'kapat': kartiKapat(); break;
       case 'git': seyahatEtVeBildir(secili); break;
+      case 'karakter': karakterGoster?.(); break;
+      case 'savas': savasBaslat?.(depo.al().konum); break;
     }
   }
   ekran.addEventListener('click', tiklama);

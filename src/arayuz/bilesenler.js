@@ -28,6 +28,17 @@ export function ilerlemeCubugu(yuzde, { etiket = '', renk = 'var(--turkuaz)' } =
     </div>`;
 }
 
+// "45 / 120" gibi değer gösteren yatay çubuk (can, nefes, XP).
+export function degerCubugu(deger, enCok, { etiket = '', renk = 'var(--turkuaz)', sinif = '' } = {}) {
+  const yuzde = enCok > 0 ? Math.max(0, Math.min(100, (deger / enCok) * 100)) : 0;
+  return `
+    <div class="cubuk ${sinif}" role="meter" aria-valuemin="0" aria-valuemax="${enCok}"
+         aria-valuenow="${deger}" aria-label="${kacis(etiket)}">
+      <div class="cubuk-dolgu" style="width:${yuzde.toFixed(1)}%;background:${renk}"></div>
+      <span class="cubuk-metin">${kacis(etiket)} ${deger} / ${enCok}</span>
+    </div>`;
+}
+
 // Ekranın altında kısa süre görünen bildirim.
 export function bildirimGoster(kap, metin, { tur = 'bilgi', sure = 2800 } = {}) {
   let alan = kap.querySelector('.bildirim-alani');

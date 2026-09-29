@@ -90,6 +90,7 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 │  │  └─ metinler.js         # arayüz metinleri tek yerde
 │  ├─ arayuz/
 │  │  ├─ harita.js
+│  │  ├─ yeniOyunEkrani.js   # isim ve sınıf seçimi
 │  │  ├─ ilEkrani.js
 │  │  ├─ savasEkrani.js
 │  │  ├─ karakterEkrani.js
@@ -199,18 +200,26 @@ Her seviyede sınıfa özgü otomatik stat artışı gelir. Ayrıca oyuncuya da�
 Arınma Işığı, cin ve ifrit türü düşmanlara ekstra hasar verir.
 
 ### Başlangıç formülleri
-Bu formüller ilk sürüm içindir. Faz 3'te dengeleme yapılabilir, değişiklik olursa bu dosyaya da yazılır.
+Bu formüller ilk sürüm içindir. Faz 3'te dengelendi; hesaplar `src/oyun/karakter.js` ve `src/oyun/savas.js` içindedir.
 
-- **Gereken XP:** `round(40 × sv^1.6)`
-- **Hasar:** `max(1, round(güç × rnd(0.9–1.1) − savunma × 0.5))`
-- **Kritik şansı:** `min(30%, çeviklik × 0.8%)`. Kritik vuruş ×1.5 hasar verir.
-- **Kaçma şansı:** `min(80%, 40% + (oyuncuÇev − düşmanÇev) × 2%)`. Bosslardan kaçılamaz.
-- **Düşman statları:** seviye ve tür çarpanıyla ölçeklenir, örneğin `can = (20 + sv × 12) × türÇarpanı`.
+- **Gereken XP:** `round(40 × sv^1.6)` — bir seviyeden sonrakine geçmek için. Seviye atlayınca XP sıfırlanır, artan kısım aktarılır.
+- **Seviye atlama:** sınıfın otomatik stat artışı + 3 stat puanı gelir, can ve nefes tamamen dolar.
+- **Stat puanı değeri:** 1 puan = +5 can, +3 nefes, +1 güç, +1 savunma ya da +1 çeviklik.
+- **Hasar:** `max(1, round(güç × yetenekÇarpanı × rnd(0.9–1.1) − savunma × 0.5))`
+- **Kritik şansı:** `min(30%, çeviklik × 0.8%)` (+ Kartal Gözü bonusu). Kritik vuruş ×1.5 hasar verir.
+- **Kaçınma şansı:** `min(20%, çeviklik × 0.5%)` — saldırılan taraf hamleden sıyrılır, hasar almaz.
+- **Kaçma şansı:** `max(0%, min(80%, 40% + (oyuncuÇev − düşmanÇev) × 2%))`. Bosslardan kaçılamaz.
+- **Düşman statları:** seviye ve tür çarpanıyla ölçeklenir:
+  `can = (20 + sv × 12) × c.can`, `güç = (6 + sv × 2) × c.güç`, `savunma = (4 + sv × 1.5) × c.savunma`, `çeviklik = (4 + sv) × c.çeviklik` (hepsi yuvarlanır).
+- **XP ödülü:** `round((5 + sv × 10) × sınıfÇarpanı)`; sınıf çarpanı sıradan 1, mini boss 3, bölge bossu 8, final 15.
+- **Düşman yapay zekâsı:** %20 ihtimalle türüne özgü özel hamle (hayvan, cin, ifrit, dev ve boss için güçlü vuruş; hortlak için oyuncunun gücünü 2 saldırı boyunca %25 azaltan ürkütme), aksi hâlde normal saldırı.
+- **Yetenek etkileri:** Kalkan Duruşu / Hikmet Kalkanı düşmanın sonraki N hamlesinde hasarı yarıya indirir; Yiğit Nârası (%30 güç) ve Kartal Gözü (+%25 kritik) oyuncunun sonraki 3 saldırısını etkiler.
+- **Denge ölçümü (Faz 3):** Sv 1 Akıncı, Sv 1 Aç Kurt'u yalnızca saldırarak ortalama ~3,2 turda yener (500 savaşlık testle denetlenir).
 
 ### Savaş akışı
 - Her turda oyuncu **Saldır / Yetenek / Yemek / Kaç** seçeneklerinden birini seçer, ardından düşman hamlesini yapar.
 - Savaş günlüğü kısa, edepli ve Türkçe cümlelerle ekranda akar.
-- **Bayılma** durumunda oyuncu, en son uğradığı kervansaraya (Faz 6'dan önce il merkezine) döner ve akçesinin %10'unu kaybeder.
+- **Bayılma** durumunda oyuncu, en son uğradığı kervansaraya (Faz 6'dan önce bulunduğu ilin merkezine) döner ve akçesinin %10'unu (aşağı yuvarlanır) kaybeder. Kendine geldiğinde canı ve nefesi dolar.
 
 ---
 
@@ -372,7 +381,7 @@ Bir bölge bossu yenildiğinde, o bölgenin yemeklerinden oluşan bir sofra kuru
 | 0 | Proje kurulumu | ✅ |
 | 1 | Veri katmanı | ✅ |
 | 2 | Harita ve seyahat | ✅ |
-| 3 | Karakter ve savaş motoru | ⬜ |
+| 3 | Karakter ve savaş motoru | ✅ |
 | 4 | Keşif, yemekler ve kayıt (**oynanabilir ilk sürüm**) | ⬜ |
 | 5 | Bosslar ve bölge ilerlemesi | ⬜ |
 | 6 | Arasta, Ahi esnafı, ekipman ve kervansaray | ⬜ |
@@ -448,15 +457,15 @@ Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 ### Faz 3 — Karakter ve Savaş Motoru
 **Hedef:** Sınıf seçimi ve tam çalışan sıra tabanlı savaş.
 
-- [ ] Yeni oyun ekranı: oyuncu isim girer ve 3 sınıftan birini seçer. Her sınıfın tarifi ve statları gösterilir.
-- [ ] `karakter.js`: stat hesapları, XP eğrisi, seviye atlama, otomatik stat artışı ve dağıtılacak stat puanları.
-- [ ] `savas.js`: Saldır / Yetenek / Yemek / Kaç eylemleri. Hasar, kritik, kaçınma, nefes tüketimi, düşman yapay zekâsı (basit: çoğunlukla saldırır, bazen özel hamle yapar).
-- [ ] Bayılma kuralını uygula (Bölüm 5).
-- [ ] `savasEkrani.js`: can ve nefes çubukları, eylem butonları ve savaş günlüğü.
-- [ ] `karakterEkrani.js`: statlar, seviye, XP çubuğu, açık yetenekler ve stat puanı dağıtma.
-- [ ] Seviye atlayınca kutlama bildirimi göster, yeni yetenek açıldıysa belirt.
-- [ ] Testleri yaz: hasar formülü, kritik, kaçma, XP eğrisi, seviye atlama, yetenek açılışı (sabit tohumla).
-- [ ] Dengeleme: Sv 1 bir Akıncı, Sv 1 bir Aç Kurt'u ortalama 3–5 turda yenebilmeli. Formüllerde değişiklik yaparsan Bölüm 5'i güncelle.
+- [x] Yeni oyun ekranı: oyuncu isim girer ve 3 sınıftan birini seçer. Her sınıfın tarifi ve statları gösterilir.
+- [x] `karakter.js`: stat hesapları, XP eğrisi, seviye atlama, otomatik stat artışı ve dağıtılacak stat puanları.
+- [x] `savas.js`: Saldır / Yetenek / Yemek / Kaç eylemleri. Hasar, kritik, kaçınma, nefes tüketimi, düşman yapay zekâsı (basit: çoğunlukla saldırır, bazen özel hamle yapar).
+- [x] Bayılma kuralını uygula (Bölüm 5).
+- [x] `savasEkrani.js`: can ve nefes çubukları, eylem butonları ve savaş günlüğü.
+- [x] `karakterEkrani.js`: statlar, seviye, XP çubuğu, açık yetenekler ve stat puanı dağıtma.
+- [x] Seviye atlayınca kutlama bildirimi göster, yeni yetenek açıldıysa belirt.
+- [x] Testleri yaz: hasar formülü, kritik, kaçma, XP eğrisi, seviye atlama, yetenek açılışı (sabit tohumla).
+- [x] Dengeleme: Sv 1 bir Akıncı, Sv 1 bir Aç Kurt'u ortalama 3–5 turda yenebilmeli. Formüllerde değişiklik yaparsan Bölüm 5'i güncelle.
 
 **Kabul kriterleri:** Üç sınıf da seçilebiliyor. Savaş baştan sona oynanabiliyor. Seviye atlama ve yetenek açılışı çalışıyor.
 

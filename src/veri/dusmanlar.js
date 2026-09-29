@@ -6,6 +6,28 @@
 
 export const DUSMAN_TURLERI = ['hayvan', 'cin', 'ifrit', 'hortlak', 'dev', 'boss'];
 
+// Düşman yapay zekâsının ara sıra yaptığı özel hamle, türe göre (plan.md Bölüm 5).
+// etki: 'hasar' → güce `carpan` uygulanmış bir vuruş;
+//       'zayiflatma' → oyuncunun gücü sonraki `sure` saldırısında `deger` oranında azalır.
+export const OZEL_HAMLE_SANSI = 0.2;
+
+export const OZEL_HAMLELER = {
+  hayvan: { ad: 'Azgın Saldırı', etki: 'hasar', carpan: 1.5 },
+  cin: { ad: 'Kara Sihir', etki: 'hasar', carpan: 1.6 },
+  ifrit: { ad: 'Alev Dalgası', etki: 'hasar', carpan: 1.6 },
+  hortlak: { ad: 'Ürkütücü Çığlık', etki: 'zayiflatma', deger: 0.25, sure: 2 },
+  dev: { ad: 'Kaya Fırlatma', etki: 'hasar', carpan: 1.8 },
+  boss: { ad: 'Zülmet\'in Sihri', etki: 'hasar', carpan: 1.7 },
+};
+
+// Yenilen düşmanın verdiği XP, düşman sınıfına göre bu çarpanla büyür.
+export const SINIF_XP_CARPANI = {
+  siradan: 1,
+  mini_boss: 3,
+  bolge_bossu: 8,
+  final: 15,
+};
+
 export const dusmanlar = {
   // ── Marmara ──────────────────────────────────────────────
   ac_kurt: {
