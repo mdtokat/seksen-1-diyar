@@ -12,9 +12,8 @@ import {
   ilDurumu,
   arinmaYuzdesi,
 } from '../oyun/ilerleme.js';
-import { statlar } from '../oyun/karakter.js';
 import { sablon, kacis, ilerlemeCubugu, bildirimGoster } from './bilesenler.js';
-import { sinifCizimi } from './cizimler/karakterler.js';
+import { karakterDugmesiniCiz } from './karakterDugmesi.js';
 
 const M = metinler.harita;
 const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
@@ -318,27 +317,8 @@ export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, ilGoster }
       <span class="konum-etiket">${M.konum}</span>
       <strong>📍 ${kacis(il.ad)}</strong>
       <span class="konum-bolge">${kacis(bolgeHaritasi.get(il.bolge).ad)}</span>`;
-    karakterDugmesiniCiz(durum);
+    karakterDugmesiniCiz(karakterDugmesi, durum.oyuncu);
     if (secili !== null) kartiDoldur(durum, secili);
-  }
-
-  // Üst çubukta karakter özeti: sınıf simgesi, seviye ve can çubuğu.
-  function karakterDugmesiniCiz(durum) {
-    const o = durum.oyuncu;
-    karakterDugmesi.hidden = !o;
-    if (!o) return;
-    const K = metinler.karakter;
-    const canYuzde = Math.round((o.can / statlar(o).can) * 100);
-    const etiket = sablon(K.ustCubukDugmesi, { ad: o.ad, seviye: o.seviye });
-    karakterDugmesi.setAttribute('aria-label', etiket);
-    karakterDugmesi.title = etiket;
-    karakterDugmesi.innerHTML = `
-      <span class="karakter-dugmesi-ikon">${sinifCizimi(o.sinif)}</span>
-      <span class="karakter-dugmesi-bilgi">
-        <strong>${sablon(K.seviye, { seviye: o.seviye })}</strong>
-        <span class="mini-cubuk" aria-hidden="true"><span style="width:${canYuzde}%"></span></span>
-      </span>
-      ${o.statPuani > 0 ? '<span class="puan-isareti" aria-hidden="true"></span>' : ''}`;
   }
 
   // ── İl kartı ──
@@ -361,7 +341,7 @@ export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, ilGoster }
       const sinif = kontrol.neden === 'ayni_il' ? 'kart-not buradasin' : 'kart-not engel';
       eylem = `<p class="${sinif}">${kacis(kontrol.neden === 'ayni_il' ? M.buradasin : mesaj)}</p>`;
       if (kontrol.neden === 'ayni_il' && durum.oyuncu && ilGoster) {
-        eylem += `<button class="buton buton-ana" data-eylem="il">🏘️ ${M.ileGir}</button>`;
+        eylem += `<button class="buton buton-ana" data-eylem="il">🚶 ${M.ileGir}</button>`;
       }
     }
 

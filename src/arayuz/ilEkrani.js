@@ -1,4 +1,5 @@
-// İl ekranı: bulunulan ilin adı, meşhur yemeği, arınma yüzdesi ve "Keşfe Çık".
+// İl bilgisi ekranı: bulunulan ilin adı, meşhur yemeği, arınma yüzdesi ve oyuncu özeti.
+// Gezintide tabeladan ya da üst çubuktan açılır.
 import { iller } from '../veri/iller.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { yemekler } from '../veri/yemekler.js';
@@ -54,7 +55,7 @@ function icerik(durum) {
     </section>
 
     <div class="il-eylemleri">
-      <button class="buton buton-ana buton-buyuk" data-eylem="kesif">🔍 ${M.kesfeCik}</button>
+      <button class="buton buton-ana buton-buyuk" data-eylem="gez">🚶 ${M.ildeGez}</button>
       <div class="il-eylemleri-alt">
         <button class="buton" data-eylem="heybe">🎒 ${M.heybe} <small>${durum.heybe.length}/${HEYBE_YUVA}</small></button>
         <button class="buton" data-eylem="karakter">👤 ${M.karakter}${o.statPuani > 0 ? ' <span class="nokta-isaret" aria-hidden="true"></span>' : ''}</button>
@@ -64,13 +65,13 @@ function icerik(durum) {
 }
 
 // Ekranı `kap` içine kurar. Temizlik fonksiyonu döndürür.
-// secenekler: { kesfeCik, heybeGoster, karakterGoster, haritaGoster }
-export function ilEkrani(kap, depo, { kesfeCik, heybeGoster, karakterGoster, haritaGoster } = {}) {
+// secenekler: { gezintiyeDon, heybeGoster, karakterGoster, haritaGoster }
+export function ilEkrani(kap, depo, { gezintiyeDon, heybeGoster, karakterGoster, haritaGoster } = {}) {
   const il = ilHaritasi.get(depo.al().konum);
   kap.innerHTML = `
     <div class="sayfa-ekrani il-ekrani">
       <header class="ust-cubuk">
-        <button class="simge-buton" data-eylem="harita" aria-label="${M.haritayaDon}" title="${M.haritayaDon}">←</button>
+        <button class="simge-buton" data-eylem="gez" aria-label="${M.gezintiyeDon}" title="${M.gezintiyeDon}">←</button>
         <h1 class="ust-baslik">📍 ${kacis(il.ad)}</h1>
       </header>
       <main class="sayfa-icerik"></main>
@@ -85,7 +86,7 @@ export function ilEkrani(kap, depo, { kesfeCik, heybeGoster, karakterGoster, har
     const b = e.target.closest('[data-eylem]');
     if (!b) return;
     switch (b.dataset.eylem) {
-      case 'kesif': return kesfeCik?.();
+      case 'gez': return gezintiyeDon?.();
       case 'heybe': return heybeGoster?.();
       case 'karakter': return karakterGoster?.();
       case 'harita': return haritaGoster?.();

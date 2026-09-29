@@ -2,6 +2,8 @@
 
 Türkiye'nin 81 ilinde geçen, tarayıcıda oynanan, sıra tabanlı bir RPG. Oyuncu, genç yiğit **Alp** olarak illeri gezer, zalim sihirbaz **Zülmet**'in saldığı cinleri ve ifritleri yener, seviye atlar ve yurdu kötülükten arındırır. Her ilin yöresel yemeği, can ve nefes yenileyen birer azıktır.
 
+Oyuncu karakterini kuşbakışı il haritalarında yürütür (dokunarak, ekran yön tuşlarıyla ya da ok tuşları/WASD ile), haritada dolaşan düşmanlarla karşılaşınca sıra tabanlı savaşa girer ve il sınırlarındaki yollardan komşu illere geçer.
+
 Geliştirme planı, kurallar ve faz takibi için: [plan.md](plan.md)
 
 ## Gereksinimler

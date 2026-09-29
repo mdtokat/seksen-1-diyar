@@ -1818,3 +1818,358 @@ h3 {
   0%, 80% { opacity: 1; }
   100% { opacity: 0; }
 }
+
+/* ── İl içi gezinti (Faz 6) ───────────────────────────── */
+.gezinti-ekrani {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.gezinti-il {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  justify-items: start;
+  gap: 0.1rem;
+  padding: 0.2rem 0.3rem;
+  font: inherit;
+  text-align: left;
+  color: var(--krem);
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.gezinti-il:focus-visible {
+  outline: 3px solid var(--altin);
+}
+
+.gezinti-il strong {
+  font-family: var(--font-baslik);
+  font-size: 1.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.gezinti-il {
+  overflow: hidden;
+  justify-items: stretch;
+}
+
+.gezinti-il-alt {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 0.8rem;
+  color: var(--altin);
+  white-space: nowrap;
+}
+
+.gezinti-il-alt .bolge-noktasi {
+  flex-shrink: 0;
+}
+
+.gezinti-bolge {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gezinti-arinma {
+  flex-shrink: 0;
+  color: #b9f0c4;
+  font-weight: 700;
+}
+
+.gezinti-alani {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  background: #2b3a2a;
+  transition: opacity 0.25s;
+}
+
+.gezinti-alani.gecis {
+  opacity: 0;
+}
+
+.dunya {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: transform 0.17s linear;
+  will-change: transform;
+}
+
+.dunya.anlik,
+.dunya.anlik .harita-figuru {
+  transition: none;
+}
+
+.karo-katmani {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.kapi-adi {
+  font-family: var(--font-metin);
+  font-size: 6px;
+  font-weight: 700;
+  fill: var(--lacivert);
+  paint-order: stroke;
+  stroke: #fbf7ec;
+  stroke-width: 2px;
+  stroke-linejoin: round;
+}
+
+.kapi.kilitli .kapi-adi {
+  fill: #6a4c93;
+}
+
+.sihirli-engel {
+  animation: sihirli-engel 2s ease-in-out infinite;
+}
+
+@keyframes sihirli-engel {
+  50% { opacity: 0.45; }
+}
+
+.figur-katmani {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.harita-figuru {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(var(--karo, 36px) * 1.6);
+  height: calc(var(--karo, 36px) * 1.6);
+  transition: transform 0.17s linear;
+  will-change: transform;
+}
+
+.dusman-figuru {
+  transition-duration: 0.45s;
+}
+
+.figur-ic {
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 90%;
+}
+
+.figur-ic .cizim {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.oyuncu-figuru.sola .figur-ic,
+.dusman-figuru.saga .figur-ic {
+  transform: scaleX(-1);
+}
+
+.oyuncu-figuru.yuruyor .figur-ic {
+  animation: yurume 0.34s ease-in-out infinite;
+}
+
+.oyuncu-figuru.sola.yuruyor .figur-ic {
+  animation-name: yurume-sola;
+}
+
+.dusman-figuru .figur-ic {
+  animation: nefes-al 1.6s ease-in-out infinite;
+}
+
+.dusman-figuru.saga .figur-ic {
+  animation-name: nefes-al-saga;
+}
+
+.oyuncu-figuru.dokunulmaz {
+  animation: dokunulmaz 0.5s steps(2) infinite;
+}
+
+@keyframes yurume {
+  50% { transform: translateY(-8%) rotate(-3deg); }
+}
+
+@keyframes yurume-sola {
+  0%, 100% { transform: scaleX(-1); }
+  50% { transform: scaleX(-1) translateY(-8%) rotate(-3deg); }
+}
+
+@keyframes nefes-al {
+  50% { transform: scaleY(0.96); }
+}
+
+@keyframes nefes-al-saga {
+  0%, 100% { transform: scaleX(-1); }
+  50% { transform: scaleX(-1) scaleY(0.96); }
+}
+
+@keyframes dokunulmaz {
+  50% { opacity: 0.45; }
+}
+
+.figur-rozeti {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  transform: translateX(-50%);
+  padding: 0 0.3rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.3;
+  border-radius: 999px;
+  background: rgba(27, 42, 92, 0.85);
+  color: var(--krem);
+  white-space: nowrap;
+}
+
+.dusman-figuru.fark::after {
+  content: '!';
+  position: absolute;
+  left: 50%;
+  top: -1.4rem;
+  transform: translateX(-50%);
+  width: 1.4rem;
+  height: 1.4rem;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: var(--lacivert);
+  background: var(--altin);
+  border: 2px solid var(--lacivert);
+  border-radius: 50%;
+  animation: fark 0.3s ease-out;
+}
+
+@keyframes fark {
+  from { transform: translate(-50%, 6px) scale(0.4); }
+}
+
+.hedef-isareti {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--karo, 36px);
+  height: var(--karo, 36px);
+  border: 3px solid var(--altin);
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.hedef-isareti.beliriyor {
+  animation: hedef 0.6s ease-out;
+}
+
+@keyframes hedef {
+  0% { opacity: 1; scale: 0.4; }
+  100% { opacity: 0; scale: 1.1; }
+}
+
+.gezinti-araclari {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  z-index: 40;
+}
+
+.gezinti-araclari .simge-buton {
+  font-size: 1.1rem;
+}
+
+.gezinti-araclari [aria-pressed='true'] {
+  background: var(--altin);
+}
+
+.yon-tuslari {
+  position: absolute;
+  left: 0.75rem;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: repeat(3, 3.3rem);
+  grid-template-rows: repeat(3, 3.3rem);
+  z-index: 40;
+}
+
+.yon-tuslari[hidden] {
+  display: none;
+}
+
+.yon-tusu {
+  font: inherit;
+  font-size: 1.2rem;
+  color: var(--krem);
+  background: rgba(27, 42, 92, 0.78);
+  border: 2px solid var(--altin);
+  border-radius: 12px;
+  margin: 2px;
+  touch-action: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.yon-tusu:active {
+  background: var(--lacivert);
+  transform: scale(0.94);
+}
+
+.yon-yukari { grid-column: 2; grid-row: 1; }
+.yon-sola { grid-column: 1; grid-row: 2; }
+.yon-saga { grid-column: 3; grid-row: 2; }
+.yon-asagi { grid-column: 2; grid-row: 3; }
+
+.gezinti-ipucu {
+  position: absolute;
+  left: 50%;
+  top: 0.75rem;
+  transform: translateX(-50%);
+  width: min(20rem, calc(100% - 5.5rem));
+  margin: 0 0 0 -2rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  text-align: center;
+  background: rgba(247, 239, 220, 0.95);
+  border: 2px solid var(--lacivert);
+  border-radius: 10px;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.gezinti-ipucu[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dunya,
+  .harita-figuru {
+    transition-duration: 0.01s;
+  }
+
+  .oyuncu-figuru.yuruyor .figur-ic,
+  .dusman-figuru .figur-ic,
+  .sihirli-engel {
+    animation: none;
+  }
+}

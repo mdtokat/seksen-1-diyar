@@ -18,9 +18,28 @@ export const metinler = {
     kayitYapilamiyor: 'Tarayıcın kayda izin vermiyor; sayfayı kapatınca ilerlemen kaybolur.',
   },
 
+  gezinti: {
+    baslikEkrani: 'Başlık ekranına dön',
+    ipucu: 'Gitmek istediğin yere dokun ya da yön tuşlarını kullan. Düşmanlara yaklaşınca savaş başlar; meydan güvenlidir.',
+    harita: 'Türkiye haritası',
+    heybe: 'Heybe',
+    ilBilgisi: 'İl bilgisi',
+    yonTuslari: 'Yön tuşlarını göster ya da gizle',
+    yukari: 'Yukarı yürü',
+    asagi: 'Aşağı yürü',
+    sola: 'Sola yürü',
+    saga: 'Sağa yürü',
+    arinma: 'Arınma %{yuzde}',
+    cesme: 'Çeşmenin serin suyuyla yüzünü yıkadın.',
+    tezgah: 'Esnaf tezgâhını kuruyor: {yemek}. Yakında buradan alışveriş yapabileceksin.',
+    fark: '{dusman} seni fark etti!',
+    alanEtiketi: '{il} il haritası',
+  },
+
   ilEkrani: {
     haritayaDon: 'Haritaya dön',
-    kesfeCik: 'Keşfe Çık',
+    ildeGez: 'İlde Gez',
+    gezintiyeDon: 'Gezintiye dön',
     heybe: 'Heybe',
     karakter: 'Karakter',
     seviye: 'Düşman seviyesi',
@@ -60,7 +79,7 @@ export const metinler = {
     buradasin: 'Buradasın.',
     git: 'Buraya git',
     kapat: 'Kapat',
-    ileGir: 'İl ekranına git',
+    ileGir: 'İlde gez',
     varis: 'Yeni konum: {il}',
     ipucu: 'Bir ile dokunarak bilgilerini gör. Parmağınla kaydır, iki parmakla yakınlaştır.',
     lejant: {

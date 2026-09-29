@@ -385,7 +385,7 @@ Bir bölge bossu yenildiğinde, o bölgenin yemeklerinden oluşan bir sofra kuru
 | 3 | Karakter ve savaş motoru | ✅ |
 | 4 | Keşif, yemekler ve kayıt (**oynanabilir ilk sürüm**) | ✅ |
 | 5 | Görsel yenileme (SVG çizimler, savaş sahnesi, il sınırlı harita) | ✅ |
-| 6 | İl içi gezinti (kuşbakışı yürüme, haritada düşmanlar) | ⬜ |
+| 6 | İl içi gezinti (kuşbakışı yürüme, haritada düşmanlar) | ✅ |
 | 7 | Bosslar ve bölge ilerlemesi | ⬜ |
 | 8 | Arasta, Ahi esnafı, ekipman ve kervansaray | ⬜ |
 | 9 | Görevler ve itibar | ⬜ |
@@ -479,7 +479,7 @@ Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 ### Faz 4 — Keşif, Yemekler ve Kayıt (Oynanabilir İlk Sürüm)
 **Hedef:** Oyunun temel döngüsünün baştan sona oynanabilmesi.
 
-- [x] `ilEkrani.js`: bulunulan ilin ekranı. İl adı, meşhur yemek, arınma yüzdesi ve "Keşfe Çık" butonu.
+- [x] `ilEkrani.js`: bulunulan ilin ekranı. İl adı, meşhur yemek, arınma yüzdesi ve "Keşfe Çık" butonu. (Faz 6'da "Keşfe Çık" yerini ilde gezintiye bıraktı; ekran il bilgisi olarak kaldı.)
 - [x] `kesif.js`: keşfe çıkınca ilin düşman havuzundan ve seviye aralığından bir düşman üret. Kazanınca arınma artsın (%8–12 arası). %100 olunca il arınmış sayılsın ve haritada yeşile dönsün.
 - [x] Ganimet: XP, akçe ve belirli bir şansla o ilin yöresel yemeği düşsün.
 - [x] `envanter.js`: heybe (20 yuva, aynı yemekler üst üste biner, en fazla 10'a kadar). Yemek kullanımı savaş içinde ve dışında çalışsın.
@@ -530,14 +530,22 @@ Kullanıcı kararı: 3D yerine **güçlendirilmiş 2D** (SVG + CSS). Oyun mantı
 
 Kullanıcı kararları: kuşbakışı görünüm; düşmanlar haritada görünür; il haritaları koddan üretilir; telefonda hem dokun-yürü hem de ekran yön tuşları (masaüstünde ok tuşları ve WASD).
 
-- [ ] `gezinti.js`: her il için sabit tohumla üretilen karo harita (her açılışta aynı). Bölgeye göre doku ve engeller (Karadeniz'de köknar ve dere, İç Anadolu'da bozkır ve peri bacaları, Güneydoğu'da kum ve kümbet evler, Doğu'da kar ve göl vb.).
-- [ ] Her ilde il meydanı (çeşme, ilin yemeğini satan esnaf tezgâhı, il tabelası) ve her komşu ile giden, komşunun gerçek yönüne yerleştirilmiş bir çıkış yolu. Tüm çıkışlar meydandan yürünerek erişilebilir.
-- [ ] Yürüme: haritaya dokununca en kısa yoldan yürüme, ekran yön tuşları, ok tuşları ve WASD. Kamera oyuncuyu izler.
-- [ ] Çıkış yoluna yürüyünce komşu ile geçilir (seyahat kuralları aynen geçerli; kilitli bölgenin yolu sihirli bir engelle kapalıdır). Yeni ile, geri dönen yolun ağzından girilir.
-- [ ] Düşmanlar ilin havuzundan ve seviye aralığından üretilip haritada dolaşır; oyuncu yaklaşınca peşine düşer, temas edince sıra tabanlı savaş başlar. Meydan güvenli bölgedir, düşmanlar giremez.
-- [ ] Yenilen düşman haritadan kalkar, bir süre sonra başka bir yerde yenisi belirir. Kaçınca oyuncu kısa süre dokunulmaz olur. Bayılınca il meydanında kendine gelir.
-- [ ] "Keşfe Çık" yerine ilde gezinti; il bilgisi tabeladan ve üst çubuktan açılır.
-- [ ] Testleri yaz: harita üretiminin tekrarlanabilirliği, 81 ilin tamamında çıkış sayısı ve erişilebilirliği, yol bulma, düşman yerleşimi ve hareket kuralları.
+- [x] `gezinti.js`: her il için sabit tohumla üretilen karo harita (her açılışta aynı). Bölgeye göre doku ve engeller (Karadeniz'de köknar ve dere, İç Anadolu'da bozkır ve peri bacaları, Güneydoğu'da kum ve kümbet evler, Doğu'da kar ve göl vb.).
+- [x] Her ilde il meydanı (çeşme, ilin yemeğini satan esnaf tezgâhı, il tabelası) ve her komşu ile giden, komşunun gerçek yönüne yerleştirilmiş bir çıkış yolu. Tüm çıkışlar meydandan yürünerek erişilebilir.
+- [x] Yürüme: haritaya dokununca en kısa yoldan yürüme, ekran yön tuşları, ok tuşları ve WASD. Kamera oyuncuyu izler.
+- [x] Çıkış yoluna yürüyünce komşu ile geçilir (seyahat kuralları aynen geçerli; kilitli bölgenin yolu sihirli bir engelle kapalıdır). Yeni ile, geri dönen yolun ağzından girilir.
+- [x] Düşmanlar ilin havuzundan ve seviye aralığından üretilip haritada dolaşır; oyuncu yaklaşınca peşine düşer, temas edince sıra tabanlı savaş başlar. Meydan güvenli bölgedir, düşmanlar giremez.
+- [x] Yenilen düşman haritadan kalkar, bir süre sonra başka bir yerde yenisi belirir. Kaçınca oyuncu kısa süre dokunulmaz olur. Bayılınca il meydanında kendine gelir.
+- [x] "Keşfe Çık" yerine ilde gezinti; il bilgisi tabeladan ve üst çubuktan açılır.
+- [x] Testleri yaz: harita üretiminin tekrarlanabilirliği, 81 ilin tamamında çıkış sayısı ve erişilebilirliği, yol bulma, düşman yerleşimi ve hareket kuralları.
+
+**Faz 6 kararları:**
+- **Harita:** 25×31 karo; meydan 7×5 ve ortada. Doğa öbekleri bölgeye göre (`BOLGE_DOGASI`). Meydandan ulaşılamayan açık alanlar engelle doldurulur.
+- **Çıkışlar:** komşunun gerçek yönündeki kenar karosuna; iki çıkış arasında en az 4 karo. Kilitli bölgeye giden yol mor sihirli engelle kapalıdır; üzerine yürüyünce oyuncu geri çekilir ve nedeni söylenir.
+- **Düşmanlar:** arınmamış ilde 4, arınmış ilde 2. Oyuncu 4 karo yakındaysa peşine düşer (meydandayken ya da dokunulmazken düşmez). Yenilen düşmanın yerine 25 adım sonra, oyuncudan en az 7 karo uzakta yenisi belirir. Kaçış ve bayılmadan sonra 8 adım dokunulmazlık.
+- **Hız:** oyuncu karo başına 0,17 sn; düşmanlar 0,65 sn'de bir hamle.
+- **Kayıt:** oyuncunun il içindeki yeri ve düşmanlar kaydedilmez; oyun yüklenince il meydanından başlanır.
+- **Yön tuşları:** dokunmatik cihazlarda varsayılan açık; 🎮 düğmesiyle gizlenir (tercih cihazda saklanır).
 
 **Kabul kriterleri:** Oyuncu İstanbul meydanından yürüyerek Kocaeli'ye geçebiliyor. Düşmanlar haritada görünüyor ve temas edince savaş başlıyor. Telefonda (375px) dokunarak ve yön tuşlarıyla rahat oynanıyor.
 
