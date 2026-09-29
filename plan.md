@@ -382,7 +382,7 @@ Bir bölge bossu yenildiğinde, o bölgenin yemeklerinden oluşan bir sofra kuru
 | 1 | Veri katmanı | ✅ |
 | 2 | Harita ve seyahat | ✅ |
 | 3 | Karakter ve savaş motoru | ✅ |
-| 4 | Keşif, yemekler ve kayıt (**oynanabilir ilk sürüm**) | ⬜ |
+| 4 | Keşif, yemekler ve kayıt (**oynanabilir ilk sürüm**) | ✅ |
 | 5 | Görsel yenileme (SVG çizimler, savaş sahnesi, il sınırlı harita) | ⬜ |
 | 6 | Bosslar ve bölge ilerlemesi | ⬜ |
 | 7 | Arasta, Ahi esnafı, ekipman ve kervansaray | ⬜ |
@@ -477,14 +477,22 @@ Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 ### Faz 4 — Keşif, Yemekler ve Kayıt (Oynanabilir İlk Sürüm)
 **Hedef:** Oyunun temel döngüsünün baştan sona oynanabilmesi.
 
-- [ ] `ilEkrani.js`: bulunulan ilin ekranı. İl adı, meşhur yemek, arınma yüzdesi ve "Keşfe Çık" butonu.
-- [ ] `kesif.js`: keşfe çıkınca ilin düşman havuzundan ve seviye aralığından bir düşman üret. Kazanınca arınma artsın (%8–12 arası). %100 olunca il arınmış sayılsın ve haritada yeşile dönsün.
-- [ ] Ganimet: XP, akçe ve belirli bir şansla o ilin yöresel yemeği düşsün.
-- [ ] `envanter.js`: heybe (20 yuva, aynı yemekler üst üste biner, en fazla 10'a kadar). Yemek kullanımı savaş içinde ve dışında çalışsın.
-- [ ] `envanterEkrani.js`: yemekler ikon, ad, açıklama ve etkiyle listelensin.
-- [ ] Başlangıç envanterine 3 balık ekmek ve 2 höşmerim ekle.
-- [ ] `kayit.js`: her önemli olaydan sonra (savaş sonu, seyahat, seviye atlama) otomatik kayıt. Başlık ekranında "Devam Et" ve "Yeni Oyun" seçenekleri olsun. Kayıt şemasında `surum` alanı bulunsun. localStorage erişimi try/catch içinde olsun.
-- [ ] Testleri yaz: arınma artışı, ganimet üretimi, heybe kuralları, kaydet/yükle döngüsü.
+- [x] `ilEkrani.js`: bulunulan ilin ekranı. İl adı, meşhur yemek, arınma yüzdesi ve "Keşfe Çık" butonu.
+- [x] `kesif.js`: keşfe çıkınca ilin düşman havuzundan ve seviye aralığından bir düşman üret. Kazanınca arınma artsın (%8–12 arası). %100 olunca il arınmış sayılsın ve haritada yeşile dönsün.
+- [x] Ganimet: XP, akçe ve belirli bir şansla o ilin yöresel yemeği düşsün.
+- [x] `envanter.js`: heybe (20 yuva, aynı yemekler üst üste biner, en fazla 10'a kadar). Yemek kullanımı savaş içinde ve dışında çalışsın.
+- [x] `envanterEkrani.js`: yemekler ikon, ad, açıklama ve etkiyle listelensin.
+- [x] Başlangıç envanterine 3 balık ekmek ve 2 höşmerim ekle.
+- [x] `kayit.js`: her önemli olaydan sonra (savaş sonu, seyahat, seviye atlama) otomatik kayıt. Başlık ekranında "Devam Et" ve "Yeni Oyun" seçenekleri olsun. Kayıt şemasında `surum` alanı bulunsun. localStorage erişimi try/catch içinde olsun.
+- [x] Testleri yaz: arınma artışı, ganimet üretimi, heybe kuralları, kaydet/yükle döngüsü.
+
+**Faz 4 kararları:**
+- **Akçe ganimeti:** `round((3 + sv × 2) × rnd(0.8–1.2) × sınıfÇarpanı)` (sınıf çarpanı XP ile aynı).
+- **Yemek düşme şansı:** her zaferde %30 ihtimalle ilin yöresel yemeği.
+- **Heybe:** 20 yuva; bir yuvada aynı yemekten en fazla 10 durur, fazlası yeni yuvaya geçer. Heybe doluysa bulunan yemek alınamaz (oyuncuya söylenir).
+- **Yemek yeme:** can ya da nefes zaten doluyken savaş dışında yemek yenmez (boşa gitmesin diye).
+- **Kayıt:** oyun durumu her değiştiğinde otomatik kaydedilir (savaş sonu, seyahat, seviye atlama, yemek, stat puanı). Kayıt anahtarı `seksen-bir-diyar/kayit`, şema `{ surum: 1, durum }`. Bozuk ya da tanınmayan kayıt yok sayılır.
+- **Akış:** Başlık → (Devam Et | Yeni Oyun) → İl ekranı. İl ekranından keşfe çıkılır; savaş bitince il ekranına dönülür. Haritadan başka ile gidilir.
 
 **Kabul kriterleri:** Oyuncu yeni oyun başlatıp Marmara'nın illerini gezebiliyor, savaşabiliyor, yemek toplayıp kullanabiliyor, seviye atlayabiliyor. Sayfa yenilenince kaldığı yerden devam ediyor.
 

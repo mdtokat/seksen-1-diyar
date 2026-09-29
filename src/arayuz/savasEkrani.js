@@ -12,6 +12,7 @@ import {
   savasSonucunuUygula,
 } from '../oyun/savas.js';
 import { gerekenXp } from '../oyun/karakter.js';
+import { yemekAdedi, yemekGucu } from '../oyun/envanter.js';
 import { kacis, sablon, degerCubugu, bildirimGoster } from './bilesenler.js';
 
 const M = metinler.savas;
@@ -89,13 +90,14 @@ export function olayMetni(olay, savas) {
 }
 
 // Ekranı `kap` içine kurar. Savaş bitince sonuç depoya yazılır.
-// secenekler: { dusman, rng, heybe, bitince, karakterGoster }
-// heybe: [{ anahtar, adet }] — savaşta yenebilecek yemekler.
-export function savasEkrani(kap, depo, { dusman, rng, heybe = [], bitince, karakterGoster } = {}) {
+// secenekler: { dusman, rng, sonucuUygula, bitince, karakterGoster }
+// sonucuUygula(durum, savas) → { durum, ozet }: varsayılanı savasSonucunuUygula;
+// keşif savaşında arınma ve ganimeti de ekleyen sürüm verilir.
+export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucunuUygula, bitince, karakterGoster } = {}) {
   const baslangic = depo.al();
   const il = ilHaritasi.get(baslangic.konum);
   const sinif = siniflar[baslangic.oyuncu.sinif];
-  let savas = savasBaslat(baslangic.oyuncu, dusman);
+  let savas = savasBaslat(baslangic.oyuncu, dusman, baslangic.heybe ?? []);
   let panel = 'ana'; // 'ana' | 'yetenek' | 'yemek' | 'son'
   let ozet = null;
   let sonDurum = null;
@@ -189,14 +191,18 @@ export function savasEkrani(kap, depo, { dusman, rng, heybe = [], bitince, karak
   }
 
   function yemekPaneli() {
-    const dolu = heybe.filter((h) => h.adet > 0);
-    const liste = dolu.length
-      ? `<ul class="secenek-listesi">${dolu.map((h) => {
-          const y = yemekler[h.anahtar];
+    const anahtarlar = [...new Set(savas.heybe.map((h) => h.anahtar))];
+    const liste = anahtarlar.length
+      ? `<ul class="secenek-listesi">${anahtarlar.map((anahtar) => {
+          const y = yemekler[anahtar];
+          const etki = sablon(metinler.envanter.etki, {
+            miktar: yemekGucu(anahtar),
+            tur: metinler.statAdlari[y.tur].toLocaleLowerCase('tr'),
+          });
           return `
-            <li><button class="secenek" data-yemek="${h.anahtar}">
-              <span class="secenek-ust"><strong><span aria-hidden="true">${y.ikon}</span> ${kacis(y.ad)}</strong>
-                <span class="secenek-bedel">×${h.adet}</span></span>
+            <li><button class="secenek" data-yemek="${anahtar}">
+              <span class="secenek-ust"><strong><span aria-hidden="true">${y.ikon}</span> ${kacis(y.ad)} ×${yemekAdedi(savas.heybe, anahtar)}</strong>
+                <span class="secenek-bedel">${etki}</span></span>
               <small>${kacis(y.aciklama)}</small>
             </button></li>`;
         }).join('')}</ul>`
@@ -214,6 +220,13 @@ export function savasEkrani(kap, depo, { dusman, rng, heybe = [], bitince, karak
         satirlar.push(sablon(S.statPuaniKazandin, { puan: sonDurum.oyuncu.statPuani }));
       }
       for (const y of ozet.yeniYetenekler) satirlar.push(`<strong>${sablon(S.yeniYetenek, { yetenek: kacis(y.ad) })}</strong>`);
+      if (ozet.akce) satirlar.push(sablon(S.akce, { akce: ozet.akce }));
+      if (ozet.yemek) {
+        const y = yemekler[ozet.yemek];
+        satirlar.push(sablon(ozet.yemekSigmadi ? S.yemekSigmadi : S.yemek, { ikon: y.ikon, yemek: kacis(y.ad) }));
+      }
+      if (ozet.arinmaArtisi) satirlar.push(sablon(S.arinma, { artis: ozet.arinmaArtisi, yuzde: ozet.arinma }));
+      if (ozet.arindi) satirlar.push(`<strong class="kutlama">${sablon(S.arindi, { il: kacis(il.ad) })}</strong>`);
     } else if (ozet.sonuc === 'yenilgi') {
       satirlar.push(sablon(S.bayilma, { il: kacis(il.ad) }));
       if (ozet.akceKaybi > 0) satirlar.push(sablon(S.akceKaybi, { akce: ozet.akceKaybi }));
@@ -233,7 +246,7 @@ export function savasEkrani(kap, depo, { dusman, rng, heybe = [], bitince, karak
         ${satirlar.map((s) => `<p>${s}</p>`).join('')}
         ${xpCubugu}
         <div class="sonuc-butonlari">
-          <button class="buton buton-ana" data-eylem="harita">${S.haritayaDon}</button>
+          <button class="buton buton-ana" data-eylem="devam">${S.devam}</button>
           ${karakterButonu}
         </div>
       </section>`;
@@ -252,11 +265,14 @@ export function savasEkrani(kap, depo, { dusman, rng, heybe = [], bitince, karak
   }
 
   function savasBitti() {
-    const r = savasSonucunuUygula(depo.al(), savas);
+    const r = sonucuUygula(depo.al(), savas);
     ozet = r.ozet;
     sonDurum = r.durum;
     depo.ayarla(r.durum);
     panel = 'son';
+    if (ozet.arindi) {
+      bildirimGoster(ekran, sablon(M.sonuc.arindi, { il: il.ad }), { tur: 'kutlama', sure: 3500 });
+    }
     if (ozet.seviyeler.length) {
       bildirimGoster(ekran, sablon(M.sonuc.seviyeAtladin, { seviye: ozet.seviyeler.at(-1) }), { tur: 'kutlama', sure: 3500 });
       for (const y of ozet.yeniYetenekler) {
@@ -285,7 +301,7 @@ export function savasEkrani(kap, depo, { dusman, rng, heybe = [], bitince, karak
       case 'yetenek-ac': panel = 'yetenek'; return panelCiz();
       case 'yemek-ac': panel = 'yemek'; return panelCiz();
       case 'geri': panel = 'ana'; return panelCiz();
-      case 'harita': return bitince?.();
+      case 'devam': return bitince?.();
       case 'karakter': return karakterGoster?.();
     }
   });

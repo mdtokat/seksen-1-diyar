@@ -195,8 +195,8 @@ function lejant() {
 // ── Harita ekranı ────────────────────────────────────────
 
 // Harita ekranını `kap` içine kurar. Temizlik fonksiyonu döndürür.
-// secenekler: { baslikaDon, karakterGoster, savasBaslat(plaka) }
-export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, savasBaslat } = {}) {
+// secenekler: { baslikaDon, karakterGoster, ilGoster }
+export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, ilGoster } = {}) {
   kap.innerHTML = `
     <div class="harita-ekrani">
       <header class="ust-cubuk">
@@ -348,8 +348,8 @@ export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, savasBasla
       });
       const sinif = kontrol.neden === 'ayni_il' ? 'kart-not buradasin' : 'kart-not engel';
       eylem = `<p class="${sinif}">${kacis(kontrol.neden === 'ayni_il' ? M.buradasin : mesaj)}</p>`;
-      if (kontrol.neden === 'ayni_il' && durum.oyuncu && savasBaslat) {
-        eylem += `<button class="buton buton-ana" data-eylem="savas">⚔️ ${metinler.savas.dusmanlaKarsilas}</button>`;
+      if (kontrol.neden === 'ayni_il' && durum.oyuncu && ilGoster) {
+        eylem += `<button class="buton buton-ana" data-eylem="il">🏘️ ${M.ileGir}</button>`;
       }
     }
 
@@ -404,7 +404,7 @@ export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, savasBasla
       case 'kapat': kartiKapat(); break;
       case 'git': seyahatEtVeBildir(secili); break;
       case 'karakter': karakterGoster?.(); break;
-      case 'savas': savasBaslat?.(depo.al().konum); break;
+      case 'il': ilGoster?.(); break;
     }
   }
   ekran.addEventListener('click', tiklama);

@@ -7,7 +7,43 @@ export const metinler = {
   giris:
     'Zalim sihirbaz Zülmet, yasak sihirle cinleri ve ifritleri Anadolu\'ya saldı. ' +
     'Yollar kesildi, kervanlar yağmalandı. Mazlumu korumak için bir yiğit yola çıkıyor.',
-  yolaCik: 'Yola Çık',
+
+  baslik: {
+    devamEt: 'Devam Et',
+    yeniOyun: 'Yeni Oyun',
+    kayitOzeti: '{ad} · {sinif} · Sv {seviye} · {il}',
+    yeniOyunUyarisi: 'Kayıtlı yolculuğun silinecek. Yeni bir oyuna başlamak istediğine emin misin?',
+    evet: 'Evet, yeni oyuna başla',
+    vazgec: 'Vazgeç',
+    kayitYapilamiyor: 'Tarayıcın kayda izin vermiyor; sayfayı kapatınca ilerlemen kaybolur.',
+  },
+
+  ilEkrani: {
+    haritayaDon: 'Haritaya dön',
+    kesfeCik: 'Keşfe Çık',
+    heybe: 'Heybe',
+    karakter: 'Karakter',
+    seviye: 'Düşman seviyesi',
+    yemek: 'Meşhur yemeği',
+    arinma: 'Arınma',
+    arinmaIpucu: 'Her zafer ili %8–12 arındırır. %100 olunca il arınmış sayılır.',
+    arinmis: '✓ Bu il Zülmet\'in sihrinden arındı. Keşfe çıkıp tecrübe kazanmaya devam edebilirsin.',
+    canAz: 'Canın azaldı. Keşfe çıkmadan önce heybenden bir şeyler yiyebilirsin.',
+    akce: '{akce} akçe',
+  },
+
+  envanter: {
+    baslik: 'Heybe',
+    geri: 'Geri dön',
+    yuva: '{dolu} / {toplam} yuva',
+    bos: 'Heyben boş. Düşmanları yendikçe illerin yöresel yemeklerini toplarsın.',
+    ye: 'Ye',
+    etki: '+{miktar} {tur}',
+    doluCan: 'Canın zaten dolu.',
+    doluNefes: 'Nefesin zaten dolu.',
+    yedin: '{yemek} yedin: +{miktar} {tur}.',
+    yeAciklama: '{yemek} ye',
+  },
 
   harita: {
     baslikEkrani: 'Başlık ekranına dön',
@@ -24,6 +60,7 @@ export const metinler = {
     buradasin: 'Buradasın.',
     git: 'Buraya git',
     kapat: 'Kapat',
+    ileGir: 'İl ekranına git',
     varis: 'Yeni konum: {il}',
     ipucu: 'Bir ile dokunarak bilgilerini gör. Parmağınla kaydır, iki parmakla yakınlaştır.',
     lejant: {
@@ -87,7 +124,6 @@ export const metinler = {
 
   savas: {
     baslik: 'Savaş',
-    dusmanlaKarsilas: 'Düşmanla karşılaş',
     seviye: 'Sv {seviye}',
     saldir: 'Saldır',
     yetenek: 'Yetenek',
@@ -145,7 +181,12 @@ export const metinler = {
       seviyeAtladin: '🎉 Seviye atladın! Artık Sv {seviye}.',
       statPuaniKazandin: 'Dağıtılacak {puan} stat puanın var.',
       yeniYetenek: '✨ Yeni yetenek: {yetenek}',
-      haritayaDon: 'Haritaya dön',
+      arinma: 'İl %{artis} arındı (şimdi %{yuzde}).',
+      arindi: '🌿 {il} Zülmet\'in sihrinden tamamen arındı!',
+      akce: '+{akce} akçe kazandın.',
+      yemek: '{ikon} {yemek} buldun!',
+      yemekSigmadi: '{ikon} {yemek} buldun ama heyben dolu, yanına alamadın.',
+      devam: 'Devam et',
       karakteriAc: 'Karakterine bak',
     },
   },

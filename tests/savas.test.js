@@ -210,15 +210,29 @@ describe('savaş eylemleri', () => {
     expect(s.gunluk.at(-2).hasar).toBeLessThan(ilk);
   });
 
-  it('yemek canı ya da nefesi yeniler, ardından düşman hamle yapar', () => {
-    const s0 = yeniSavas();
+  it('yemek heybeden düşer, canı ya da nefesi yeniler, ardından düşman hamle yapar', () => {
+    const heybe = [{ anahtar: 'balik_ekmek', adet: 2 }, { anahtar: 'hosmerim', adet: 1 }];
+    const s0 = savasBaslat(yeniKarakter('A', 'akinci'), dusmanOlustur('ac_kurt', 1), heybe);
     const yarali = { ...s0, oyuncu: { ...s0.oyuncu, can: 50, nefes: 10 } };
     const c = oyuncuEylemi(yarali, { tur: 'yemek', anahtar: 'balik_ekmek' }, sabit(0.99));
     expect(c.gunluk[1]).toEqual({ tip: 'yemek', kim: 'oyuncu', yemek: 'balik_ekmek', yenilenen: 'can', miktar: yemekGucu('balik_ekmek') });
     expect(c.gunluk).toHaveLength(3);
+    expect(c.heybe).toEqual([{ anahtar: 'balik_ekmek', adet: 1 }, { anahtar: 'hosmerim', adet: 1 }]);
     const n = oyuncuEylemi(yarali, { tur: 'yemek', anahtar: 'hosmerim' }, sabit(0.99));
     expect(n.oyuncu.nefes).toBe(10 + yemekGucu('hosmerim'));
+    expect(n.heybe).toEqual([{ anahtar: 'balik_ekmek', adet: 2 }]);
+    expect(eylemKontrol(n, { tur: 'yemek', anahtar: 'hosmerim' })).toEqual({ olur: false, neden: 'yemek_yok' });
     expect(eylemKontrol(yarali, { tur: 'yemek', anahtar: 'sarap' }).olur).toBe(false);
+    expect(heybe).toHaveLength(2); // verilen heybe değişmez
+  });
+
+  it('savaşta yenen yemekler savaş sonunda heybeden düşülür', () => {
+    const durum = yeniOyunDurumu({ ad: 'A', sinif: 'akinci' });
+    let s = savasBaslat({ ...durum.oyuncu, can: 40 }, dusmanOlustur('ac_kurt', 1), durum.heybe);
+    s = oyuncuEylemi(s, { tur: 'yemek', anahtar: 'balik_ekmek' }, sabit(0.99));
+    s = oyuncuEylemi({ ...s, dusman: { ...s.dusman, can: 1 } }, { tur: 'saldir' }, sabit(0.99));
+    const { durum: sonra } = savasSonucunuUygula(durum, s);
+    expect(sonra.heybe).toEqual([{ anahtar: 'balik_ekmek', adet: 2 }, { anahtar: 'hosmerim', adet: 2 }]);
   });
 });
 

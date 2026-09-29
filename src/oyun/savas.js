@@ -12,7 +12,7 @@ import {
 } from '../veri/dusmanlar.js';
 import { siniflar } from '../veri/siniflar.js';
 import { yemekler } from '../veri/yemekler.js';
-import { yemekGucu } from './envanter.js';
+import { yemekAdedi, yemekCikar, yemekEtkisi } from './envanter.js';
 import { statlar, acikYetenekler, xpEkle, tamIyilestir } from './karakter.js';
 import { aralik, sans } from './rastgele.js';
 
@@ -88,7 +88,8 @@ export function dusmanOlustur(anahtar, seviye) {
 }
 
 // Oyuncu karakteri ve oluşturulmuş bir düşmanla yeni savaş.
-export function savasBaslat(oyuncu, dusman) {
+// `heybe`: savaşta yenebilecek yemekler; savaş sonunda oyun durumuna geri yazılır.
+export function savasBaslat(oyuncu, dusman, heybe = []) {
   const s = statlar(oyuncu);
   return {
     oyuncu: {
@@ -105,6 +106,7 @@ export function savasBaslat(oyuncu, dusman) {
       yetenekler: acikYetenekler(oyuncu).map((y) => y.anahtar),
     },
     dusman: { ...dusman },
+    heybe,
     etkiler: [], // { hedef: 'oyuncu', etki, deger, kalan }
     tur: 1,
     gunluk: [{ tip: 'baslangic' }],
@@ -119,7 +121,7 @@ export function yetenekBul(sinifAnahtari, yetenekAnahtari) {
 
 // Eylem yapılabilir mi? Sonuç: { olur: true } ya da { olur: false, neden }.
 // neden: 'bitti' | 'bilinmeyen_eylem' | 'kilitli_yetenek' | 'nefes_yetersiz'
-//        | 'bilinmeyen_yemek' | 'kacilamaz'
+//        | 'bilinmeyen_yemek' | 'yemek_yok' | 'kacilamaz'
 export function eylemKontrol(savas, eylem) {
   if (savas.sonuc) return { olur: false, neden: 'bitti' };
   switch (eylem?.tur) {
@@ -132,7 +134,9 @@ export function eylemKontrol(savas, eylem) {
       return { olur: true };
     }
     case 'yemek':
-      return yemekler[eylem.anahtar] ? { olur: true } : { olur: false, neden: 'bilinmeyen_yemek' };
+      if (!yemekler[eylem.anahtar]) return { olur: false, neden: 'bilinmeyen_yemek' };
+      if (yemekAdedi(savas.heybe, eylem.anahtar) < 1) return { olur: false, neden: 'yemek_yok' };
+      return { olur: true };
     case 'kac':
       return kacilabilirMi(savas.dusman) ? { olur: true } : { olur: false, neden: 'kacilamaz' };
     default:
@@ -207,17 +211,10 @@ function yetenekKullan(s, yetenek, rng) {
 
 function yemekYe(s, anahtar) {
   const o = s.oyuncu;
-  const yemek = yemekler[anahtar];
-  const guc = yemekGucu(anahtar);
-  let miktar;
-  if (yemek.tur === 'can') {
-    miktar = Math.min(o.canEnCok - o.can, guc);
-    o.can += miktar;
-  } else {
-    miktar = Math.min(o.nefesEnCok - o.nefes, guc);
-    o.nefes += miktar;
-  }
-  return { tip: 'yemek', kim: 'oyuncu', yemek: anahtar, yenilenen: yemek.tur, miktar };
+  const { tur, miktar } = yemekEtkisi(anahtar, o, { can: o.canEnCok, nefes: o.nefesEnCok });
+  o[tur] += miktar;
+  s.heybe = yemekCikar(s.heybe, anahtar);
+  return { tip: 'yemek', kim: 'oyuncu', yemek: anahtar, yenilenen: tur, miktar };
 }
 
 // Düşman yapay zekâsı: çoğunlukla saldırır, bazen türüne özgü özel hamle yapar.
@@ -324,6 +321,7 @@ export function savasSonucunuUygula(durum, savas) {
   if (!savas.sonuc) return { durum, ozet: null };
   let yeni = {
     ...durum,
+    heybe: savas.heybe,
     oyuncu: { ...durum.oyuncu, can: savas.oyuncu.can, nefes: savas.oyuncu.nefes },
   };
   const ozet = { sonuc: savas.sonuc, xp: 0, seviyeler: [], yeniYetenekler: [], akceKaybi: 0 };

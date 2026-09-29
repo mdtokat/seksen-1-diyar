@@ -1,6 +1,7 @@
 // Oyun durumu ve abonelik. Saf oyun mantığı — DOM'a dokunmaz.
 import { bolgeler } from '../veri/bolgeler.js';
 import { yeniKarakter } from './karakter.js';
+import { BASLANGIC_HEYBESI } from './envanter.js';
 
 // Yeni bir oyunun başlangıç durumu: yalnızca ilk bölge açık,
 // oyuncu o bölgenin giriş ilinde (İstanbul).
@@ -13,6 +14,7 @@ export function yeniOyunDurumu({ ad, sinif } = {}) {
     arinma: {}, // { plaka: 0–100 }
     oyuncu: sinif ? yeniKarakter(ad, sinif) : null,
     akce: 0,
+    heybe: BASLANGIC_HEYBESI.map((y) => ({ ...y })),
   };
 }
 
