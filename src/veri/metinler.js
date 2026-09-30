@@ -14,11 +14,11 @@ export const metinler = {
     surprizRozet: 'Sürpriz boss',
     tehlike: { zorlu: '⚔️ Zorlu', kesilemez: '💀 Kesilemez' },
     tehlikeAciklama: {
-      zorlu: 'Senden güçlü ama kesilebilir',
-      kesilemez: 'Kesilemez: kılıç işlemez, kaçmak gerekir',
+      zorlu: 'Bu diyarın düşmanlarından güçlü ama kesilebilir',
+      kesilemez: 'Kesilemez: zırhına kılıç zor işler, kaçmak gerekebilir',
     },
     surpriz: '⚡ Sürpriz! {dusman} birden önüne çıktı!',
-    yenildi: 'Senden güçlü {dusman} dağılıp gitti!',
+    yenildi: 'Güçlü {dusman} dağılıp gitti!',
   },
 
   boss: {
@@ -517,8 +517,8 @@ export const metinler = {
       evre: '{dusman} üzerindeki sihir kabardı; daha da güçlendi!',
       yenilgi: 'Gözlerin karardı, bayıldın…',
       gezgin: {
-        zorlu: '{dusman} senden güçlü, ama yenilmez değil. Dikkatli dövüş!',
-        kesilemez: '{dusman} öyle güçlü ki kılıç işlemiyor! Kaçmak en akıllıcası.',
+        zorlu: '{dusman} bu diyarın düşmanlarından çok daha güçlü, ama yenilmez değil. Dikkatli dövüş!',
+        kesilemez: '{dusman} öyle güçlü ki kılıç zırhına zor işliyor! Kaçmak en akıllıcası olabilir.',
       },
     },
     // Yenilen düşmanlar ölmez: kaçar, dağılır ya da sihri bozulur (plan.md Bölüm 2).

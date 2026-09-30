@@ -20,7 +20,6 @@ import { statlar, acikYetenekler, xpEkle, tamIyilestir } from './karakter.js';
 import { aralik, sans, sec } from './rastgele.js';
 import { sofraTuket } from './ilerleme.js';
 import { yeniYetenekleriYerlestir } from './kisayollar.js';
-import { GEZGIN_BOSS } from './gezginBoss.js';
 
 // ── Formüller (plan.md Bölüm 5) ──────────────────────────
 
@@ -66,7 +65,7 @@ export function dusmanStatlari(anahtar, seviye) {
 }
 
 // Yenilen düşmanın verdiği XP: round((5 + sv × 10) × sınıf çarpanı).
-// Gezgin bossların çarpanı sınıflarından bağımsızdır (gezginBoss.js).
+// Gezgin bossların çarpanı sınıflarından bağımsızdır (SINIF_XP_CARPANI.gezgin).
 export function xpOdulu(anahtar, seviye, carpan = SINIF_XP_CARPANI[dusmanlar[anahtar].sinif]) {
   return Math.round((5 + seviye * 10) * carpan);
 }
@@ -127,7 +126,7 @@ export function savasBaslat(oyuncu, dusman, heybe = [], { gucCarpani = 1 } = {})
     // Gezgin bossların tehlikesi savaşın başında söylenir: kesilemezden kaçmak gerekir
     gunluk: [{ tip: 'baslangic' }, ...(dusman.gezgin ? [{ tip: 'gezgin', tehlike: dusman.tehlike }] : [])],
     sonuc: null, // null | 'zafer' | 'yenilgi' | 'kacis'
-    xpOdulu: xpOdulu(dusman.anahtar, dusman.seviye, dusman.gezgin ? GEZGIN_BOSS.xpCarpani : undefined),
+    xpOdulu: xpOdulu(dusman.anahtar, dusman.seviye, dusman.gezgin ? SINIF_XP_CARPANI.gezgin : undefined),
   };
 }
 

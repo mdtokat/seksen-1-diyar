@@ -55,10 +55,10 @@ Her ilin meşhur yemeği ya **canı** (ana yemekler) ya da **nefesi** (tatlılar
 Bölgeler sırayla açılır: Marmara → Ege → Akdeniz → İç Anadolu → Karadeniz → Güneydoğu → Doğu Anadolu. Her bölgenin bossu, bölge illerinin ortalama arınması %60'a ve seviyen bölgenin üst seviyesinin bir altına ulaşınca mühründen çıkar. Boss yenilince sonraki bölge açılır ve **zafer sofrası** kurulur (10 savaş boyunca %10 güç). Bazı illerde arınma %50'yi geçince **mini boss** belirir.
 
 ### Gezgin ve sürpriz bosslar
-Bölgenin boss yaratıkları (mini bosslar ve bölge bossları) inlerinin dışında da çıkar: haritada sıradan düşmanlar arasında **gezgin boss** olarak dolaşabilir, yürürken de hiç beklemediğin bir anda **sürpriz** olarak yanı başında belirebilirler (meydan güvenlidir). Güçleri her zaman senin o anki gücünden fazladır:
+Bölgenin boss yaratıkları (mini bosslar ve bölge bossları) inlerinin dışında da çıkar: haritada sıradan düşmanlar arasında **gezgin boss** olarak dolaşabilir, yürürken de hiç beklemediğin bir anda **sürpriz** olarak yanı başında belirebilirler (meydan güvenlidir). Güçleri karaktere göre değil, bulundukları ile göre belirlenir: seviyeleri ilin düşman seviyesinin üst ucundan başlar, yani o ilin sıradan düşmanlarından hep güçlüdürler:
 
-- **⚔️ Zorlu:** senden güçlüdür ama kesilebilir; iyi dövüşür, yeteneklerini ve yemeklerini kullanırsan yenersin. Bol XP, akçe ve bazen bölgenin nadir eşyalarından birini düşürür.
-- **💀 Kesilemez:** zırhı kılıcını söndürür; yenmek pek mümkün değildir. **Kaç!** Gezgin bosslardan (bölge bossu türünden olsalar bile) kaçılabilir.
+- **⚔️ Zorlu:** ilin düşmanlarından güçlüdür ama kesilebilir; iyi dövüşür, yeteneklerini ve yemeklerini kullanırsan yenersin. Bol XP, akçe ve bazen bölgenin nadir eşyalarından birini düşürür.
+- **💀 Kesilemez:** zırhı kılıcını söndürür; o ilin seviyesindeysen yenmek pek mümkün değildir (ilin çok üstüne çıkmış bir yiğit ise kesebilir). **Kaç!** Gezgin bosslardan (bölge bossu türünden olsalar bile) kaçılabilir.
 
 Gezgin bosslar ilerlemeyi etkilemez: yenmek bölge bossunu ya da mini bossu yenilmiş saydırmaz.
 
