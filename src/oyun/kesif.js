@@ -54,9 +54,9 @@ export function arinmaArtir(durum, plaka, rng) {
 // Zafer ganimeti: akçe ve belli bir şansla ilin yöresel yemeği.
 // Akçe: round((3 + sv × 2) × rnd(0.8–1.2) × sınıf çarpanı).
 // XP ganimeti savaş motorunda hesaplanır (savas.js → xpOdulu).
-// Gezgin bossların çarpanı sınıflarından bağımsızdır (gezginBoss.js).
+// Gezgin bossların çarpanı sınıflarından bağımsızdır (SINIF_XP_CARPANI.gezgin).
 export function ganimetUret(dusman, plaka, rng) {
-  const carpan = dusman.gezgin ? GEZGIN_BOSS.akceCarpani : SINIF_XP_CARPANI[dusmanlar[dusman.anahtar].sinif];
+  const carpan = dusman.gezgin ? SINIF_XP_CARPANI.gezgin : SINIF_XP_CARPANI[dusmanlar[dusman.anahtar].sinif];
   const akce = Math.round((3 + dusman.seviye * 2) * aralik(rng, 0.8, 1.2) * carpan);
   const yemek = sans(rng, YEMEK_DUSME_SANSI) ? ilHaritasi.get(plaka).yemek : null;
   return { akce, yemek };

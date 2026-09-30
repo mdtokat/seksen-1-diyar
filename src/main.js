@@ -5,7 +5,6 @@ import { yeniOyunDurumu, durumDeposu } from './oyun/durum.js';
 import { rastgeleUreteci, yeniTohum } from './oyun/rastgele.js';
 import { kesifSonucunuUygula } from './oyun/kesif.js';
 import { ilHaritasiUret, girisNoktasi, dusmanlariYerlestir, ozelDusmanlar, halkiYerlestir } from './oyun/gezinti.js';
-import { gezginBossOlcekle } from './oyun/gezginBoss.js';
 import { arinmaYuzdesi, seyahatEt, yeniAcilanBosslar, finalDurumu } from './oyun/ilerleme.js';
 import { oyunDurumunuIsle, yeniBasarimlar } from './oyun/basarimlar.js';
 import { basarimlar } from './veri/basarimlar.js';
@@ -195,7 +194,7 @@ function gezintiHazirla() {
     oyuncu,
     yon: 1,
     dusmanlar: [
-      ...dusmanlariYerlestir(harita, arinmaYuzdesi(durum, durum.konum), rng, { oyuncu, karakter: durum.oyuncu, dolu: inDekiler }),
+      ...dusmanlariYerlestir(harita, arinmaYuzdesi(durum, durum.konum), rng, { oyuncu, bosslar: true, dolu: inDekiler }),
       ...inDekiler,
     ],
     sonrakiId: 100,
@@ -332,8 +331,7 @@ function savasGoster(kayit) {
   };
   ekranGoster((kap) =>
     savasEkrani(kap, depo, {
-      // Gezgin bossun gücü oyuncunun o anki gücüne göre ayarlanır
-      dusman: gezginBossOlcekle(kayit.dusman, depo.al().oyuncu),
+      dusman: kayit.dusman,
       rng,
       sonucuUygula: (durum, savas) => {
         const r = kesifSonucunuUygula(durum, savas, plaka, rng);

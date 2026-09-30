@@ -389,7 +389,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     g.surprizAdimi = (g.surprizAdimi ?? 0) + 1;
     if (g.dokunulmaz > 0) return false;
     const d = surprizBaskin(harita, {
-      dusmanlar: g.dusmanlar, oyuncu: g.oyuncu, karakter: depo.al().oyuncu, adim: g.surprizAdimi, id: g.sonrakiId,
+      dusmanlar: g.dusmanlar, oyuncu: g.oyuncu, adim: g.surprizAdimi, id: g.sonrakiId,
     }, rng);
     if (!d) return false;
     g.sonrakiId++;
@@ -417,7 +417,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     const enCok = dusmanSayisi(arinmaYuzdesi(depo.al(), g.plaka), harita);
     for (let i = 0; i < hazir && siradanDusmanSayisi(g.dusmanlar) < enCok; i++) {
       const d = dusmanDogur(harita, g.plaka, rng, {
-        dolu: g.dusmanlar, oyuncu: g.oyuncu, enAzUzaklik: 7, id: g.sonrakiId++, karakter: depo.al().oyuncu,
+        dolu: g.dusmanlar, oyuncu: g.oyuncu, enAzUzaklik: 7, id: g.sonrakiId++, bosslar: true,
       });
       if (d) g.dusmanlar.push(d);
     }

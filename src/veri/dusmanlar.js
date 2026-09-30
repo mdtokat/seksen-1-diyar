@@ -33,6 +33,7 @@ export const SINIF_XP_CARPANI = {
   mini_boss: 3,
   bolge_bossu: 8,
   final: 15,
+  gezgin: 3, // haritada dolaşan ya da sürpriz çıkan boss yaratıklar (gezginBoss.js)
 };
 
 export const dusmanlar = {
