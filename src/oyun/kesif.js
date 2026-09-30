@@ -11,6 +11,7 @@ import { gorevler } from '../veri/gorevler.js';
 import { hayirEkle } from './itibar.js';
 import { zaferIlerlemesi, gorevIlerlemesi, hazirGorevler } from './gorevler.js';
 import { aralik, sans, sec, tamSayi } from './rastgele.js';
+import { GEZGIN_BOSS } from './gezginBoss.js';
 
 export const ARINMA_ARTISI = [12, 18]; // zafer başına % (iki uç dahil)
 export const YEMEK_DUSME_SANSI = 0.3;
@@ -53,8 +54,9 @@ export function arinmaArtir(durum, plaka, rng) {
 // Zafer ganimeti: akçe ve belli bir şansla ilin yöresel yemeği.
 // Akçe: round((3 + sv × 2) × rnd(0.8–1.2) × sınıf çarpanı).
 // XP ganimeti savaş motorunda hesaplanır (savas.js → xpOdulu).
+// Gezgin bossların çarpanı sınıflarından bağımsızdır (gezginBoss.js).
 export function ganimetUret(dusman, plaka, rng) {
-  const carpan = SINIF_XP_CARPANI[dusmanlar[dusman.anahtar].sinif];
+  const carpan = dusman.gezgin ? GEZGIN_BOSS.akceCarpani : SINIF_XP_CARPANI[dusmanlar[dusman.anahtar].sinif];
   const akce = Math.round((3 + dusman.seviye * 2) * aralik(rng, 0.8, 1.2) * carpan);
   const yemek = sans(rng, YEMEK_DUSME_SANSI) ? ilHaritasi.get(plaka).yemek : null;
   return { akce, yemek };
@@ -80,7 +82,10 @@ export function bossGanimeti(durum, bolge, nadirlik, rng) {
 //     bossYenildi (bölge anahtarı | null), acilanBolge, miniBossYenildi, miniBossBelirdi,
 //     esya (düşen eşyanın anahtarı | null), hayir (kazanılan Hayır puanı),
 //     gorevIlerlemesi ([{ anahtar, mevcut, hedef }]), hazirOlanGorevler ([anahtar]),
-//     zulmetYenildi }
+//     zulmetYenildi, gezginBoss ('zorlu' | 'kesilemez' | null) }
+// Gezgin bosslar (gezginBoss.js) ilerlemeyi etkilemez: yenilmeleri bölge bossunu ya da
+// mini bossu yenilmiş saydırmaz. Zorlu olanlar bazen bölgenin nadir eşyalarından birini,
+// kesilemez olanlar (yenilebilirse) efsanevi bir eşyayı düşürür.
 // İstatistikler (zafer ve bayılma sayıları, bölge bölge bayılmalar) de burada tutulur.
 export function kesifSonucunuUygula(durum, savas, plaka, rng) {
   const r = savasSonucunuUygula(durum, savas);
@@ -103,6 +108,7 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
     gorevIlerlemesi: [],
     hazirOlanGorevler: [],
     zulmetYenildi: false,
+    gezginBoss: savas.dusman.gezgin ? savas.dusman.tehlike : null,
   };
   if (savas.sonuc !== 'zafer') return { durum: yeni, ozet };
   const onceHazir = new Set(hazirGorevler(durum));
@@ -122,7 +128,18 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
     ozet.yemekSigmadi = e.eklenen === 0;
   }
 
-  const sinif = dusmanlar[savas.dusman.anahtar].sinif;
+  const gezgin = Boolean(savas.dusman.gezgin);
+  const sinif = gezgin ? 'gezgin' : dusmanlar[savas.dusman.anahtar].sinif;
+  if (gezgin) {
+    const kesilemez = savas.dusman.tehlike === 'kesilemez';
+    if (kesilemez || sans(rng, GEZGIN_BOSS.esyaSansi)) {
+      const esya = bossGanimeti(yeni, dusmanlar[savas.dusman.anahtar].bolge, kesilemez ? 'efsanevi' : 'nadir', rng);
+      if (esya) {
+        yeni = { ...yeni, esyalar: [...(yeni.esyalar ?? []), esya] };
+        ozet.esya = esya;
+      }
+    }
+  }
   if (sinif === 'bolge_bossu' || sinif === 'mini_boss') {
     const esya = bossGanimeti(yeni, dusmanlar[savas.dusman.anahtar].bolge, sinif === 'bolge_bossu' ? 'efsanevi' : 'nadir', rng);
     if (esya) {

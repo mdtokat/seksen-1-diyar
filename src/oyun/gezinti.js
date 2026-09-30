@@ -15,6 +15,7 @@ import { karsilasmaUret } from './kesif.js';
 import { dusmanOlustur } from './savas.js';
 import { bossDurumu, miniBossVarMi, finalDurumu } from './ilerleme.js';
 import { rastgeleUreteci, tamSayi, sans } from './rastgele.js';
+import { gezginBossUret, GEZGIN_BOSS } from './gezginBoss.js';
 
 // Harita boyutu: karo sayısı = TEMEL_KARO × (yüzölçümü / TEMEL_ALAN)^ALAN_USSU.
 // Gerçek oranla (Konya/Yalova ≈ 51 kat) oynanabilir kalmayacağı için alan bir
@@ -70,9 +71,11 @@ const DOLASMA_YARICAPI = 3;
 // gorus: oyuncuyu fark ettiği uzaklık · birakma: peşini bıraktığı uzaklık ·
 // hiz: kovalarken tık başına karo. Takipçiler (kurtlar, çakallar, yol kesen cinler…)
 // oyuncuyu uzaktan fark eder, neredeyse onun kadar hızlı koşar ve kolay kolay bırakmaz.
+// Gezgin bosslar (gezginBoss.js) ağır adımlıdır ama gözleri keskindir.
 export const DAVRANIS = {
   bekci: { gorus: 4, birakma: 7, hiz: 0.55 },
   takipci: { gorus: 6, birakma: 13, hiz: 0.85 },
+  gezgin: { gorus: 5, birakma: 10, hiz: 0.7 },
 };
 const DOLASMA_HIZI = 0.25;
 
@@ -485,7 +488,9 @@ export function dogusNoktalari(harita) {
 
 // Oyuncudan en az `enAzUzaklik` uzakta, boş bir doğuş noktasına yeni bir düşman koyar.
 // Çalılıklar tercih edilir. Uygun yer yoksa null.
-export function dusmanDogur(harita, plaka, rng, { dolu = [], oyuncu = null, enAzUzaklik = 6, id = 0 } = {}) {
+// `karakter` (oyuncu karakteri) verilirse düşman bazen bölgenin boss yaratıklarından biri,
+// oyuncudan güçlü bir gezgin boss olur (gezginBoss.js).
+export function dusmanDogur(harita, plaka, rng, { dolu = [], oyuncu = null, enAzUzaklik = 6, id = 0, karakter = null } = {}) {
   const adaylar = dogusNoktalari(harita).filter(
     (n) => !dolu.some((d) => mesafe(d, n) < 3) && (!oyuncu || mesafe(oyuncu, n) >= enAzUzaklik),
   );
@@ -493,21 +498,51 @@ export function dusmanDogur(harita, plaka, rng, { dolu = [], oyuncu = null, enAz
   const yabaniler = adaylar.filter((n) => n.yabani);
   const havuz = yabaniler.length && sans(rng, 0.7) ? yabaniler : adaylar;
   const n = havuz[Math.floor(rng() * havuz.length)];
-  return { id, dusman: karsilasmaUret(plaka, rng), x: n.x, y: n.y, evX: n.x, evY: n.y };
+  const boss = karakter && sans(rng, GEZGIN_BOSS.dogusSansi)
+    ? gezginBossUret(harita.bolge, karakter, rng, { haric: inBosslari(dolu) })
+    : null;
+  return { id, dusman: boss ?? karsilasmaUret(plaka, rng), x: n.x, y: n.y, evX: n.x, evY: n.y };
 }
 
+// Haritadaki inlerde bekleyen boss yaratıkları: gezgin olarak bir daha çıkmazlar.
+const inBosslari = (dusmanlar) => dusmanlar.filter((d) => d.sabit).map((d) => d.dusman.anahtar);
+
 // İlin düşmanlarını yerleştirir (arınmış illerde daha az düşman olur).
-export function dusmanlariYerlestir(harita, arinma, rng, { oyuncu = null, ilkId = 1 } = {}) {
+// `karakter` verilirse aralarında gezgin bosslar da bulunabilir; `dolu` ise haritada
+// zaten duran düşmanlardır (inlerdeki bosslar).
+export function dusmanlariYerlestir(harita, arinma, rng, { oyuncu = null, ilkId = 1, karakter = null, dolu = [] } = {}) {
   const dusmanlar = [];
   for (let i = 0; i < dusmanSayisi(arinma, harita); i++) {
-    const d = dusmanDogur(harita, harita.plaka, rng, { dolu: dusmanlar, oyuncu, id: ilkId + i });
+    const d = dusmanDogur(harita, harita.plaka, rng, { dolu: [...dolu, ...dusmanlar], oyuncu, id: ilkId + i, karakter });
     if (d) dusmanlar.push(d);
   }
   return dusmanlar;
 }
 
 export function davranisi(d) {
+  if (d.dusman?.gezgin) return DAVRANIS.gezgin;
   return d.dusman?.takipci ? DAVRANIS.takipci : DAVRANIS.bekci;
+}
+
+// ── Sürpriz baskın ───────────────────────────────────────
+// Oyuncu meydan dışında yürürken, son baskından bu yana en az `surprizBekleme` adım
+// geçtiyse, her adımda `surprizSansi` olasılıkla bölgenin boss yaratıklarından biri
+// hemen yanı başında belirir. Sonuç: yeni düşman kaydı (kovalıyor) ya da null.
+// `adim`: son baskından bu yana atılan adım sayısı.
+export function surprizBaskin(harita, { dusmanlar, oyuncu, karakter, adim, id }, rng) {
+  if (adim < GEZGIN_BOSS.surprizBekleme || meydandaMi(harita, oyuncu)) return null;
+  if (!sans(rng, GEZGIN_BOSS.surprizSansi)) return null;
+  const yerler = YONLER.map(({ dx, dy }) => ({ x: oyuncu.x + dx, y: oyuncu.y + dy })).filter(
+    (p) => dusmanYurunurMu(harita, p.x, p.y) && !dusmanlar.some((d) => d.x === p.x && d.y === p.y),
+  );
+  if (!yerler.length) return null;
+  const dusman = gezginBossUret(harita.bolge, karakter, rng, { haric: inBosslari(dusmanlar) });
+  if (!dusman) return null;
+  const yer = yerler[Math.floor(rng() * yerler.length)];
+  return {
+    id, dusman, x: yer.x, y: yer.y, evX: yer.x, evY: yer.y,
+    kovaliyor: true, surpriz: true, yon: Math.sign(oyuncu.x - yer.x) || -1,
+  };
 }
 
 // Düşmanların bir tıkı. Oyuncu görüş uzaklığına girince düşman peşine düşer ve

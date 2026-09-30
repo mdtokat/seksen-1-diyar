@@ -4,12 +4,13 @@
 //
 // Gezinti durumu (g) ekranlar arasında korunur (savaşa girip çıkınca kaldığı yerden
 // sürer) ve bu ekran tarafından güncellenir:
-//   { plaka, harita, oyuncu: {x, y}, yon, dusmanlar, halk, sonrakiId, dogusSayaclari, dokunulmaz }
+//   { plaka, harita, oyuncu: {x, y}, yon, dusmanlar, halk, sonrakiId, dogusSayaclari, dokunulmaz,
+//     surprizAdimi }
 import { iller } from '../veri/iller.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { metinler } from '../veri/metinler.js';
 import { arinmaYuzdesi, seyahatKontrol, bolgeAcikMi, bossDurumu, bossKosullari, finalDurumu, finalKosullari } from '../oyun/ilerleme.js';
-import { sesAcikMi, sesAyarla } from './ses.js';
+import { sesAcikMi, sesAyarla, sesCal } from './ses.js';
 import { statlar } from '../oyun/karakter.js';
 import {
   yurunurMu,
@@ -24,6 +25,7 @@ import {
   yeniKovalayanlar,
   halkiYerlestir,
   halkiYurut,
+  surprizBaskin,
 } from '../oyun/gezinti.js';
 import { sablon, kacis, bildirimGoster, degerCubugu } from './bilesenler.js';
 import { karakterDugmesiniCiz } from './karakterDugmesi.js';
@@ -203,16 +205,23 @@ export function gezintiEkrani(kap, depo, secenekler) {
 
   function dusmanFiguruOlustur(d) {
     const el = document.createElement('div');
-    el.className = `harita-figuru dusman-figuru${d.sabit ? ` ozel-figur ozel-${d.tur}` : ''}`;
+    const gezgin = d.dusman.gezgin;
+    el.className = `harita-figuru dusman-figuru${d.sabit ? ` ozel-figur ozel-${d.tur}` : ''}${
+      gezgin ? ` ozel-figur ozel-gezgin tehlike-${d.dusman.tehlike}` : ''}`;
     el.dataset.id = d.id;
     const B = metinler.boss;
-    const rozet = d.sabit
-      ? `${{ boss: B.rozet, mini: B.miniRozet, final: metinler.final.rozet }[d.tur]} · ${sablon(metinler.savas.seviye, { seviye: d.dusman.seviye })}`
-      : sablon(metinler.savas.seviye, { seviye: d.dusman.seviye }) + (d.dusman.takipci ? ` <span title="${M.takipciRozeti}">👣</span>` : '');
+    const GB = metinler.gezginBoss;
+    const seviye = sablon(metinler.savas.seviye, { seviye: d.dusman.seviye });
+    let rozet;
+    if (d.sabit) rozet = `${{ boss: B.rozet, mini: B.miniRozet, final: metinler.final.rozet }[d.tur]} · ${seviye}`;
+    else if (gezgin) rozet = `${GB.tehlike[d.dusman.tehlike]} · ${seviye}`;
+    else rozet = seviye + (d.dusman.takipci ? ` <span title="${M.takipciRozeti}">👣</span>` : '');
     el.innerHTML = `<div class="figur-ic">${dusmanCizimi(d.dusman.anahtar)}</div>
       <span class="figur-rozeti">${rozet}</span>
-      ${d.tur === 'boss' || d.tur === 'final' ? `<span class="muhur" aria-hidden="true"></span>` : ''}`;
-    el.title = d.dusman.takipci ? `${d.dusman.ad} · ${M.takipciRozeti}` : d.dusman.ad;
+      ${d.tur === 'boss' || d.tur === 'final' ? `<span class="muhur" aria-hidden="true"></span>` : ''}
+      ${gezgin ? `<span class="gezgin-aura" aria-hidden="true"></span>` : ''}`;
+    if (gezgin) el.title = `${d.dusman.ad} · ${d.surpriz ? GB.surprizRozet : GB.rozet} · ${GB.tehlikeAciklama[d.dusman.tehlike]}`;
+    else el.title = d.dusman.takipci ? `${d.dusman.ad} · ${M.takipciRozeti}` : d.dusman.ad;
     figurKatmani.appendChild(el);
     dusmanFigurleri.set(d.id, el);
     return el;
@@ -375,6 +384,31 @@ export function gezintiEkrani(kap, depo, secenekler) {
     setTimeout(() => secenekler.savasBaslat?.(d), 550);
   }
 
+  // Yürürken bazen bölgenin boss yaratıklarından biri bir anda oyuncunun önüne çıkar.
+  function surprizDene() {
+    g.surprizAdimi = (g.surprizAdimi ?? 0) + 1;
+    if (g.dokunulmaz > 0) return false;
+    const d = surprizBaskin(harita, {
+      dusmanlar: g.dusmanlar, oyuncu: g.oyuncu, karakter: depo.al().oyuncu, adim: g.surprizAdimi, id: g.sonrakiId,
+    }, rng);
+    if (!d) return false;
+    g.sonrakiId++;
+    g.surprizAdimi = 0;
+    g.dusmanlar.push(d);
+    mesgul = true;
+    kuyruk = [];
+    varista = null;
+    tutulanYon = null;
+    dusmanlariCiz();
+    dusmanFigurleri.get(d.id)?.classList.add('beliriyor', 'fark');
+    alan.classList.add('sarsinti');
+    setTimeout(() => alan.classList.remove('sarsinti'), 500);
+    sesCal('evre');
+    bildirimGoster(ekran, sablon(metinler.gezginBoss.surpriz, { dusman: d.dusman.ad }), { tur: 'uyari', sure: 1600 });
+    setTimeout(() => secenekler.savasBaslat?.(d), 1100);
+    return true;
+  }
+
   // Yenilen düşmanların yerine, oyuncu yürüdükçe yenileri gelir.
   function yenidenDogur() {
     g.dogusSayaclari = g.dogusSayaclari.map((s) => s - 1);
@@ -382,7 +416,9 @@ export function gezintiEkrani(kap, depo, secenekler) {
     g.dogusSayaclari = g.dogusSayaclari.filter((s) => s > 0);
     const enCok = dusmanSayisi(arinmaYuzdesi(depo.al(), g.plaka), harita);
     for (let i = 0; i < hazir && siradanDusmanSayisi(g.dusmanlar) < enCok; i++) {
-      const d = dusmanDogur(harita, g.plaka, rng, { dolu: g.dusmanlar, oyuncu: g.oyuncu, enAzUzaklik: 7, id: g.sonrakiId++ });
+      const d = dusmanDogur(harita, g.plaka, rng, {
+        dolu: g.dusmanlar, oyuncu: g.oyuncu, enAzUzaklik: 7, id: g.sonrakiId++, karakter: depo.al().oyuncu,
+      });
       if (d) g.dusmanlar.push(d);
     }
   }
@@ -436,6 +472,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     dusmanlariCiz();
     const kapi = kapiBul(harita, g.oyuncu);
     if (kapi) return kapidanGec(kapi);
+    if (surprizDene()) return;
     temasKontrol();
   }
 

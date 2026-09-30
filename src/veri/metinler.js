@@ -8,6 +8,19 @@ export const metinler = {
     'Zalim sihirbaz Zülmet, yasak sihirle cinleri ve ifritleri Anadolu\'ya saldı. ' +
     'Yollar kesildi, kervanlar yağmalandı. Mazlumu korumak için bir yiğit yola çıkıyor.',
 
+  // Haritada dolaşan ya da yürürken bir anda önüne çıkan boss yaratıklar
+  gezginBoss: {
+    rozet: 'Gezgin boss',
+    surprizRozet: 'Sürpriz boss',
+    tehlike: { zorlu: '⚔️ Zorlu', kesilemez: '💀 Kesilemez' },
+    tehlikeAciklama: {
+      zorlu: 'Senden güçlü ama kesilebilir',
+      kesilemez: 'Kesilemez: kılıç işlemez, kaçmak gerekir',
+    },
+    surpriz: '⚡ Sürpriz! {dusman} birden önüne çıktı!',
+    yenildi: 'Senden güçlü {dusman} dağılıp gitti!',
+  },
+
   boss: {
     muhurlu: '{boss} mühürlü. Mührü çözmek için {bolge} illerinin ortalama arınması %{gerekenArinma} (şimdi %{arinma}), seviyen de en az {gerekenSeviye} (şimdi {seviye}) olmalı.',
     acildi: 'Mühür çözüldü! {boss} artık {il} ilindeki ininde seni bekliyor.',
@@ -503,6 +516,10 @@ export const metinler = {
       kacisBasarisiz: 'Kaçamadın! {dusman} yolunu kesti.',
       evre: '{dusman} üzerindeki sihir kabardı; daha da güçlendi!',
       yenilgi: 'Gözlerin karardı, bayıldın…',
+      gezgin: {
+        zorlu: '{dusman} senden güçlü, ama yenilmez değil. Dikkatli dövüş!',
+        kesilemez: '{dusman} öyle güçlü ki kılıç işlemiyor! Kaçmak en akıllıcası.',
+      },
     },
     // Yenilen düşmanlar ölmez: kaçar, dağılır ya da sihri bozulur (plan.md Bölüm 2).
     dagilma: {
