@@ -3348,3 +3348,87 @@ h3 {
   width: 100%;
   height: auto;
 }
+
+/* ── Kalabalık savaş: aynı anda birden fazla yaratık ──────── */
+.sahne[data-grup='2'] .figur-dusman,
+.sahne[data-grup='3'] .figur-dusman {
+  width: min(31cqw, 40cqh);
+}
+
+.sahne[data-grup='2'] .figur-dusman[data-yuva='1'] { right: 3%; bottom: 34%; }
+.sahne[data-grup='2'] .figur-dusman[data-yuva='2'] { right: 30%; bottom: 46%; }
+
+.sahne[data-grup='3'] .figur-dusman {
+  width: min(27cqw, 36cqh);
+}
+
+.sahne[data-grup='3'] .figur-dusman[data-yuva='1'] { right: 2%; bottom: 34%; }
+.sahne[data-grup='3'] .figur-dusman[data-yuva='2'] { right: 27%; bottom: 47%; }
+.sahne[data-grup='3'] .figur-dusman[data-yuva='3'] { right: 50%; bottom: 36%; }
+
+.figur-dusman.hedef::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -3%;
+  width: 70%;
+  height: 10%;
+  transform: translateX(-50%);
+  border: 3px solid var(--mercan);
+  border-radius: 50%;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.dusman-seridi {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.4rem 0.5rem;
+  background: var(--krem);
+  border-bottom: 2px solid var(--altin);
+}
+
+.dusman-karti {
+  flex: 1 1 0;
+  min-width: 0;
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.3rem 0.45rem 0.4rem;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: #fff8e8;
+  border: 2px solid var(--lacivert);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.dusman-karti strong {
+  font-size: 0.82rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dusman-karti small {
+  font-size: 0.7rem;
+  color: #5a5348;
+}
+
+.dusman-karti .cubuk {
+  height: 0.85rem;
+}
+
+.dusman-karti .cubuk-metin {
+  font-size: 0.65rem;
+}
+
+.dusman-karti.hedef {
+  border-color: var(--mercan);
+  box-shadow: 0 0 0 2px var(--mercan);
+}
+
+.dusman-karti.dustu {
+  opacity: 0.45;
+  cursor: default;
+}

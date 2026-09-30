@@ -683,6 +683,15 @@ Kullanıcı kararları: kuşbakışı görünüm; düşmanlar haritada görünü
 
 **Commit:** `Faz 10: final, ses, animasyon ve cila`
 
+### Ek — Kalabalık saldırı (aynı anda birden fazla yaratık)
+- **Motor (`savas.js`):** `savas.dusman` oyuncunun vurduğu hedeftir; diğer canlılar `savas.yoldaslar`, düşenler `savas.dusenler`, savaşın başındaki hepsi `savas.grup` içindedir. Tek yaratıklı savaşta bunlar boş/tek elemanlıdır ve olaylara numara eklenmez, yani eski savaş birebir aynı işler. Yaratıklar 1'den numaralanır (`no`); olaylar `no` taşır. En çok `EN_COK_SALDIRGAN` = 3 yaratık.
+- **Tur:** oyuncunun hamlesinden sonra canlı her yaratık sırayla hamle yapar (oyuncu bayılırsa kalanlar vurmaz). Vuruş gücü çarpanı `TOPLU_HASAR_CARPANI` = { 1: 1, 2: 0,55, 3: 0,38 }; Korunma etkisi bütün yaratıklara karşı geçerlidir ve turda bir kez azalır. Hedef `hedefSec(savas, no)` ile değişir (sıra harcamaz); hedef düşünce sıradaki yaratık hedef olur.
+- **Kaçış:** en çevik yaratık belirleyicidir, takipçi varsa takipçi cezası da sayılır ve fazladan her yaratık için %5 daha zordur. İçlerinde kaçılamaz (boss) yaratık varsa kaçılamaz.
+- **Denge (simülasyon):** ilin üst seviyesindeki, ekipmansız ve yemeksiz bir yiğit (yetenek kullanır) 1 yaratıkta ≈ %100, 2 yaratıkta ≈ %60–100, 3 yaratıkta erken bölgelerde ≈ %100, geç bölgelerde (Karadeniz sonrası) %10–65 kazanır; yani üçlü saldırıdan geç bölgelerde kaçmak akıllıcadır. Ekipman ve yemekle oranlar yükselir.
+- **Ödül (`kesif.js`):** düşürülen her yaratık tek başına yenilmiş gibi arınma, akçe, yemek şansı ve görev sayacı getirir; XP toplamı `savas.xpOdulu`dur. `istatistik.zafer` savaş başına 1 artar. Kaçış ve bayılmada hiçbir yaratık sayılmaz (haritada hepsi yeniden tam canla durur).
+- **Haritada (`gezinti.js`):** temas eden sıradan yaratığa, oyuncudan ≤ 5 karo uzaktaki peşinde koşanlar ve ≤ 2 karodaki herkes katılır (`saldiriGrubu`). Bosslar, mini bosslar, Zülmet ve gezgin bosslar hep tek başına çıkar. Takipçiler (kurt, çakal, yol kesen cin…) %40 ihtimalle 2, %25'inde 3'lü **sürü** doğar (`suruUyeleri`); sürü üyeleri toplam düşman sayısından sayılır.
+- **Ekran:** her yaratığın sahnede figürü, altında kartı (ad, seviye, can); karta dokununca hedef değişir, hedefin altında halka görünür. Aynı türden yaratıklar "Aç Kurt 1/2/3" diye numaralanır.
+
 ---
 
 ## 10. Sonraki Fikirler (Kapsam Dışı)

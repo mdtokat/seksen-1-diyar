@@ -63,6 +63,9 @@ Bölgenin boss yaratıkları (mini bosslar ve bölge bossları) inlerinin dış�
 
 Gezgin bosslar ilerlemeyi etkilemez: yenmek bölge bossunu ya da mini bossu yenilmiş saydırmaz.
 
+### Kalabalık saldırı
+Yaratıklar bazen **birden fazla** saldırır. Peşinde koşan yakın yaratıklar, sana değen yaratığın savaşına katılır (en çok 3); kurt ve çakal gibi takipçiler ise ara sıra **sürü** hâlinde doğar. Savaşta her yaratığın kendi kartı ve can çubuğu vardır; karta (ya da sahnedeki yaratığa) dokunarak **vuracağın hedefi seçersin** (sıra harcamaz). Her tur canlı yaratıkların hepsi sırayla vurur, ama kalabalıkta herkes tam vuramaz: yaratık sayısı arttıkça her birinin vuruşu zayıflar. Asıl tehlike, düşürmen gereken canın çoğalması ve kalabalıktan kaçmanın zorlaşmasıdır. Düşürdüğün her yaratık, tek başına yenilmiş gibi XP, akçe, arınma ve görev ilerlemesi getirir; savaştan kaçarsan ya da bayılırsan hiçbiri sayılmaz. Bosslar, mini bosslar ve gezgin bosslar hep tek başına çıkar.
+
 ### Kervansaray ve hızlı yolculuk
 Kervansarayda dinlenmek ücretsizdir; can ve nefes dolar. Tamamen arınmış illerdeki kervansaraylar arasında akçe karşılığı anında yolculuk edebilirsin.
 

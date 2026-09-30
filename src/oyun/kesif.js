@@ -77,8 +77,10 @@ export function bossGanimeti(durum, bolge, nadirlik, rng) {
 
 // Keşif savaşının sonucunu uygular: savaş sonucu (XP, seviye, bayılma) +
 // zaferde arınma artışı, akçe, yemek, Hayır puanı ve görev ilerlemesi. Sonuç: { durum, ozet }.
+// Kalabalık savaşta (savas.grup) düşürülen her yaratık, tek başına yenilmiş gibi arınma,
+// akçe, yemek ve görev ilerlemesi getirir; XP toplamı savaş motorunda hesaplanmıştır.
 // ozet, savasSonucunuUygula özetine ek olarak:
-//   { arinmaArtisi, arinma, arindi, akce, yemek, yemekSigmadi,
+//   { arinmaArtisi, arinma, arindi, akce, yemek, yemekSigmadi, yemekler ([{ yemek, sigmadi }]),
 //     bossYenildi (bölge anahtarı | null), acilanBolge, miniBossYenildi, miniBossBelirdi,
 //     esya (düşen eşyanın anahtarı | null), hayir (kazanılan Hayır puanı),
 //     gorevIlerlemesi ([{ anahtar, mevcut, hedef }]), hazirOlanGorevler ([anahtar]),
@@ -99,6 +101,7 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
     akce: 0,
     yemek: null,
     yemekSigmadi: false,
+    yemekler: [],
     bossYenildi: null,
     acilanBolge: null,
     miniBossYenildi: false,
@@ -114,19 +117,26 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
   const onceHazir = new Set(hazirGorevler(durum));
   const onceArinma = yeni.arinma[plaka] ?? 0;
 
-  const a = arinmaArtir(yeni, plaka, rng);
-  yeni = a.durum;
-  Object.assign(ozet, { arinmaArtisi: a.artis, arinma: a.yuzde, arindi: a.arindi });
+  const yaratiklar = savas.grup ?? [savas.dusman];
+  let arinmaArtisi = 0;
+  let arindi = false;
+  for (const d of yaratiklar) {
+    const a = arinmaArtir(yeni, plaka, rng);
+    yeni = a.durum;
+    arinmaArtisi += a.artis;
+    arindi ||= a.arindi;
 
-  const g = ganimetUret(savas.dusman, plaka, rng);
-  yeni = { ...yeni, akce: (yeni.akce ?? 0) + g.akce };
-  ozet.akce = g.akce;
-  if (g.yemek) {
-    const e = yemekEkle(yeni.heybe, g.yemek);
-    yeni = { ...yeni, heybe: e.heybe };
-    ozet.yemek = g.yemek;
-    ozet.yemekSigmadi = e.eklenen === 0;
+    const g = ganimetUret(d, plaka, rng);
+    yeni = { ...yeni, akce: (yeni.akce ?? 0) + g.akce };
+    ozet.akce += g.akce;
+    if (g.yemek) {
+      const e = yemekEkle(yeni.heybe, g.yemek);
+      yeni = { ...yeni, heybe: e.heybe };
+      ozet.yemekler.push({ yemek: g.yemek, sigmadi: e.eklenen === 0 });
+    }
   }
+  Object.assign(ozet, { arinmaArtisi, arinma: yeni.arinma[plaka] ?? 0, arindi });
+  if (ozet.yemekler.length) Object.assign(ozet, { yemek: ozet.yemekler[0].yemek, yemekSigmadi: ozet.yemekler[0].sigmadi });
 
   const gezgin = Boolean(savas.dusman.gezgin);
   const sinif = gezgin ? 'gezgin' : dusmanlar[savas.dusman.anahtar].sinif;
@@ -174,9 +184,13 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
     + (sinif === 'final' ? HAYIR.final : 0);
   yeni = hayirEkle(yeni, ozet.hayir);
 
-  const z = zaferIlerlemesi(yeni, savas.dusman.anahtar);
-  yeni = z.durum;
-  ozet.gorevIlerlemesi = z.ilerleyenler.map((anahtar) => ({ anahtar, ...gorevIlerlemesi(yeni, anahtar) }));
+  const ilerleyenler = new Set();
+  for (const d of yaratiklar) {
+    const z = zaferIlerlemesi(yeni, d.anahtar);
+    yeni = z.durum;
+    z.ilerleyenler.forEach((a) => ilerleyenler.add(a));
+  }
+  ozet.gorevIlerlemesi = [...ilerleyenler].map((anahtar) => ({ anahtar, ...gorevIlerlemesi(yeni, anahtar) }));
   // Ulaştırma görevleri heybeye bağlıdır; savaşta bulunan yemek onları "hazır" saydırmasın
   ozet.hazirOlanGorevler = hazirGorevler(yeni).filter((a) => !onceHazir.has(a) && gorevler[a].tur !== 'ulastir');
   return { durum: yeni, ozet };
