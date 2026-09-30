@@ -82,6 +82,8 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 │  │  ├─ ticaret.js          # arasta ve Ahi esnafı alışverişi
 │  │  ├─ kervansaray.js      # dinlenme ve hızlı yolculuk
 │  │  ├─ gezinti.js          # il içi karo harita, yürüme, haritadaki düşmanlar
+│  │  ├─ gorevler.js         # görev alma, ilerleme, teslim ve ödül
+│  │  ├─ itibar.js           # Hayır puanı, unvan, arasta indirimi, köylülerin hediyesi
 │  │  ├─ ilerleme.js         # bölge kilitleri, boss koşulları
 │  │  └─ kayit.js            # kaydet / yükle / şema göçü
 │  ├─ veri/                  # SADECE VERİ — mantık yok
@@ -91,6 +93,8 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 │  │  ├─ dusmanlar.js
 │  │  ├─ siniflar.js
 │  │  ├─ esyalar.js
+│  │  ├─ gorevler.js
+│  │  ├─ itibar.js
 │  │  └─ metinler.js         # arayüz metinleri tek yerde
 │  ├─ arayuz/
 │  │  ├─ harita.js
@@ -99,6 +103,8 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 │  │  ├─ savasEkrani.js
 │  │  ├─ karakterEkrani.js
 │  │  ├─ envanterEkrani.js
+│  │  ├─ gorevEkrani.js      # muhtar ve Ahi Baba ile konuşma
+│  │  ├─ gunlukEkrani.js     # görev günlüğü ve itibar
 │  │  └─ bilesenler.js       # buton, çubuk, modal vb.
 │  └─ stil/
 │     └─ ana.css
@@ -392,7 +398,7 @@ Bir bölge bossu yenildiğinde, o bölgenin yemeklerinden oluşan bir sofra kuru
 | 6 | İl içi gezinti (kuşbakışı yürüme, haritada düşmanlar) | ✅ |
 | 7 | Bosslar ve bölge ilerlemesi | ✅ |
 | 8 | Arasta, Ahi esnafı, ekipman ve kervansaray | ✅ |
-| 9 | Görevler ve itibar | ⬜ |
+| 9 | Görevler ve itibar | ✅ |
 | 10 | Final, ses, animasyon ve cila | ⬜ |
 
 Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
@@ -613,11 +619,25 @@ Kullanıcı kararları: kuşbakışı görünüm; düşmanlar haritada görünü
 ### Faz 9 — Görevler ve İtibar
 **Hedef:** İllere hikâye ve anlam katmak.
 
-- [ ] Görev sistemi: köy muhtarları ve Ahi Babalar görev verir. Türleri şunlar olsun: belirli düşmandan N tane yen, bir ili belirli yüzdeye kadar arındır, bir yemeği başka bir ile ulaştır.
-- [ ] Her bölgede en az 3 görev olsun. Görev metinleri yöreye özgü, saygılı ve sıcak olsun.
-- [ ] **İtibar (Hayır) puanı:** görevler ve mazluma yardım itibar kazandırır. Yüksek itibar arastada indirim ve köylülerden hediye yemek getirir.
-- [ ] Görev günlüğü ekranı.
-- [ ] Testleri yaz: görev ilerlemesi, tamamlanma, ödül ve itibar etkisi.
+- [x] Görev sistemi: köy muhtarları ve Ahi Babalar görev verir. Türleri şunlar olsun: belirli düşmandan N tane yen, bir ili belirli yüzdeye kadar arındır, bir yemeği başka bir ile ulaştır.
+- [x] Her bölgede en az 3 görev olsun. Görev metinleri yöreye özgü, saygılı ve sıcak olsun.
+- [x] **İtibar (Hayır) puanı:** görevler ve mazluma yardım itibar kazandırır. Yüksek itibar arastada indirim ve köylülerden hediye yemek getirir.
+- [x] Görev günlüğü ekranı.
+- [x] Testleri yaz: görev ilerlemesi, tamamlanma, ödül ve itibar etkisi.
+
+**Faz 9 kararları:**
+- **Görev verenler:** her ilin meydanında tabelanın yanında bir muhtar, Ahi esnafı olan illerde dükkânın yanında bir Ahi Baba durur. Başlarındaki işaret: `!` alınabilir görev, `?` teslim edilecek görev, 🎁 hediye. Kişilere özel isim verilmez (yalnızca "Muhtar", "Ahi Baba"); böylece peygamber ya da sahabe isimleri hiçbir yerde geçmez.
+- **Görevler (28):** her bölgede 4 görev: 2 düşman yenme, 1 arındırma, 1 ulaştırma; görevleri 2 muhtar ve 2 Ahi Baba verir (Marmara'da 3 muhtar, 1 Ahi Baba) (`src/veri/gorevler.js`). Görevler bölge açılınca alınabilir, aynı anda istenen sayıda görev yürütülebilir, her görev bir kez yapılır.
+  - **Yen:** veren ilin düşman havuzundan bir tür, 3–4 tane; yalnızca görev alındıktan sonraki zaferler (herhangi bir ilde) sayılır.
+  - **Arındır:** veren ilin kendisi, %70 (Tekirdağ) ya da %80; ilerleme ilin güncel arınmasıdır (görevden önce yapılan arınma da sayılır).
+  - **Ulaştır:** veren kişi, görev alınınca ilinin yöresel yemeğinden birini heybeye koyar (heybe doluysa görev alınamaz); yemek bölgedeki komşu ilin muhtarına teslim edilir. Yemek yenirse ilin arastasından yenisi alınabilir.
+  - Yen ve arındır görevleri verene, ulaştırma görevleri hedef ilin muhtarına teslim edilir.
+- **Ödül:** veren ilin üst seviyesi `sv` olmak üzere XP = `round((5 + sv × 10) × 4)`, akçe = `round((3 + sv × 2) × 5)`; Hayır: yen 10, ulaştır 10, arındır 15.
+- **Mazluma yardım:** bir ili %100 arındırmak +5, mini bossu yenmek +5, bölge bossunu yenmek +10 Hayır.
+- **Unvanlar:** Yolcu (0) · Tanınan Yiğit (25; arastada %5 indirim) · Sevilen Yiğit (75; %10, hediye 1) · Halkın Yiğidi (175; %15, hediye 2) · Diyarın Kahramanı (350; %20, hediye 3). Unvan yükselince bildirim gelir. İndirim yalnızca arastadaki yemeklerdedir (Ahi esnafı fiyatları herkese aynıdır).
+- **Köylülerin hediyesi:** Sevilen Yiğit ve üstü unvanda her ilin muhtarı, köylüler adına ilin yöresel yemeğinden unvana göre 1–3 tane bir kez hediye eder (şans yoktur).
+- **Görev günlüğü:** gezintideki 📜 düğmesiyle açılır; itibar ve ayrıcalıklar, üstlenilen görevler (hazır olanlar önce), açık bölgelerde bekleyen görevler ve bölge bölge tamamlananlar. Harita kartında da ildeki görev verenler gösterilir.
+- **Kayıt:** şema sürüm 4 (`gorevler`, `hayir`, `hediyeAlinan`); eski kayıtlar zincirleme taşınır.
 
 **Kabul kriterleri:** Oyuncunun her bölgede savaş dışında da yapacak anlamlı işleri var.
 

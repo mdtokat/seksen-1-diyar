@@ -2,7 +2,8 @@
 import { iller } from '../veri/iller.js';
 import { yemekler } from '../veri/yemekler.js';
 import { metinler } from '../veri/metinler.js';
-import { arastaMallari, yemekAl, yemekAlKontrol } from '../oyun/ticaret.js';
+import { arastaMallari, arastaFiyati, yemekAl, yemekAlKontrol } from '../oyun/ticaret.js';
+import { arastaIndirimi } from '../oyun/itibar.js';
 import { yemekFiyati, yemekGucu, yemekAdedi, HEYBE_YUVA } from '../oyun/envanter.js';
 import { kacis, sablon, bildirimGoster } from './bilesenler.js';
 
@@ -17,20 +18,24 @@ function icerik(durum) {
       miktar: yemekGucu(anahtar),
       tur: metinler.statAdlari[y.tur].toLocaleLowerCase('tr'),
     });
+    const fiyat = arastaFiyati(durum, anahtar);
+    const eskiFiyat = fiyat < yemekFiyati(anahtar) ? `<s>${yemekFiyati(anahtar)}</s> ` : '';
     return `
       <li class="heybe-yuvasi heybe-${y.tur}">
         <span class="heybe-ikon" aria-hidden="true">${y.ikon}<span class="heybe-adet">${yemekAdedi(durum.heybe, anahtar)}</span></span>
         <div class="heybe-bilgi">
           <strong>${kacis(y.ad)} <small>(${kacis(il.ad)})</small></strong>
-          <span class="heybe-etki">${etki} · ${sablon(M.fiyat, { fiyat: yemekFiyati(anahtar) })}</span>
+          <span class="heybe-etki">${etki} · ${eskiFiyat}${sablon(M.fiyat, { fiyat })}</span>
           <small>${kacis(kontrol.olur ? y.aciklama : M.neden[kontrol.neden] ?? y.aciklama)}</small>
         </div>
         <button class="buton buton-kucuk" data-yemek="${anahtar}" ${kontrol.olur ? '' : 'disabled'}>${M.al}</button>
       </li>`;
   }).join('');
+  const indirim = arastaIndirimi(durum);
   return `
     <section class="kart">
       <p class="dukkan-selami">${M.selam}</p>
+      ${indirim > 0 ? `<p class="kart-not arinmis-not">🌟 ${sablon(M.indirim, { oran: Math.round(indirim * 100) })}</p>` : ''}
       <p class="kese">🪙 ${sablon(M.akce, { akce: durum.akce })} · ${sablon(M.heybe, { dolu: durum.heybe.length, toplam: HEYBE_YUVA })}</p>
     </section>
     <section class="kart">

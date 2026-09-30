@@ -2438,3 +2438,184 @@ h3 {
 .yolculuk-satiri .bolge-noktasi {
   flex-shrink: 0;
 }
+
+/* ── Görevler ve itibar (Faz 9) ─────────────────────── */
+.gorev-isareti {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.2rem;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--lacivert);
+  background: var(--altin);
+  border: 2px solid var(--lacivert);
+  border-radius: 999px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  animation: isaret-zipla 1.4s ease-in-out infinite;
+}
+
+.gorev-isareti[hidden] {
+  display: none;
+}
+
+.gorev-isareti.isaret-hazir {
+  background: var(--turkuaz);
+  color: #fff;
+}
+
+.gorev-isareti.isaret-hediye {
+  background: var(--krem);
+  font-size: 0.85rem;
+}
+
+@keyframes isaret-zipla {
+  50% { margin-top: -4px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gorev-isareti {
+    animation: none;
+  }
+}
+
+.gorev-karti {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--krem-koyu);
+}
+
+.gorev-karti:last-child {
+  border-bottom: 0;
+}
+
+.gorev-karti.gorev-tamam {
+  opacity: 0.6;
+}
+
+/* Görev metinleri uzun; düğme kartın altına, metnin hizasına iner */
+.gorev-karti {
+  flex-wrap: wrap;
+}
+
+.gorev-karti .esya-bilgi {
+  flex: 1 1 12rem;
+}
+
+.gorev-karti .esya-sag {
+  flex-basis: 100%;
+  justify-items: stretch;
+  padding-left: 3.5rem;
+}
+
+.gorev-ikon {
+  border-color: var(--altin);
+}
+
+.gorev-hazir .gorev-ikon {
+  border-color: var(--turkuaz);
+  box-shadow: 0 0 0 2px rgba(42, 167, 167, 0.35);
+}
+
+.gorev-rozeti {
+  display: inline-block;
+  margin-left: 0.2rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  vertical-align: middle;
+  background: var(--krem-koyu);
+  color: var(--murekkep);
+}
+
+.gorev-alinabilir .gorev-rozeti {
+  background: var(--altin);
+  color: var(--lacivert-koyu);
+}
+
+.gorev-hazir .gorev-rozeti {
+  background: var(--turkuaz);
+  color: #fff;
+}
+
+.gorev-anlatim {
+  display: block;
+  margin: 0.2rem 0;
+  font-family: var(--font-baslik);
+  font-style: italic;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--lacivert);
+}
+
+.gorev-hedef {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--lacivert);
+}
+
+.tesekkur-karti {
+  border-color: var(--turkuaz);
+  box-shadow: inset 0 0 0 2px rgba(42, 167, 167, 0.35);
+}
+
+.tesekkur-karti:focus {
+  outline: none;
+}
+
+.hediye-karti p {
+  margin: 0.3rem 0;
+}
+
+.itibar-unvan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.5rem;
+}
+
+.itibar-unvan strong {
+  font-family: var(--font-baslik);
+  font-size: 1.15rem;
+  color: var(--lacivert);
+}
+
+.ayricalik-listesi {
+  margin: 0.4rem 0;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
+}
+
+.bolge-sayaclari {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bolge-sayaci {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--krem-koyu);
+}
+
+.bolge-sayaci:last-child {
+  border-bottom: 0;
+}
+
+.bolge-sayaci small {
+  grid-column: 2 / -1;
+  color: #5a5348;
+}

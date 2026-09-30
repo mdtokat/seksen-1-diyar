@@ -27,6 +27,7 @@ import { karakterDugmesiniCiz } from './karakterDugmesi.js';
 import { haritaKatmani, kapiKatmani, KARO_BOYU } from './cizimler/karolar.js';
 import { sinifCizimi } from './cizimler/karakterler.js';
 import { dusmanCizimi } from './cizimler/dusmanlar.js';
+import { verenIsareti } from '../oyun/gorevler.js';
 
 const M = metinler.gezinti;
 const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
@@ -70,7 +71,7 @@ function yonTuslariniKaydet(acik) {
 
 // secenekler: { g, rng, savasBaslat(dusmanKaydi), ileGec(plaka), ilBilgisi, haritaGoster,
 //               heybeGoster, karakterGoster, baslikaDon, ipucuGoster,
-//               arastaGoster, ahiGoster, kervansarayGoster }
+//               arastaGoster, ahiGoster, kervansarayGoster, gorevVerenGoster(veren), gunlukGoster }
 export function gezintiEkrani(kap, depo, secenekler) {
   const { g, rng } = secenekler;
   const harita = g.harita;
@@ -103,6 +104,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
         <div class="gezinti-araclari">
           <button class="simge-buton" data-eylem="harita" aria-label="${M.harita}" title="${M.harita}">🗺️</button>
           <button class="simge-buton" data-eylem="heybe" aria-label="${M.heybe}" title="${M.heybe}">🎒</button>
+          <button class="simge-buton" data-eylem="gunluk" aria-label="${M.gunluk}" title="${M.gunluk}">📜</button>
           <button class="simge-buton" data-eylem="bilgi" aria-label="${M.ilBilgisi}" title="${M.ilBilgisi}">ℹ️</button>
           <button class="simge-buton" data-eylem="yon-tuslari" aria-label="${M.yonTuslari}" title="${M.yonTuslari}" aria-pressed="false">🎮</button>
         </div>
@@ -143,6 +145,35 @@ export function gezintiEkrani(kap, depo, secenekler) {
   oyuncuFiguru.innerHTML = `<div class="figur-ic">${sinifCizimi(depo.al().oyuncu.sinif)}</div>`;
   figurKatmani.appendChild(oyuncuFiguru);
   const dusmanFigurleri = new Map();
+
+  // Görev verenlerin başındaki işaretler (Faz 9): ! yeni görev, ? teslim, 🎁 hediye
+  const ISARET_SIMGESI = { yeni: '!', hazir: '?', hediye: '🎁' };
+  const gorevVerenler = [
+    { veren: 'muhtar', yer: harita.muhtar },
+    { veren: 'ahi_baba', yer: harita.ahiBaba },
+  ].filter((v) => v.yer).map((v) => {
+    const el = document.createElement('span');
+    el.className = 'gorev-isareti';
+    el.setAttribute('aria-hidden', 'true');
+    figurKatmani.appendChild(el);
+    return { ...v, el };
+  });
+
+  function isaretleriCiz(durum) {
+    for (const v of gorevVerenler) {
+      const isaret = verenIsareti(durum, g.plaka, v.veren);
+      v.el.hidden = !isaret;
+      v.el.textContent = isaret ? ISARET_SIMGESI[isaret] : '';
+      v.el.className = `gorev-isareti${isaret ? ` isaret-${isaret}` : ''}`;
+      v.el.title = isaret ? metinler.gorev.isaretler[isaret] : '';
+    }
+  }
+
+  function isaretleriKonumla() {
+    for (const v of gorevVerenler) {
+      v.el.style.transform = `translate3d(${(v.yer.x + 0.5) * T}px, ${(v.yer.y - 0.55) * T}px, 0) translateX(-50%)`;
+    }
+  }
 
   // Figür karosunun ortasına, ayakları karonun altına gelecek biçimde yerleşir.
   // Boss ve mini boss figürleri daha büyüktür.
@@ -212,6 +243,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     dunya.classList.add('anlik');
     oyuncuyuCiz();
     dusmanlariCiz();
+    isaretleriKonumla();
     kamera();
     void dunya.getBoundingClientRect();
     dunya.classList.remove('anlik');
@@ -225,6 +257,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
   function ustCubuguCiz(durum) {
     arinmaEtiketi.textContent = sablon(M.arinma, { yuzde: arinmaYuzdesi(durum, g.plaka) });
     karakterDugmesiniCiz(karakterDugmesi, durum.oyuncu);
+    isaretleriCiz(durum);
   }
 
   // ── Etkileşimler ──
@@ -235,6 +268,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     if (tur === 'tezgah') return secenekler.arastaGoster?.();
     if (tur === 'dukkan') return secenekler.ahiGoster?.();
     if (tur === 'kervansaray') return secenekler.kervansarayGoster?.();
+    if (tur === 'muhtar' || tur === 'ahi_baba') return secenekler.gorevVerenGoster?.(tur);
     if (tur === 'cesme') return bildirimGoster(ekran, M.cesme);
   }
 
@@ -445,6 +479,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
       case 'bilgi': return secenekler.ilBilgisi?.();
       case 'harita': return secenekler.haritaGoster?.();
       case 'heybe': return secenekler.heybeGoster?.();
+      case 'gunluk': return secenekler.gunlukGoster?.();
       case 'karakter': return secenekler.karakterGoster?.();
       case 'yon-tuslari': {
         const acik = yonTuslari.hidden;

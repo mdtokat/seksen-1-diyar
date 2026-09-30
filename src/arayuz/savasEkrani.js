@@ -3,6 +3,7 @@ import { iller } from '../veri/iller.js';
 import { yemekler } from '../veri/yemekler.js';
 import { dusmanlar as dusmanVerisi } from '../veri/dusmanlar.js';
 import { esyalar as esyaVerisi } from '../veri/esyalar.js';
+import { gorevler as gorevVerisi } from '../veri/gorevler.js';
 import { metinler } from '../veri/metinler.js';
 import {
   savasBaslat,
@@ -333,6 +334,15 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
         satirlar.push(`<strong class="kutlama">${sablon(S.esya, { ikon: e.ikon, esya: kacis(e.ad), nadirlik: metinler.nadirlik[e.nadirlik] })}</strong>`);
       }
       if (ozet.miniBossYenildi) satirlar.push(`<strong>${sablon(B.miniYenildi, { boss: kacis(savas.dusman.ad) })}</strong>`);
+      if (ozet.hayir) satirlar.push(sablon(S.hayir, { hayir: ozet.hayir }));
+      for (const g of ozet.gorevIlerlemesi ?? []) {
+        if (!(ozet.hazirOlanGorevler ?? []).includes(g.anahtar)) {
+          satirlar.push(sablon(S.gorevIlerlemesi, { gorev: kacis(gorevVerisi[g.anahtar].ad), mevcut: g.mevcut, hedef: g.hedef }));
+        }
+      }
+      for (const a of ozet.hazirOlanGorevler ?? []) {
+        satirlar.push(`<strong class="kutlama">${sablon(S.gorevHazir, { gorev: kacis(gorevVerisi[a].ad) })}</strong>`);
+      }
       if (ozet.miniBossBelirdi) {
         satirlar.push(`<strong class="kutlama">${sablon(B.miniBelirdi, { boss: kacis(dusmanAdi(ozet.miniBossBelirdi)) })}</strong>`);
       }

@@ -7,6 +7,7 @@ import { sinifCizimi } from './cizimler/karakterler.js';
 import { esyalar, YUVALAR } from '../veri/esyalar.js';
 import { kusan, kusanKontrol, cikar, kusaniliMi } from '../oyun/ekipman.js';
 import { esyaKarti } from './esyaKarti.js';
+import { hayirPuani, itibarKademesi } from '../oyun/itibar.js';
 
 const E = metinler.ekipman;
 
@@ -82,6 +83,7 @@ function icerik(durum) {
       <div>
         <h2>${kacis(o.ad)}</h2>
         <p class="karakter-alt">${kacis(sinif.ad)} · <strong>${sablon(M.seviye, { seviye: o.seviye })}</strong> · ${M.akce}: ${durum.akce ?? 0}</p>
+        <p class="karakter-alt">🌟 ${kacis(itibarKademesi(durum).ad)} · ${M.hayir}: ${hayirPuani(durum)}</p>
       </div>
     </section>
     <section class="kart">

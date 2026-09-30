@@ -28,6 +28,95 @@ export const metinler = {
     sofraDurumu: 'Zafer sofrası: {kalan} savaş boyunca gücün %10 fazla.',
   },
 
+  // Görev verenler ve görevler (plan.md Faz 9).
+  gorev: {
+    geri: 'Meydana dön',
+    verenler: { muhtar: 'Muhtar', ahi_baba: 'Ahi Baba' },
+    verenlerCumlede: { muhtar: 'muhtar', ahi_baba: 'Ahi Baba' },
+    // Görev verenin selamı; oyuncunun unvanına (itibar kademesine) göre.
+    selamlar: {
+      muhtar: [
+        'Hoş geldin yolcu. Kapımıza gelen misafir başımızın tacıdır.',
+        'Hoş geldin yiğidim! Adını duyduk; iyiliğin senden önce gelmiş.',
+        'Vay, bizim yiğit gelmiş! Otur hele, bir soluklan.',
+        'Halkın yiğidi aramızda! Çocuklar senin hikâyelerini anlatıyor.',
+        'Diyarın kahramanı ilimizi şereflendirdi! Buyur, başımızın üstünde yerin var.',
+      ],
+      ahi_baba: [
+        'Hoş geldin evlat. Ahi kapısı yolcuya her zaman açıktır.',
+        'Hoş geldin evlat; iyiliğini esnaf arasında konuşuyorlar.',
+        'Gel evlat, gel. Senin gibi yiğitler Ahiliğin yüz akıdır.',
+        'Halkın yiğidi! Esnafımız seni gördükçe gönlü ferahlıyor.',
+        'Diyarın kahramanı, hoş geldin. Kapımız da sofralarımız da sana açık.',
+      ],
+    },
+    bosSoz: {
+      muhtar: 'Şimdilik bir derdimiz yok yiğidim. Yolun açık olsun.',
+      ahi_baba: 'Şimdilik bir işimiz yok evlat. Hayırlı yolculuklar.',
+    },
+    gorevler: 'Görevler',
+    teslimler: 'Teslim edilecekler',
+    kabulEt: 'Kabul et',
+    teslimEt: 'Teslim et',
+    hedef: {
+      yen: 'Yenilecek düşman: {dusman} ({mevcut}/{hedef})',
+      arindir: 'Arındırılacak il: {il} (%{mevcut}/%{hedef})',
+      ulastir: 'Götürülecek yer: {il} muhtarı ({yemek})',
+    },
+    yenIpucu: 'Bu düşmana şu illerde rastlanır: {iller}.',
+    ulastirIpucu: 'Kabul edersen muhtar sana bir {yemek} verecek.',
+    yemekYok: 'Heybende {yemek} kalmadı; {il} arastasında bulabilirsin.',
+    hazir: 'Hazır! {il} ilindeki {veren} seni bekliyor.',
+    teslimYeri: 'Teslim: {il} · {veren}',
+    odul: 'Ödül: {xp} XP · {akce} akçe · {hayir} Hayır',
+    durum: {
+      alinabilir: 'Yeni',
+      aktif: 'Sürüyor',
+      hazir: 'Hazır',
+      tamam: 'Tamamlandı ✓',
+    },
+    neden: {
+      heybe_dolu: 'Heyben dolu; götüreceğin yemeğe yer aç.',
+      hazir_degil: 'Görev henüz bitmedi.',
+    },
+    kabulEdildi: '"{gorev}" görevini üstlendin.',
+    yemekVerildi: '{yemek} heybene kondu.',
+    tamamlandi: '"{gorev}" tamamlandı! +{xp} XP, +{akce} akçe, +{hayir} Hayır.',
+    hediye: {
+      baslik: 'Köylülerin hediyesi',
+      metin: 'Köylüler senin için ilin yöresel lezzetinden hazırlamış: {adet} {yemek}.',
+      al: 'Hediyeyi al',
+      aldin: 'Köylülerin hediyesi heybende: {adet} {yemek}. Afiyet olsun!',
+      heybeDolu: 'Köylüler sana hediye hazırlamış ama heyben dolu.',
+    },
+    unvanAtladin: '🌟 Yeni unvan: {unvan}!',
+    isaretler: { yeni: 'Yeni görev var', hazir: 'Teslim edilecek görev var', hediye: 'Hediyen var' },
+  },
+
+  itibar: {
+    baslik: 'İtibar',
+    hayir: 'Hayır puanı',
+    unvan: 'Unvanın',
+    sonraki: 'Sonraki unvan: {unvan} ({kalan} puan kaldı)',
+    enYuksek: 'En yüksek unvana ulaştın.',
+    indirim: 'Arastada %{oran} indirim',
+    hediye: 'Muhtarlar her ilde bir kez {adet} yöresel yemek hediye eder',
+    ayricalikYok: 'Henüz bir ayrıcalığın yok.',
+    kazanma: 'Hayır puanı görevlerden, bir ili tamamen arındırmaktan ve halkı bosslardan kurtarmaktan gelir.',
+  },
+
+  gunluk: {
+    baslik: 'Görev Günlüğü',
+    geri: 'Geri dön',
+    aktif: 'Üstlendiğin görevler',
+    aktifYok: 'Üstlendiğin bir görev yok. Meydanlardaki muhtarlara ve Ahi Babalara uğra.',
+    acik: 'Seni bekleyen görevler',
+    acikYok: 'Açık bölgelerde bekleyen görev kalmadı.',
+    acikSatir: '{il} · {veren}',
+    tamam: 'Tamamlanan görevler',
+    bolgeSayaci: '{tamam}/{toplam}',
+  },
+
   nadirlik: { siradan: 'Sıradan', nadir: 'Nadir', efsanevi: 'Efsanevi' },
   yuvaAdlari: { silah: 'Silah', zirh: 'Zırh', aksesuar: 'Kuşak' },
 
@@ -39,6 +128,7 @@ export const metinler = {
     fiyat: '{fiyat} akçe',
     akce: 'Kesende {akce} akçe var.',
     heybe: 'Heybe: {dolu} / {toplam} yuva',
+    indirim: 'Unvanın sayesinde esnaf sana %{oran} indirim yapıyor.',
     aldin: '{yemek} heybene girdi.',
     neden: {
       akce_yetersiz: 'Akçen yetmiyor.',
@@ -149,6 +239,7 @@ export const metinler = {
     saga: 'Sağa yürü',
     arinma: 'Arınma %{yuzde}',
     cesme: 'Çeşmenin serin suyuyla yüzünü yıkadın.',
+    gunluk: 'Görev günlüğü',
     fark: '{dusman} seni fark etti!',
     alanEtiketi: '{il} il haritası',
   },
@@ -200,6 +291,7 @@ export const metinler = {
     olanaklar: 'Olanaklar',
     kervansaray: '🏨 Kervansaray',
     ahi: '⚒️ Ahi esnafı',
+    gorev: '📜 Görev: {verenler}',
     varis: 'Yeni konum: {il}',
     ipucu: 'Bir ile dokunarak bilgilerini gör. Parmağınla kaydır, iki parmakla yakınlaştır.',
     lejant: {
@@ -258,6 +350,7 @@ export const metinler = {
     yetenekNefes: '{nefes} nefes',
     yetenekKilitli: 'Sv {seviye} olunca açılır',
     akce: 'Akçe',
+    hayir: 'Hayır',
     ustCubukDugmesi: 'Karakteri aç: {ad}, seviye {seviye}',
   },
 
@@ -333,6 +426,9 @@ export const metinler = {
       yemek: '{ikon} {yemek} buldun!',
       yemekSigmadi: '{ikon} {yemek} buldun ama heyben dolu, yanına alamadın.',
       esya: '{ikon} {esya} ({nadirlik}) kazandın! Karakter ekranından kuşanabilirsin.',
+      hayir: '+{hayir} Hayır puanı: halk sana minnettar.',
+      gorevIlerlemesi: '📜 {gorev}: {mevcut}/{hedef}',
+      gorevHazir: '📜 "{gorev}" tamamlanmaya hazır; görevi verene dön.',
       devam: 'Devam et',
       karakteriAc: 'Karakterine bak',
     },

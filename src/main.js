@@ -23,6 +23,10 @@ import { arastaEkrani } from './arayuz/arastaEkrani.js';
 import { ahiEkrani } from './arayuz/ahiEkrani.js';
 import { kervansarayEkrani } from './arayuz/kervansarayEkrani.js';
 import { hizliYolculuk } from './oyun/kervansaray.js';
+import { gorevEkrani } from './arayuz/gorevEkrani.js';
+import { gunlukEkrani } from './arayuz/gunlukEkrani.js';
+import { kademeSirasi, hayirPuani } from './oyun/itibar.js';
+import { itibarKademeleri } from './veri/itibar.js';
 
 // Sekiz köşeli Selçuklu yıldızı: biri 45° döndürülmüş iki karenin birleşimi.
 const yildiz = (sinif) => `
@@ -96,9 +100,13 @@ function oyunuBaslat(durum) {
   depo.abone(kaydetVeUyar);
   kaydetVeUyar(durum);
 
-  // Bir bossun mührü çözülünce oyuncuya haber verilir.
+  // Bir bossun mührü çözülünce ya da oyuncunun unvanı yükselince haber verilir.
   let onceki = durum;
   depo.abone((d) => {
+    const kademe = kademeSirasi(hayirPuani(d));
+    if (kademe > kademeSirasi(hayirPuani(onceki))) {
+      bildirimGoster(document.body, sablon(metinler.gorev.unvanAtladin, { unvan: itibarKademeleri[kademe].ad }), { tur: 'kutlama', sure: 5000 });
+    }
     for (const anahtar of yeniAcilanBosslar(onceki, d)) {
       const b = bolgeler.find((x) => x.anahtar === anahtar);
       bildirimGoster(document.body, sablon(metinler.boss.acildi, {
@@ -200,6 +208,8 @@ function gezintiGoster() {
       arastaGoster: () => ekranGoster((kap) => arastaEkrani(kap, depo, { geri: gezintiGoster })),
       ahiGoster: () => ekranGoster((kap) => ahiEkrani(kap, depo, { geri: gezintiGoster })),
       kervansarayGoster,
+      gorevVerenGoster: (veren) => ekranGoster((kap) => gorevEkrani(kap, depo, { veren, geri: gezintiGoster })),
+      gunlukGoster: () => ekranGoster((kap) => gunlukEkrani(kap, depo, { geri: gezintiGoster })),
     }),
   );
 }

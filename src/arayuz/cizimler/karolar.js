@@ -119,6 +119,32 @@ function kervansaray(x, y) {
     <rect x="${x}" y="${y + 5}" width="2.5" height="3" fill="#2b2620"/><rect x="${x + 13.5}" y="${y + 5}" width="2.5" height="3" fill="#2b2620"/>`;
 }
 
+// Görev verenler (Faz 9): stilize, edepli, sade figürler.
+// Muhtar: lacivert ceket, kasket, ak bıyık ve baston.
+function muhtarCizimi(x, y) {
+  const cx = x + T / 2;
+  return `<ellipse cx="${cx}" cy="${y + T - 1}" rx="5.5" ry="1.8" fill="#000" opacity=".18"/>
+    <path d="M${cx + 6} ${y + T - 1} L${cx + 6} ${y + 6}" stroke="#5b3a24" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M${cx - 5} ${y + T - 1} L${cx - 4} ${y + 5} Q${cx} ${y + 3} ${cx + 4} ${y + 5} L${cx + 5} ${y + T - 1} Z" fill="#1b2a5c" ${CIZGI}/>
+    <path d="M${cx - 1.6} ${y + 4.4} L${cx} ${y + 9} L${cx + 1.6} ${y + 4.4} Z" fill="#f7efdc"/>
+    <path d="M${cx + 4} ${y + 8} L${cx + 6} ${y + 7}" stroke="#e9b98f" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${y + 1.5}" r="3.2" fill="#e9b98f" ${CIZGI}/>
+    <path d="M${cx - 3.6} ${y + 0.8} Q${cx - 0.5} ${y - 3.8} ${cx + 3.4} ${y + 0.4} L${cx + 5} ${y + 0.9} Z" fill="#6e5b45" ${CIZGI}/>
+    <path d="M${cx - 1.8} ${y + 2.9} q1.8 1 3.6 0" stroke="#f7efdc" stroke-width="1.1" fill="none"/>`;
+}
+
+// Ahi Baba: kahve cübbe, krem peştamal, keçe külah ve ak sakal.
+function ahiBabaCizimi(x, y) {
+  const cx = x + T / 2;
+  return `<ellipse cx="${cx}" cy="${y + T - 1}" rx="5.5" ry="1.8" fill="#000" opacity=".18"/>
+    <path d="M${cx - 5.5} ${y + T - 1} L${cx - 4} ${y + 5} Q${cx} ${y + 3} ${cx + 4} ${y + 5} L${cx + 5.5} ${y + T - 1} Z" fill="#7b5236" ${CIZGI}/>
+    <path d="M${cx - 3.5} ${y + 8} L${cx + 3.5} ${y + 8} L${cx + 4} ${y + T - 2} L${cx - 4} ${y + T - 2} Z" fill="#f7efdc" ${CIZGI}/>
+    <path d="M${cx - 4} ${y + 8} L${cx + 4} ${y + 8}" stroke="#d4a537" stroke-width="1.4"/>
+    <circle cx="${cx}" cy="${y + 1.5}" r="3.2" fill="#e9b98f" ${CIZGI}/>
+    <path d="M${cx - 2.8} ${y + 2.4} Q${cx} ${y + 7.5} ${cx + 2.8} ${y + 2.4} Z" fill="#f7efdc" ${CIZGI}/>
+    <path d="M${cx - 3} ${y} L${cx - 2} ${y - 5} Q${cx} ${y - 6} ${cx + 2} ${y - 5} L${cx + 3} ${y} Z" fill="#b39a6e" ${CIZGI}/>`;
+}
+
 // Boss ya da mini bossun beklediği in: dikili taşlardan bir halka.
 function inCizimi(p, x, y) {
   const cx = x + T / 2;
@@ -161,6 +187,8 @@ export function haritaKatmani(harita) {
         case KARO.CESME:
         case KARO.TEZGAH:
         case KARO.TABELA:
+        case KARO.MUHTAR:
+        case KARO.AHI_BABA:
           parcalar.push(`<rect x="${px}" y="${py}" width="${T}" height="${T}" fill="#ddd3bf" stroke="#c4b89e" stroke-width=".6"/>`);
           break;
         case KARO.YABANI:
@@ -175,6 +203,8 @@ export function haritaKatmani(harita) {
       else if (t === KARO.TABELA) ustler.push(tabela(px, py));
       else if (t === KARO.DUKKAN) ustler.push(dukkan(px, py));
       else if (t === KARO.KERVANSARAY) ustler.push(kervansaray(px, py));
+      else if (t === KARO.MUHTAR) ustler.push(muhtarCizimi(px, py));
+      else if (t === KARO.AHI_BABA) ustler.push(ahiBabaCizimi(px, py));
     }
   }
   // Meydanın çini kenarı
