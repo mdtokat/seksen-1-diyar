@@ -39,7 +39,7 @@ Yolculuk İstanbul'da başlar. Başlangıçta yalnızca Marmara açıktır.
 ### Savaş
 - Düşmanlar haritada dolaşır; yaklaşınca peşine düşer, temas edince sıra tabanlı savaş başlar. Büyük illerde daha çok düşman olur.
 - **Takipçi düşmanlar** (👣 rozetli: kurtlar, çakallar, yol kesen cinler…) seni uzaktan fark eder, neredeyse senin kadar hızlı koşar ve kolay kolay peşini bırakmaz. Kurtulmak için meydana sığın, başka ile geç ya da savaş. Savaşta bunlardan kaçmak da daha zordur.
-- Her turda **Saldır**, **Yetenek** (nefes harcar), **Yemek** ya da **Kaç** seçilir. Bosslardan kaçılamaz.
+- Her turda **Saldır**, **Yetenek** (nefes harcar), **Yemek** ya da **Kaç** seçilir. İnlerindeki bosslardan kaçılamaz; gezgin bosslardan kaçılabilir.
 - **Kısayol yuvaları:** savaş ekranındaki dört yuva, sıra sendeyken `1` `2` `3` `4` tuşlarıyla ya da dokunarak kullanılır. Yuvalara yetenek, yemek, Saldır ya da Kaç konur (✎ düğmesi ya da karakter ekranındaki *Savaş Kısayolları*). Yeni açılan yetenekler boş yuvalara kendiliğinden yerleşir.
 - Zafer XP, akçe ve bazen ilin yöresel yemeğini getirir; ayrıca ili **%12–18 arındırır**. %100 olan il yeşile döner.
 - Bayılırsan en son dinlendiğin kervansarayda (hiç dinlenmediysen bulunduğun ilin meydanında) kendine gelirsin ve akçenin %10'unu kaybedersin.
@@ -53,6 +53,14 @@ Her ilin meşhur yemeği ya **canı** (ana yemekler) ya da **nefesi** (tatlılar
 
 ### Bölgeler ve bosslar
 Bölgeler sırayla açılır: Marmara → Ege → Akdeniz → İç Anadolu → Karadeniz → Güneydoğu → Doğu Anadolu. Her bölgenin bossu, bölge illerinin ortalama arınması %60'a ve seviyen bölgenin üst seviyesinin bir altına ulaşınca mühründen çıkar. Boss yenilince sonraki bölge açılır ve **zafer sofrası** kurulur (10 savaş boyunca %10 güç). Bazı illerde arınma %50'yi geçince **mini boss** belirir.
+
+### Gezgin ve sürpriz bosslar
+Bölgenin boss yaratıkları (mini bosslar ve bölge bossları) inlerinin dışında da çıkar: haritada sıradan düşmanlar arasında **gezgin boss** olarak dolaşabilir, yürürken de hiç beklemediğin bir anda **sürpriz** olarak yanı başında belirebilirler (meydan güvenlidir). Güçleri her zaman senin o anki gücünden fazladır:
+
+- **⚔️ Zorlu:** senden güçlüdür ama kesilebilir; iyi dövüşür, yeteneklerini ve yemeklerini kullanırsan yenersin. Bol XP, akçe ve bazen bölgenin nadir eşyalarından birini düşürür.
+- **💀 Kesilemez:** zırhı kılıcını söndürür; yenmek pek mümkün değildir. **Kaç!** Gezgin bosslardan (bölge bossu türünden olsalar bile) kaçılabilir.
+
+Gezgin bosslar ilerlemeyi etkilemez: yenmek bölge bossunu ya da mini bossu yenilmiş saydırmaz.
 
 ### Kervansaray ve hızlı yolculuk
 Kervansarayda dinlenmek ücretsizdir; can ve nefes dolar. Tamamen arınmış illerdeki kervansaraylar arasında akçe karşılığı anında yolculuk edebilirsin.

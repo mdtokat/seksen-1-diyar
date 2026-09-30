@@ -5,6 +5,7 @@ import { yeniOyunDurumu, durumDeposu } from './oyun/durum.js';
 import { rastgeleUreteci, yeniTohum } from './oyun/rastgele.js';
 import { kesifSonucunuUygula } from './oyun/kesif.js';
 import { ilHaritasiUret, girisNoktasi, dusmanlariYerlestir, ozelDusmanlar, halkiYerlestir } from './oyun/gezinti.js';
+import { gezginBossOlcekle } from './oyun/gezginBoss.js';
 import { arinmaYuzdesi, seyahatEt, yeniAcilanBosslar, finalDurumu } from './oyun/ilerleme.js';
 import { oyunDurumunuIsle, yeniBasarimlar } from './oyun/basarimlar.js';
 import { basarimlar } from './veri/basarimlar.js';
@@ -187,19 +188,21 @@ function gezintiHazirla() {
   }
   const harita = ilHaritasiUret(durum.konum);
   const oyuncu = gezinti ? girisNoktasi(harita, gezinti.plaka) : { ...harita.dogus };
+  const inDekiler = ozelDusmanlar(harita, durum);
   gezinti = {
     plaka: durum.konum,
     harita,
     oyuncu,
     yon: 1,
     dusmanlar: [
-      ...dusmanlariYerlestir(harita, arinmaYuzdesi(durum, durum.konum), rng, { oyuncu }),
-      ...ozelDusmanlar(harita, durum),
+      ...dusmanlariYerlestir(harita, arinmaYuzdesi(durum, durum.konum), rng, { oyuncu, karakter: durum.oyuncu, dolu: inDekiler }),
+      ...inDekiler,
     ],
     sonrakiId: 100,
     halk: halkiYerlestir(harita, rng),
     dogusSayaclari: [],
     dokunulmaz: 0,
+    surprizAdimi: 0, // son sürpriz baskından bu yana atılan adım
   };
   return gezinti;
 }
@@ -329,7 +332,8 @@ function savasGoster(kayit) {
   };
   ekranGoster((kap) =>
     savasEkrani(kap, depo, {
-      dusman: kayit.dusman,
+      // Gezgin bossun gücü oyuncunun o anki gücüne göre ayarlanır
+      dusman: gezginBossOlcekle(kayit.dusman, depo.al().oyuncu),
       rng,
       sonucuUygula: (durum, savas) => {
         const r = kesifSonucunuUygula(durum, savas, plaka, rng);

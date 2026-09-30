@@ -20,6 +20,7 @@ import { statlar, acikYetenekler, xpEkle, tamIyilestir } from './karakter.js';
 import { aralik, sans, sec } from './rastgele.js';
 import { sofraTuket } from './ilerleme.js';
 import { yeniYetenekleriYerlestir } from './kisayollar.js';
+import { GEZGIN_BOSS } from './gezginBoss.js';
 
 // ── Formüller (plan.md Bölüm 5) ──────────────────────────
 
@@ -65,13 +66,14 @@ export function dusmanStatlari(anahtar, seviye) {
 }
 
 // Yenilen düşmanın verdiği XP: round((5 + sv × 10) × sınıf çarpanı).
-export function xpOdulu(anahtar, seviye) {
-  return Math.round((5 + seviye * 10) * SINIF_XP_CARPANI[dusmanlar[anahtar].sinif]);
+// Gezgin bossların çarpanı sınıflarından bağımsızdır (gezginBoss.js).
+export function xpOdulu(anahtar, seviye, carpan = SINIF_XP_CARPANI[dusmanlar[anahtar].sinif]) {
+  return Math.round((5 + seviye * 10) * carpan);
 }
 
-// Bosslardan kaçılamaz.
+// Bosslardan kaçılamaz; haritada dolaşan ya da sürpriz çıkan gezgin bosslardan kaçılır.
 export function kacilabilirMi(dusman) {
-  return dusman.tur !== 'boss';
+  return Boolean(dusman.gezgin) || dusman.tur !== 'boss';
 }
 
 // ── Savaş durumu ─────────────────────────────────────────
@@ -122,9 +124,10 @@ export function savasBaslat(oyuncu, dusman, heybe = [], { gucCarpani = 1 } = {})
     tur: 1,
     evre: false, // bölge bossu güçlenme evresine girdi mi
     evreNo: 1, // Zülmet'in üç evreli savaşında bulunulan evre (1–3)
-    gunluk: [{ tip: 'baslangic' }],
+    // Gezgin bossların tehlikesi savaşın başında söylenir: kesilemezden kaçmak gerekir
+    gunluk: [{ tip: 'baslangic' }, ...(dusman.gezgin ? [{ tip: 'gezgin', tehlike: dusman.tehlike }] : [])],
     sonuc: null, // null | 'zafer' | 'yenilgi' | 'kacis'
-    xpOdulu: xpOdulu(dusman.anahtar, dusman.seviye),
+    xpOdulu: xpOdulu(dusman.anahtar, dusman.seviye, dusman.gezgin ? GEZGIN_BOSS.xpCarpani : undefined),
   };
 }
 
@@ -250,8 +253,8 @@ function ozelHamleSansi(s) {
   return s.dusman.sinif === 'siradan' ? OZEL_HAMLE_SANSI : BOSS_OZEL_HAMLE_SANSI;
 }
 
-// Bölge bossu canı yarının altına düşünce bir kez güçlenir. Zülmet ise üç evreli
-// savaşır: canı her evre eşiğinin altına düşünce sıradaki evreye geçer.
+// Bölge bossu canı yarının altına düşünce bir kez güçlenir (gezgin bosslar güçlenmez).
+// Zülmet ise üç evreli savaşır: canı her evre eşiğinin altına düşünce sıradaki evreye geçer.
 function evreKontrol(s) {
   const d = s.dusman;
   if (d.can <= 0) return null;
@@ -264,7 +267,7 @@ function evreKontrol(s) {
     s.evre = true;
     return { tip: 'evre', kim: 'dusman', no: hedef };
   }
-  if (d.sinif !== 'bolge_bossu' || s.evre || d.can * 2 >= d.canEnCok) return null;
+  if (d.sinif !== 'bolge_bossu' || d.gezgin || s.evre || d.can * 2 >= d.canEnCok) return null;
   s.evre = true;
   d.guc = Math.round(d.guc * EVRE_GUC_CARPANI);
   return { tip: 'evre', kim: 'dusman' };

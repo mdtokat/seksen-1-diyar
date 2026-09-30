@@ -97,6 +97,8 @@ export function olayMetni(olay, savas) {
       return { sinif: 'dusman', metin: sablon(olay.no ? metinler.final.evreler[olay.no] : G.evre, { dusman: d.ad }) };
     case 'yenilgi':
       return { sinif: 'yenilgi', metin: G.yenilgi };
+    case 'gezgin':
+      return { sinif: 'dusman', metin: sablon(G.gezgin[olay.tehlike], { dusman: d.ad }) };
     default:
       return { sinif: 'bilgi', metin: '' };
   }
@@ -194,7 +196,8 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
     const o = savas.oyuncu;
     plakaDusman.innerHTML = `
       <h2>${kacis(d.ad)} <span class="rozet">${sablon(M.seviye, { seviye: d.seviye })}</span></h2>
-      <p class="savasci-tur">${metinler.dusmanTurleri[d.tur]}</p>
+      <p class="savasci-tur">${metinler.dusmanTurleri[d.tur]}${d.gezgin
+        ? ` · <span class="tehlike-rozeti tehlike-${d.tehlike}">${metinler.gezginBoss.tehlike[d.tehlike]}</span>` : ''}</p>
       ${degerCubugu(gosterilen.dusmanCan, d.canEnCok, { etiket: metinler.statAdlari.can, renk: 'var(--mercan)' })}`;
     const etkiler = savas.etkiler
       .filter((e) => e.hedef === 'oyuncu')
@@ -349,6 +352,7 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
       }
       if (ozet.zulmetYenildi) satirlar.push(`<strong class="kutlama">🏰 ${metinler.final.yenildi}</strong>`);
       if (ozet.miniBossYenildi) satirlar.push(`<strong>${sablon(B.miniYenildi, { boss: kacis(savas.dusman.ad) })}</strong>`);
+      if (ozet.gezginBoss) satirlar.push(`<strong class="kutlama">${sablon(metinler.gezginBoss.yenildi, { dusman: kacis(savas.dusman.ad) })}</strong>`);
       if (ozet.hayir) satirlar.push(sablon(S.hayir, { hayir: ozet.hayir }));
       for (const g of ozet.gorevIlerlemesi ?? []) {
         if (!(ozet.hazirOlanGorevler ?? []).includes(g.anahtar)) {
@@ -541,7 +545,7 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
   window.addEventListener('keydown', tusBasildi);
 
   plakalariCiz();
-  gunlugeYaz(savas.gunluk[0]);
+  savas.gunluk.forEach(gunlugeYaz);
   panelCiz();
   return () => window.removeEventListener('keydown', tusBasildi);
 }
