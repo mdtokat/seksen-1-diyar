@@ -3,15 +3,31 @@ import { iller } from '../veri/iller.js';
 import { dusmanlar, SINIF_XP_CARPANI } from '../veri/dusmanlar.js';
 import { dusmanOlustur, savasSonucunuUygula } from './savas.js';
 import { yemekEkle } from './envanter.js';
-import { bossYenildi, MINI_BOSS_ARINMA_ESIGI } from './ilerleme.js';
+import { bossYenildi, zulmetYenildi, MINI_BOSS_ARINMA_ESIGI } from './ilerleme.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { esyalar } from '../veri/esyalar.js';
+import { HAYIR } from '../veri/itibar.js';
+import { gorevler } from '../veri/gorevler.js';
+import { hayirEkle } from './itibar.js';
+import { zaferIlerlemesi, gorevIlerlemesi, hazirGorevler } from './gorevler.js';
 import { aralik, sans, sec, tamSayi } from './rastgele.js';
 
-export const ARINMA_ARTISI = [8, 12]; // zafer başına % (iki uç dahil)
+export const ARINMA_ARTISI = [12, 18]; // zafer başına % (iki uç dahil)
 export const YEMEK_DUSME_SANSI = 0.3;
 
 const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
+
+// Savaş sonucu istatistiklere işlenir: zafer ve bayılma sayıları; bayılmalar
+// bölge bölge de tutulur ("Yiğit" başarımı için).
+export function istatistikYaz(durum, sonuc, bolge) {
+  const i = durum.istatistik ?? { zafer: 0, bayilma: 0, bolgeBayilma: {} };
+  if (sonuc === 'zafer') return { ...durum, istatistik: { ...i, zafer: i.zafer + 1 } };
+  if (sonuc !== 'yenilgi') return durum;
+  return {
+    ...durum,
+    istatistik: { ...i, bayilma: i.bayilma + 1, bolgeBayilma: { ...i.bolgeBayilma, [bolge]: (i.bolgeBayilma[bolge] ?? 0) + 1 } },
+  };
+}
 
 // İlin düşman havuzundan ve seviye aralığından rastgele bir düşman üretir.
 export function karsilasmaUret(plaka, rng) {
@@ -21,7 +37,7 @@ export function karsilasmaUret(plaka, rng) {
   return dusmanOlustur(anahtar, seviye);
 }
 
-// İlin arınmasını %8–12 artırır, %100'de durur. Sonuç: { durum, artis, yuzde, arindi }.
+// İlin arınmasını %12–18 artırır, %100'de durur. Sonuç: { durum, artis, yuzde, arindi }.
 // arindi: bu zaferle il %100'e ulaştıysa true.
 export function arinmaArtir(durum, plaka, rng) {
   const once = durum.arinma[plaka] ?? 0;
@@ -58,15 +74,18 @@ export function bossGanimeti(durum, bolge, nadirlik, rng) {
 }
 
 // Keşif savaşının sonucunu uygular: savaş sonucu (XP, seviye, bayılma) +
-// zaferde arınma artışı, akçe ve yemek. Sonuç: { durum, ozet }.
+// zaferde arınma artışı, akçe, yemek, Hayır puanı ve görev ilerlemesi. Sonuç: { durum, ozet }.
 // ozet, savasSonucunuUygula özetine ek olarak:
 //   { arinmaArtisi, arinma, arindi, akce, yemek, yemekSigmadi,
 //     bossYenildi (bölge anahtarı | null), acilanBolge, miniBossYenildi, miniBossBelirdi,
-//     esya (düşen eşyanın anahtarı | null) }
+//     esya (düşen eşyanın anahtarı | null), hayir (kazanılan Hayır puanı),
+//     gorevIlerlemesi ([{ anahtar, mevcut, hedef }]), hazirOlanGorevler ([anahtar]),
+//     zulmetYenildi }
+// İstatistikler (zafer ve bayılma sayıları, bölge bölge bayılmalar) de burada tutulur.
 export function kesifSonucunuUygula(durum, savas, plaka, rng) {
   const r = savasSonucunuUygula(durum, savas);
   if (!r.ozet) return r;
-  let yeni = r.durum;
+  let yeni = istatistikYaz(r.durum, savas.sonuc, ilHaritasi.get(plaka).bolge);
   const ozet = {
     ...r.ozet,
     arinmaArtisi: 0,
@@ -80,8 +99,13 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
     miniBossYenildi: false,
     miniBossBelirdi: null,
     esya: null,
+    hayir: 0,
+    gorevIlerlemesi: [],
+    hazirOlanGorevler: [],
+    zulmetYenildi: false,
   };
   if (savas.sonuc !== 'zafer') return { durum: yeni, ozet };
+  const onceHazir = new Set(hazirGorevler(durum));
   const onceArinma = yeni.arinma[plaka] ?? 0;
 
   const a = arinmaArtir(yeni, plaka, rng);
@@ -114,6 +138,9 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
   } else if (sinif === 'mini_boss') {
     yeni = { ...yeni, yenilenMiniBosslar: [...new Set([...(yeni.yenilenMiniBosslar ?? []), plaka])] };
     ozet.miniBossYenildi = true;
+  } else if (sinif === 'final') {
+    yeni = zulmetYenildi(yeni);
+    ozet.zulmetYenildi = true;
   }
 
   // İlin arınması eşiği geçtiyse ve bu ilde mini boss varsa ortaya çıkar
@@ -122,5 +149,18 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
       && bolge.miniBossIlleri.includes(plaka) && !(yeni.yenilenMiniBosslar ?? []).includes(plaka)) {
     ozet.miniBossBelirdi = bolge.miniBoss;
   }
+
+  // Mazluma yardım Hayır puanı kazandırır (plan.md Faz 9)
+  ozet.hayir = (ozet.arindi ? HAYIR.ilArindi : 0)
+    + (sinif === 'mini_boss' ? HAYIR.miniBoss : 0)
+    + (sinif === 'bolge_bossu' ? HAYIR.bolgeBossu : 0)
+    + (sinif === 'final' ? HAYIR.final : 0);
+  yeni = hayirEkle(yeni, ozet.hayir);
+
+  const z = zaferIlerlemesi(yeni, savas.dusman.anahtar);
+  yeni = z.durum;
+  ozet.gorevIlerlemesi = z.ilerleyenler.map((anahtar) => ({ anahtar, ...gorevIlerlemesi(yeni, anahtar) }));
+  // Ulaştırma görevleri heybeye bağlıdır; savaşta bulunan yemek onları "hazır" saydırmasın
+  ozet.hazirOlanGorevler = hazirGorevler(yeni).filter((a) => !onceHazir.has(a) && gorevler[a].tur !== 'ulastir');
   return { durum: yeni, ozet };
 }

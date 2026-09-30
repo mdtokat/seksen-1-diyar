@@ -2,16 +2,80 @@
 
 Türkiye'nin 81 ilinde geçen, tarayıcıda oynanan, sıra tabanlı bir RPG. Oyuncu, genç yiğit **Alp** olarak illeri gezer, zalim sihirbaz **Zülmet**'in saldığı cinleri ve ifritleri yener, seviye atlar ve yurdu kötülükten arındırır. Her ilin yöresel yemeği, can ve nefes yenileyen birer azıktır.
 
-Oyuncu karakterini kuşbakışı il haritalarında yürütür (dokunarak, ekran yön tuşlarıyla ya da ok tuşları/WASD ile), haritada dolaşan düşmanlarla karşılaşınca sıra tabanlı savaşa girer ve il sınırlarındaki yollardan komşu illere geçer.
+**Oyna:** <https://mdtokat.github.io/seksen-1-diyar/>
+
+Telefonda dikey ekranda rahat oynanır; masaüstünde de çalışır. İlerleme tarayıcıda otomatik kaydedilir.
+
+## Ekran görüntüleri
+
+| Başlık | İl içi gezinti | Savaş |
+|---|---|---|
+| ![Başlık ekranı](docs/ekran/baslik.jpg) | ![Manisa meydanında gezinti](docs/ekran/gezinti.jpg) | ![Kara Cin ile savaş](docs/ekran/savas.jpg) |
+
+| Türkiye haritası | Görev günlüğü |
+|---|---|
+| ![İl sınırlı Türkiye haritası](docs/ekran/harita.jpg) | ![Görev günlüğü ve itibar](docs/ekran/gunluk.jpg) |
+
+## Oyun rehberi
+
+### Başlangıç
+Adını gir ve üç yoldan birini seç:
+
+- **Akıncı:** kılıçlı öncü süvari. Canı ve savunması yüksektir; *Yiğit Nârası* ile gücünü artırır.
+- **Kemankeş:** Osmanlı okçusu. Çevik ve isabetlidir, kritik vuruşları güçlüdür; canı azdır, dikkatli oyna.
+- **Alperen:** gazi-derviş geleneğinden gelir. Nefesi boldur, kendini iyileştirir; *Arınma Işığı* cinlere ve ifritlere ek hasar verir.
+
+Yolculuk İstanbul'da başlar. Başlangıçta yalnızca Marmara açıktır.
+
+### Gezinti
+- Gitmek istediğin yere **dokun** ya da ekrandaki **yön tuşlarını** (🎮) kullan. Masaüstünde **ok tuşları** ve **WASD** çalışır.
+- İl meydanı güvenlidir; düşmanlar giremez. Meydanda **çeşme**, **arasta** (yemek tezgâhı), **tabela** (il bilgisi) ve **muhtar** bulunur. Bazı illerde **Ahi esnafı**, **Ahi Baba** ve **kervansaray** da vardır.
+- Haritanın kenarındaki yollar komşu illere çıkar. Kilitli bölgeye giden yol mor bir sihirli engelle kapalıdır.
+- Sağdaki düğmeler: 🗺️ Türkiye haritası · 🎒 heybe · 📜 görev günlüğü ve başarımlar · ℹ️ il bilgisi · 🎮 yön tuşları · 🔊 ses.
+
+### Savaş
+- Düşmanlar haritada dolaşır; yaklaşınca peşine düşer, temas edince sıra tabanlı savaş başlar.
+- Her turda **Saldır**, **Yetenek** (nefes harcar), **Yemek** ya da **Kaç** seçilir. Bosslardan kaçılamaz.
+- Zafer XP, akçe ve bazen ilin yöresel yemeğini getirir; ayrıca ili **%12–18 arındırır**. %100 olan il yeşile döner.
+- Bayılırsan en son dinlendiğin kervansarayda (hiç dinlenmediysen bulunduğun ilin meydanında) kendine gelirsin ve akçenin %10'unu kaybedersin.
+
+### Seviye ve ekipman
+- Her seviyede statların kendiliğinden artar ve **3 stat puanı** dağıtırsın (👤 karakter ekranı). Yeni yetenekler 5, 12, 20 ve 32. seviyelerde açılır.
+- **Ahi esnafı** bölgenin sıradan ve nadir silah, zırh ve kuşaklarını satar; eşyalarını yarı fiyatına geri alır. **Efsanevi** eşyaları yalnızca bosslar düşürür.
+
+### Yemekler
+Her ilin meşhur yemeği ya **canı** (ana yemekler) ya da **nefesi** (tatlılar, içecekler, meyveler, bal) yeniler. Doğuya gidildikçe yemekler güçlenir. Heybe 20 yuvadır; aynı yemekten bir yuvada 10 tane durur.
+
+### Bölgeler ve bosslar
+Bölgeler sırayla açılır: Marmara → Ege → Akdeniz → İç Anadolu → Karadeniz → Güneydoğu → Doğu Anadolu. Her bölgenin bossu, bölge illerinin ortalama arınması %60'a ve seviyen bölgenin üst seviyesinin bir altına ulaşınca mühründen çıkar. Boss yenilince sonraki bölge açılır ve **zafer sofrası** kurulur (10 savaş boyunca %10 güç). Bazı illerde arınma %50'yi geçince **mini boss** belirir.
+
+### Kervansaray ve hızlı yolculuk
+Kervansarayda dinlenmek ücretsizdir; can ve nefes dolar. Tamamen arınmış illerdeki kervansaraylar arasında akçe karşılığı anında yolculuk edebilirsin.
+
+### Görevler ve itibar
+Meydanlardaki **muhtarlar** ve **Ahi Babalar** görev verir (başlarındaki `!` işareti). Görevler: belirli bir düşmandan birkaç tane yenmek, bir ili arındırmak ya da bir yöresel yemeği komşu ile ulaştırmak. Görevler ve mazluma yardım (ili arındırmak, bossları yenmek) **Hayır puanı** kazandırır. Unvanın yükseldikçe arastada indirim alırsın; muhtarlar da köylüler adına hediye yemek verir (🎁).
+
+### Final
+Van Gölü Canavarı'nı yenip **seviye 48**'e ulaşınca Ağrı Dağı'ndaki kalenin mührü çözülür. Zülmet ile **üç evreli** bir savaş seni bekler: canı azaldıkça yeni sihirlerle güçlenir. Onu yenince hikâyenin sonunu ve 81 ilin özetini görürsün; ardından kalan illeri arındırmaya devam edebilirsin.
+
+### Başarımlar
+İlk Zafer, İlk İl Arındı, Bir Bölge Tamam, Yiğit (bir bölge bossunu o bölgede hiç bayılmadan yenmek), Efsanenin Sahibi, Halkın Yiğidi, Hizmet Ehli, Sofra Ustası (81 yemeğin hepsini toplamak), Zulmete Son ve 81 Diyar. Hepsi görev günlüğündedir.
+
+### İpuçları
+- Savaştan önce heybeni bölgenin yemekleriyle doldur; bosslarda canın yarıya inmeden ye.
+- Stat puanlarını dağıtmayı unutma; üst çubuktaki karakter düğmesinde nokta varsa bekleyen puanın var demektir.
+- Kemankeş ile canı, Alperen ile nefesi göz ardı etme.
+
+## Geliştirme
 
 Geliştirme planı, kurallar ve faz takibi için: [plan.md](plan.md)
 
-## Gereksinimler
+### Gereksinimler
 
 - Node.js 20.19+ veya 22.12+
 - npm
 
-## Kurulum ve çalıştırma
+### Kurulum ve çalıştırma
 
 ```bash
 npm install      # bağımlılıkları kur
@@ -21,13 +85,13 @@ npm run build    # yayın paketini dist/ klasörüne derle
 npm run preview  # derlenmiş paketi yerelde önizle
 ```
 
-## Yayın
+### Yayın
 
-`main` dalına yapılan her push, GitHub Actions ile test edilip derlenir ve GitHub Pages'e yayınlanır (`.github/workflows/deploy.yml`). Depo ayarlarında **Settings → Pages → Source** değeri **GitHub Actions** olmalıdır.
+`main` dalına yapılan her push, GitHub Actions ile test edilip derlenir ve GitHub Pages'e yayınlanır (`.github/workflows/deploy.yml`): <https://mdtokat.github.io/seksen-1-diyar/>. Depo ayarlarında **Settings → Pages → Source** değeri **GitHub Actions** olmalıdır.
 
-## Teknoloji
+### Teknoloji
 
-Vite, vanilla JavaScript (ES modülleri), Vitest, SVG ve localStorage.
+Vite, vanilla JavaScript (ES modülleri), Vitest, SVG, Web Audio API ve localStorage. Görseller ve sesler koddan üretilir; harici görsel ya da ses dosyası yoktur.
 
 ## Harita verisi ve atıf
 

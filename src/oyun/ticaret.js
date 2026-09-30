@@ -4,6 +4,7 @@ import { bolgeler } from '../veri/bolgeler.js';
 import { esyalar } from '../veri/esyalar.js';
 import { yemekFiyati, yemekEkle } from './envanter.js';
 import { kusaniliMi } from './ekipman.js';
+import { indirimliFiyat } from './itibar.js';
 
 export const SATIS_ORANI = 0.5; // Ahi, eşyayı fiyatının yarısına geri alır
 export const ARASTA_KOMSU_YEMEGI = 2;
@@ -21,10 +22,15 @@ export function arastaMallari(plaka) {
   return [...new Set([il.yemek, ...komsular.map((p) => ilHaritasi.get(p).yemek)])];
 }
 
+// Arastadaki fiyat: yemeğin fiyatı, oyuncunun itibarına göre indirimli (plan.md Faz 9).
+export function arastaFiyati(durum, anahtar) {
+  return indirimliFiyat(durum, yemekFiyati(anahtar));
+}
+
 // neden: 'satilmiyor' | 'akce_yetersiz' | 'heybe_dolu'
 export function yemekAlKontrol(durum, anahtar) {
   if (!arastaMallari(durum.konum).includes(anahtar)) return { olur: false, neden: 'satilmiyor' };
-  if (durum.akce < yemekFiyati(anahtar)) return { olur: false, neden: 'akce_yetersiz' };
+  if (durum.akce < arastaFiyati(durum, anahtar)) return { olur: false, neden: 'akce_yetersiz' };
   if (yemekEkle(durum.heybe, anahtar).eklenen === 0) return { olur: false, neden: 'heybe_dolu' };
   return { olur: true };
 }
@@ -33,7 +39,7 @@ export function yemekAl(durum, anahtar) {
   if (!yemekAlKontrol(durum, anahtar).olur) return durum;
   return {
     ...durum,
-    akce: durum.akce - yemekFiyati(anahtar),
+    akce: durum.akce - arastaFiyati(durum, anahtar),
     heybe: yemekEkle(durum.heybe, anahtar).heybe,
   };
 }

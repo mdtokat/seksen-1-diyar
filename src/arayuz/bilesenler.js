@@ -56,3 +56,15 @@ export function bildirimGoster(kap, metin, { tur = 'bilgi', sure = 2800 } = {}) 
   setTimeout(() => bildirim.classList.add('kayboluyor'), sure);
   setTimeout(() => bildirim.remove(), sure + 400);
 }
+
+// Seviye atlama ve büyük zaferlerde ekranın ortasında açılan altın parıltı.
+// Hareket azaltılmışsa yalnızca yumuşak bir ışıma görünür (CSS).
+export function parilti(kap, { sayi = 14 } = {}) {
+  const katman = document.createElement('div');
+  katman.className = 'parilti-katmani';
+  katman.setAttribute('aria-hidden', 'true');
+  katman.innerHTML = Array.from({ length: sayi }, (_, i) =>
+    `<span class="kivilcim" style="--aci:${Math.round((360 / sayi) * i)}deg;--gecikme:${(i % 3) * 60}ms"></span>`).join('');
+  kap.appendChild(katman);
+  setTimeout(() => katman.remove(), 1500);
+}

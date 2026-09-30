@@ -1,6 +1,6 @@
 // Bölge ilerlemesi. Saf oyun mantığı — DOM'a dokunmaz.
 import { iller as ilVerisi } from '../veri/iller.js';
-import { bolgeler as bolgeVerisi } from '../veri/bolgeler.js';
+import { bolgeler as bolgeVerisi, final } from '../veri/bolgeler.js';
 import { tamIyilestir } from './karakter.js';
 
 // Bölge içinde, giriş ilinden başlayarak yalnızca aynı bölgedeki komşular
@@ -167,4 +167,27 @@ export function miniBossVarMi(durum, plaka) {
   return bolge.miniBossIlleri.includes(plaka)
     && arinmaYuzdesi(durum, plaka) > MINI_BOSS_ARINMA_ESIGI
     && !(durum.yenilenMiniBosslar ?? []).includes(plaka);
+}
+
+// ── Final: Ağrı Dağı'ndaki kale (plan.md Faz 10) ─────────
+
+// Kalenin mührünün çözülme koşulları: önkoşul bölgenin (Doğu Anadolu) bossu
+// yenilmiş ve oyuncu en az final seviyesinde olmalı.
+export function finalKosullari(durum) {
+  const onkosulBossu = (durum.yenilenBosslar ?? []).includes(final.onkosulBolge);
+  const seviye = durum.oyuncu?.seviye ?? 0;
+  return { onkosulBossu, seviye, gerekenSeviye: final.seviye, olur: onkosulBossu && seviye >= final.seviye };
+}
+
+// 'kilitli_bolge' | 'muhurlu' | 'acik' | 'yenildi'
+export function finalDurumu(durum) {
+  if (durum.zulmetYenildi) return 'yenildi';
+  if (!bolgeAcikMi(durum, ilHaritasi.get(final.il).bolge)) return 'kilitli_bolge';
+  return finalKosullari(durum).olur ? 'acik' : 'muhurlu';
+}
+
+// Zülmet yenilince: oyun bitmiş sayılır, can ve nefes dolar. Oyuncu kalan illeri
+// arındırmaya devam edebilir.
+export function zulmetYenildi(durum) {
+  return { ...durum, zulmetYenildi: true, oyuncu: tamIyilestir(durum.oyuncu) };
 }

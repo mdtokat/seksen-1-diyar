@@ -10,7 +10,7 @@ export const VARSAYILAN_AD = 'Alp';
 // Bir seviyeden sonrakine geçmek için gereken XP (plan.md Bölüm 5).
 // XP her seviye atlamada sıfırlanır; artan kısım sonraki seviyeye aktarılır.
 export function gerekenXp(seviye) {
-  return Math.round(40 * seviye ** 1.6);
+  return Math.round(30 * seviye ** 1.35);
 }
 
 // Oyuncu adını temizler: baştaki/sondaki boşluklar atılır, uzunluk sınırlanır.

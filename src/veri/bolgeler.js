@@ -115,9 +115,12 @@ export const bolgeler = [
   },
 ];
 
-// Final savaşı: Ağrı Dağı'ndaki kalede Zülmet.
+// Final savaşı: Ağrı Dağı'ndaki kalede Zülmet (plan.md Faz 10).
+// Kale, `onkosulBolge` bölgesinin bossu yenilip oyuncu `seviye`ye ulaşınca açılır.
 export const final = {
   boss: 'zulmet',
   il: 4,
   seviye: 48,
+  onkosulBolge: 'dogu_anadolu',
+  dusmanSeviyesi: 50,
 };

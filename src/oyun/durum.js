@@ -20,19 +20,28 @@ export function yeniOyunDurumu({ ad, sinif } = {}) {
     sofra: null, // { bolge, kalan } — zafer sofrasının kalan savaş sayısı
     esyalar: [], // sahip olunan eşyalar (esyalar.js anahtarları)
     sonKervansaray: null, // en son dinlenilen kervansarayın ili; bayılınca buraya dönülür
+    gorevler: {}, // { anahtar: { durum: 'aktif', sayac } | { durum: 'tamam' } }
+    hayir: 0, // itibar (Hayır puanı)
+    hediyeAlinan: [], // muhtarın köylüler adına hediye verdiği iller
+    zulmetYenildi: false, // final savaşı kazanıldı mı (oyun bitti; sonrasında da sürer)
+    basarimlar: [], // kazanılan başarımlar (basarimlar.js anahtarları)
+    toplananYemekler: BASLANGIC_HEYBESI.map((y) => y.anahtar), // en az bir kez sahip olunan yemekler
+    istatistik: { zafer: 0, bayilma: 0, bolgeBayilma: {} },
   };
 }
 
 // Tek bir oyun durumunu tutan depo. Durum değişmez (immutable) kabul edilir:
 // oyun fonksiyonları yeni durum döndürür, depo aboneleri haberdar eder.
-export function durumDeposu(baslangic) {
-  let durum = baslangic;
+// `donustur(yeni, onceki)` verilirse her yeni durum abonelere gitmeden ondan geçer
+// (ör. başarımların denetlenmesi).
+export function durumDeposu(baslangic, { donustur = (d) => d } = {}) {
+  let durum = donustur(baslangic, baslangic); // ilk durumda geçiş yoktur (ör. eski bosslar "Yiğit" saydırmaz)
   const aboneler = new Set();
   return {
     al: () => durum,
     ayarla(yeni) {
       if (yeni === durum) return;
-      durum = yeni;
+      durum = donustur(yeni, durum);
       for (const abone of aboneler) abone(durum);
     },
     abone(fn) {

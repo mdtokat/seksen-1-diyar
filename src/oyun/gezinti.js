@@ -5,10 +5,10 @@
 // açılışta aynı görünür. Harita GENISLIK × YUKSEKLIK karodan oluşur, karolar satır
 // satır tek bir dizide tutulur (sira = y × GENISLIK + x).
 import { iller } from '../veri/iller.js';
-import { bolgeler } from '../veri/bolgeler.js';
+import { bolgeler, final } from '../veri/bolgeler.js';
 import { karsilasmaUret } from './kesif.js';
 import { dusmanOlustur } from './savas.js';
-import { bossDurumu, miniBossVarMi } from './ilerleme.js';
+import { bossDurumu, miniBossVarMi, finalDurumu } from './ilerleme.js';
 import { rastgeleUreteci, tamSayi, sans } from './rastgele.js';
 
 export const GENISLIK = 25;
@@ -29,6 +29,8 @@ export const KARO = {
   KAPI: 11, // komşu ile çıkış
   DUKKAN: 12, // Ahi esnafının silah ve zırh dükkânı
   KERVANSARAY: 13,
+  MUHTAR: 14, // köy muhtarı: görev verir, ulaştırılan yemeği teslim alır, hediye verir
+  AHI_BABA: 15, // Ahi esnafı olan illerde dükkânın yanında durur, görev verir
 };
 
 const OYUNCU_YURUR = new Set([KARO.CIM, KARO.YOL, KARO.YABANI, KARO.MEYDAN, KARO.KAPI]);
@@ -217,10 +219,15 @@ export function ilHaritasiUret(plaka) {
   const kervansaray = bolgeVerisi.kervansarayIlleri.includes(plaka) ? { x: merkez.x + 2, y: merkez.y + 1 } : null;
   if (dukkan) koy(dukkan.x, dukkan.y, KARO.DUKKAN);
   if (kervansaray) koy(kervansaray.x, kervansaray.y, KARO.KERVANSARAY);
+  // Görev verenler (Faz 9): muhtar tabelanın yanında, Ahi Baba dükkânın yanında
+  const muhtar = { x: merkez.x + 3, y: merkez.y - 1 };
+  const ahiBaba = dukkan ? { x: merkez.x - 3, y: merkez.y + 1 } : null;
+  koy(muhtar.x, muhtar.y, KARO.MUHTAR);
+  if (ahiBaba) koy(ahiBaba.x, ahiBaba.y, KARO.AHI_BABA);
   const dogus = { x: merkez.x, y: merkez.y + 1 };
 
   // 7. Bağlantı: meydandan yürünerek ulaşılamayan açık alanlar engelle doldurulur
-  const harita = { plaka, bolge: il.bolge, karolar: k, kapilar, meydan, dogus, tezgah, cesme, tabela, dukkan, kervansaray };
+  const harita = { plaka, bolge: il.bolge, karolar: k, kapilar, meydan, dogus, tezgah, cesme, tabela, dukkan, kervansaray, muhtar, ahiBaba };
   const ulasilan = ulasilabilir(harita, dogus, yurunurMu);
   for (let y = 0; y < Y; y++) {
     for (let x = 0; x < G; x++) {
@@ -291,8 +298,8 @@ export function kapiBul(harita, p) {
   return harita.kapilar.find((k) => k.x === p.x && k.y === p.y);
 }
 
-// Engelle karşılaşılan karo bir yapıysa türü:
-// 'cesme' | 'tezgah' | 'tabela' | 'dukkan' | 'kervansaray'.
+// Engelle karşılaşılan karo bir yapıysa ya da görev verense türü:
+// 'cesme' | 'tezgah' | 'tabela' | 'dukkan' | 'kervansaray' | 'muhtar' | 'ahi_baba'.
 export function etkilesimTuru(harita, x, y) {
   return {
     [KARO.CESME]: 'cesme',
@@ -300,6 +307,8 @@ export function etkilesimTuru(harita, x, y) {
     [KARO.TABELA]: 'tabela',
     [KARO.DUKKAN]: 'dukkan',
     [KARO.KERVANSARAY]: 'kervansaray',
+    [KARO.MUHTAR]: 'muhtar',
+    [KARO.AHI_BABA]: 'ahi_baba',
   }[karo(harita, x, y)] ?? null;
 }
 
@@ -429,9 +438,9 @@ export function temasEdenDusman(harita, dusmanlar, oyuncu) {
 
 // ── Boss ve mini boss inleri (plan.md Faz 7) ─────────────
 
-// Bu ilin ininde bekleyen boss ya da mini boss (sabit düşman kaydı), yoksa boş dizi.
+// Bu ilin ininde bekleyen boss, mini boss ya da Zülmet (sabit düşman kaydı), yoksa boş dizi.
 // Bölge bossu, yenilene dek (mühürlü olsa da) bossun ilinde görünür; mini boss ise
-// ilin arınması eşiği geçince ortaya çıkar.
+// ilin arınması eşiği geçince ortaya çıkar. Zülmet, Ağrı'daki kalede bekler.
 export function ozelDusmanlar(harita, durum) {
   const il = ilHaritasi.get(harita.plaka);
   const bolge = bolgeler.find((b) => b.anahtar === il.bolge);
@@ -439,6 +448,10 @@ export function ozelDusmanlar(harita, durum) {
     id, dusman: dusmanOlustur(anahtar, seviye), x: harita.in.x, y: harita.in.y,
     evX: harita.in.x, evY: harita.in.y, sabit: true, tur, yon: -1,
   });
+  // Ağrı Dağı'ndaki kalede Zülmet bekler (kale açılana dek mühürlü)
+  if (final.il === harita.plaka && ['muhurlu', 'acik'].includes(finalDurumu(durum))) {
+    return [kayit('final', final.boss, final.dusmanSeviyesi, 'final')];
+  }
   if (bolge.bossIli === harita.plaka && bossDurumu(durum, bolge.anahtar) !== 'yenildi') {
     return [kayit('boss', bolge.boss, bolge.seviye[1], 'boss')];
   }

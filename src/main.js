@@ -5,7 +5,11 @@ import { yeniOyunDurumu, durumDeposu } from './oyun/durum.js';
 import { rastgeleUreteci, yeniTohum } from './oyun/rastgele.js';
 import { kesifSonucunuUygula } from './oyun/kesif.js';
 import { ilHaritasiUret, girisNoktasi, dusmanlariYerlestir, ozelDusmanlar } from './oyun/gezinti.js';
-import { arinmaYuzdesi, seyahatEt, yeniAcilanBosslar } from './oyun/ilerleme.js';
+import { arinmaYuzdesi, seyahatEt, yeniAcilanBosslar, finalDurumu } from './oyun/ilerleme.js';
+import { oyunDurumunuIsle, yeniBasarimlar } from './oyun/basarimlar.js';
+import { basarimlar } from './veri/basarimlar.js';
+import { bitisEkrani } from './arayuz/bitisEkrani.js';
+import { sesCal } from './arayuz/ses.js';
 import { bolgeler } from './veri/bolgeler.js';
 import { dusmanlar } from './veri/dusmanlar.js';
 import { kaydet, yukle } from './oyun/kayit.js';
@@ -23,6 +27,10 @@ import { arastaEkrani } from './arayuz/arastaEkrani.js';
 import { ahiEkrani } from './arayuz/ahiEkrani.js';
 import { kervansarayEkrani } from './arayuz/kervansarayEkrani.js';
 import { hizliYolculuk } from './oyun/kervansaray.js';
+import { gorevEkrani } from './arayuz/gorevEkrani.js';
+import { gunlukEkrani } from './arayuz/gunlukEkrani.js';
+import { kademeSirasi, hayirPuani } from './oyun/itibar.js';
+import { itibarKademeleri } from './veri/itibar.js';
 
 // Sekiz köşeli Selçuklu yıldızı: biri 45° döndürülmüş iki karenin birleşimi.
 const yildiz = (sinif) => `
@@ -78,13 +86,17 @@ let ipucuGosterildi = false;
 function ekranGoster(kur) {
   temizle?.();
   temizle = kur(uygulama) ?? null;
+  // Ekranlar arası yumuşak geçiş (hareket azaltılmışsa CSS kapatır)
+  uygulama.firstElementChild?.classList.add('ekran-gir');
   window.scrollTo(0, 0);
 }
 
 // Durum her değiştiğinde (savaş sonu, seyahat, seviye atlama, yemek, stat
 // puanı) otomatik kayıt yapılır. Kayıt yapılamazsa oyuncu bir kez uyarılır.
 function oyunuBaslat(durum) {
-  depo = durumDeposu(durum);
+  // Her yeni durum başarımlar ve yemek defteri için denetlenir
+  depo = durumDeposu(durum, { donustur: oyunDurumunuIsle });
+  durum = depo.al();
   gezinti = null;
   let uyarildi = false;
   const kaydetVeUyar = (d) => {
@@ -96,9 +108,21 @@ function oyunuBaslat(durum) {
   depo.abone(kaydetVeUyar);
   kaydetVeUyar(durum);
 
-  // Bir bossun mührü çözülünce oyuncuya haber verilir.
+  // Bir bossun mührü çözülünce ya da oyuncunun unvanı yükselince haber verilir.
   let onceki = durum;
   depo.abone((d) => {
+    const kademe = kademeSirasi(hayirPuani(d));
+    if (kademe > kademeSirasi(hayirPuani(onceki))) {
+      sesCal('basarim');
+      bildirimGoster(document.body, sablon(metinler.gorev.unvanAtladin, { unvan: itibarKademeleri[kademe].ad }), { tur: 'kutlama', sure: 5000 });
+    }
+    for (const a of yeniBasarimlar(onceki, d)) {
+      sesCal('basarim');
+      bildirimGoster(document.body, sablon(metinler.basarim.kazanildi, { basarim: `${basarimlar[a].ikon} ${basarimlar[a].ad}` }), { tur: 'kutlama', sure: 5000 });
+    }
+    if (finalDurumu(d) === 'acik' && finalDurumu(onceki) !== 'acik') {
+      bildirimGoster(document.body, metinler.final.acildi, { tur: 'kutlama', sure: 6000 });
+    }
     for (const anahtar of yeniAcilanBosslar(onceki, d)) {
       const b = bolgeler.find((x) => x.anahtar === anahtar);
       bildirimGoster(document.body, sablon(metinler.boss.acildi, {
@@ -175,7 +199,8 @@ function gezintiHazirla() {
   return gezinti;
 }
 
-function gezintiGoster() {
+// ilGirisi: başka bir ilden yeni gelindiyse il adı afişi gösterilir.
+function gezintiGoster({ ilGirisi = false } = {}) {
   const g = gezintiHazirla();
   const ipucuGoster = !ipucuGosterildi;
   ipucuGosterildi = true;
@@ -184,10 +209,11 @@ function gezintiGoster() {
       g,
       rng,
       ipucuGoster,
+      ilGirisi,
       savasBaslat: savasGoster,
       ileGec: (plaka) => {
         depo.ayarla(seyahatEt(depo.al(), plaka));
-        gezintiGoster();
+        gezintiGoster({ ilGirisi: true });
         bildirimGoster(uygulama.querySelector('.gezinti-ekrani'), sablon(metinler.harita.varis, {
           il: iller.find((il) => il.plaka === plaka).ad,
         }));
@@ -200,6 +226,8 @@ function gezintiGoster() {
       arastaGoster: () => ekranGoster((kap) => arastaEkrani(kap, depo, { geri: gezintiGoster })),
       ahiGoster: () => ekranGoster((kap) => ahiEkrani(kap, depo, { geri: gezintiGoster })),
       kervansarayGoster,
+      gorevVerenGoster: (veren) => ekranGoster((kap) => gorevEkrani(kap, depo, { veren, geri: gezintiGoster })),
+      gunlukGoster,
     }),
   );
 }
@@ -214,13 +242,22 @@ function kervansarayGoster() {
         if (sonra === once) return;
         depo.ayarla(sonra);
         gezinti = null; // yeni ilde meydandan, kervansarayın yanından başlanır
-        gezintiGoster();
+        gezintiGoster({ ilGirisi: true });
         bildirimGoster(uygulama.querySelector('.gezinti-ekrani'), sablon(metinler.kervansaray.vardin, {
           il: iller.find((il) => il.plaka === hedef).ad,
         }));
       },
     }),
   );
+}
+
+function gunlukGoster() {
+  ekranGoster((kap) => gunlukEkrani(kap, depo, { geri: () => gezintiGoster(), bitisGoster: () => bitisGoster(gunlukGoster) }));
+}
+
+// Zülmet yenilince bitiş sahnesi; ardından yolculuğa devam edilir.
+function bitisGoster(devam = () => gezintiGoster()) {
+  ekranGoster((kap) => bitisEkrani(kap, depo, { devam }));
 }
 
 function ilGoster() {
@@ -258,6 +295,7 @@ function heybeGoster(geri) {
 function savasGoster(kayit) {
   const plaka = depo.al().konum;
   let sonuc = null;
+  let finalBitti = false;
   let islendi = false;
   const sonrasi = () => {
     if (islendi || !sonuc) return;
@@ -284,10 +322,12 @@ function savasGoster(kayit) {
       sonucuUygula: (durum, savas) => {
         const r = kesifSonucunuUygula(durum, savas, plaka, rng);
         sonuc = r.ozet.sonuc;
+        finalBitti = r.ozet.zulmetYenildi;
         return r;
       },
       bitince: () => {
         sonrasi();
+        if (finalBitti) return bitisGoster();
         gezintiGoster();
       },
       karakterGoster: () => {

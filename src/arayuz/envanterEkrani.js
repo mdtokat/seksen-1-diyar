@@ -4,6 +4,7 @@ import { metinler } from '../veri/metinler.js';
 import { statlar } from '../oyun/karakter.js';
 import { yemekGucu, yemekYe, yemekYeKontrol, HEYBE_YUVA } from '../oyun/envanter.js';
 import { kacis, sablon, degerCubugu, bildirimGoster } from './bilesenler.js';
+import { sesCal } from './ses.js';
 
 const M = metinler.envanter;
 const turAdi = (tur) => metinler.statAdlari[tur].toLocaleLowerCase('tr');
@@ -69,6 +70,7 @@ export function envanterEkrani(kap, depo, { geri } = {}) {
     const r = yemekYe(durum, anahtar);
     if (r.durum === durum) return;
     depo.ayarla(r.durum);
+    sesCal('yemek');
     bildirimGoster(ekran, sablon(M.yedin, { yemek: yemekler[anahtar].ad, miktar: r.miktar, tur: turAdi(r.tur) }));
   });
 

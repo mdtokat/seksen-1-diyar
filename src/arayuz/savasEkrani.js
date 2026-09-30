@@ -3,6 +3,7 @@ import { iller } from '../veri/iller.js';
 import { yemekler } from '../veri/yemekler.js';
 import { dusmanlar as dusmanVerisi } from '../veri/dusmanlar.js';
 import { esyalar as esyaVerisi } from '../veri/esyalar.js';
+import { gorevler as gorevVerisi } from '../veri/gorevler.js';
 import { metinler } from '../veri/metinler.js';
 import {
   savasBaslat,
@@ -16,7 +17,8 @@ import { gerekenXp } from '../oyun/karakter.js';
 import { sofraGucCarpani, SOFRA } from '../oyun/ilerleme.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { yemekAdedi, yemekGucu } from '../oyun/envanter.js';
-import { kacis, sablon, degerCubugu, bildirimGoster } from './bilesenler.js';
+import { kacis, sablon, degerCubugu, bildirimGoster, parilti } from './bilesenler.js';
+import { sesCal } from './ses.js';
 import { sinifCizimi } from './cizimler/karakterler.js';
 import { dusmanCizimi } from './cizimler/dusmanlar.js';
 import { bolgeArkaPlani } from './cizimler/arkaplanlar.js';
@@ -90,7 +92,7 @@ export function olayMetni(olay, savas) {
     case 'zafer':
       return { sinif: 'zafer', metin: sablon(M.dagilma[d.tur], { dusman: d.ad }) };
     case 'evre':
-      return { sinif: 'dusman', metin: sablon(G.evre, { dusman: d.ad }) };
+      return { sinif: 'dusman', metin: sablon(olay.no ? metinler.final.evreler[olay.no] : G.evre, { dusman: d.ad }) };
     case 'yenilgi':
       return { sinif: 'yenilgi', metin: G.yenilgi };
     default:
@@ -222,9 +224,11 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
       titret(saldiran, oyuncudan ? 'hamle-sag' : 'hamle-sol', 400);
       if (!azHareket) await bekle(180);
       if (olay.kacindi) {
+        sesCal('siyrilma');
         titret(hedef, 'siyril', 450);
         yaziUcur(hedef, M.sahne.siyrildi, 'bilgi');
       } else {
+        sesCal(olay.kritik ? 'kritik' : oyuncudan ? 'vurus' : 'dusmanVurusu');
         vurusGoster(hedef);
         titret(hedef, 'sarsil', 420);
         yaziUcur(hedef, `-${olay.hasar}${olay.kritik ? '!' : ''}`, olay.kritik ? 'kritik' : 'hasar');
@@ -232,6 +236,7 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
         else gosterilen.oyuncuCan = Math.max(0, gosterilen.oyuncuCan - olay.hasar);
       }
     } else if (olay.tip === 'yetenek' || olay.tip === 'yemek') {
+      sesCal(olay.tip === 'yemek' ? 'yemek' : 'yetenek');
       titret(figurOyuncu, 'parilti', 600);
       if (olay.etki === 'sifa' || olay.tip === 'yemek') {
         const nefes = olay.yenilenen === 'nefes';
@@ -248,12 +253,16 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
       if (olay.basarili) figurOyuncu.classList.add('geri-cekil');
       else titret(figurOyuncu, 'sarsil', 420);
     } else if (olay.tip === 'zafer') {
+      sesCal('zafer');
       figurDusman.classList.add('dagil');
     } else if (olay.tip === 'evre') {
+      sesCal('evre');
       titret(figurDusman, 'sarsil', 420);
       titret(figurDusman, 'evre-parilti', 900);
-      yaziUcur(figurDusman, M.sahne.guclendi, 'kritik');
+      yaziUcur(figurDusman, olay.no ? metinler.final.evreSahne[olay.no] : M.sahne.guclendi, 'kritik');
+      if (olay.no) ekran.querySelector('.sahne').dataset.evre = olay.no;
     } else if (olay.tip === 'yenilgi') {
+      sesCal('yenilgi');
       figurOyuncu.classList.add('bayil');
     }
     gunlugeYaz(olay);
@@ -332,7 +341,17 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
         const e = esyaVerisi[ozet.esya];
         satirlar.push(`<strong class="kutlama">${sablon(S.esya, { ikon: e.ikon, esya: kacis(e.ad), nadirlik: metinler.nadirlik[e.nadirlik] })}</strong>`);
       }
+      if (ozet.zulmetYenildi) satirlar.push(`<strong class="kutlama">🏰 ${metinler.final.yenildi}</strong>`);
       if (ozet.miniBossYenildi) satirlar.push(`<strong>${sablon(B.miniYenildi, { boss: kacis(savas.dusman.ad) })}</strong>`);
+      if (ozet.hayir) satirlar.push(sablon(S.hayir, { hayir: ozet.hayir }));
+      for (const g of ozet.gorevIlerlemesi ?? []) {
+        if (!(ozet.hazirOlanGorevler ?? []).includes(g.anahtar)) {
+          satirlar.push(sablon(S.gorevIlerlemesi, { gorev: kacis(gorevVerisi[g.anahtar].ad), mevcut: g.mevcut, hedef: g.hedef }));
+        }
+      }
+      for (const a of ozet.hazirOlanGorevler ?? []) {
+        satirlar.push(`<strong class="kutlama">${sablon(S.gorevHazir, { gorev: kacis(gorevVerisi[a].ad) })}</strong>`);
+      }
       if (ozet.miniBossBelirdi) {
         satirlar.push(`<strong class="kutlama">${sablon(B.miniBelirdi, { boss: kacis(dusmanAdi(ozet.miniBossBelirdi)) })}</strong>`);
       }
@@ -392,6 +411,8 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
       bildirimGoster(ekran, sablon(M.sonuc.arindi, { il: il.ad }), { tur: 'kutlama', sure: 3500 });
     }
     if (ozet.seviyeler.length) {
+      sesCal('seviye');
+      parilti(ekran);
       titret(figurOyuncu, 'seviye-parilti', 1200);
       bildirimGoster(ekran, sablon(M.sonuc.seviyeAtladin, { seviye: ozet.seviyeler.at(-1) }), { tur: 'kutlama', sure: 3500 });
       for (const y of ozet.yeniYetenekler) {

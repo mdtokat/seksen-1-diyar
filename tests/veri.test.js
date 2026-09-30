@@ -7,6 +7,9 @@ import { dusmanlar, DUSMAN_TURLERI, OZEL_HAMLELER, SINIF_XP_CARPANI } from '../s
 import { siniflar, STAT_PUANI_DEGERI } from '../src/veri/siniflar.js';
 import { metinler } from '../src/veri/metinler.js';
 import { esyalar } from '../src/veri/esyalar.js';
+import { gorevler } from '../src/veri/gorevler.js';
+import { itibarKademeleri } from '../src/veri/itibar.js';
+import { basarimlar } from '../src/veri/basarimlar.js';
 import { ilSeviyeleriniHesapla, bolgeIciMesafeler } from '../src/oyun/ilerleme.js';
 
 const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
@@ -180,7 +183,8 @@ describe('bölgeler', () => {
   });
 
   it('final: Zülmet, Ağrı, seviye 48', () => {
-    expect(final).toEqual({ boss: 'zulmet', il: 4, seviye: 48 });
+    expect(final).toMatchObject({ boss: 'zulmet', il: 4, seviye: 48, onkosulBolge: 'dogu_anadolu' });
+    expect(final.dusmanSeviyesi).toBeGreaterThanOrEqual(final.seviye);
     expect(dusmanlar.zulmet.sinif).toBe('final');
   });
 });
@@ -299,7 +303,7 @@ describe('sınıflar', () => {
 });
 
 describe('kırmızı çizgiler (plan.md Bölüm 2)', () => {
-  const tumVeri = JSON.stringify({ iller, bolgeler, final, yemekler, dusmanlar, OZEL_HAMLELER, siniflar, metinler, esyalar });
+  const tumVeri = JSON.stringify({ iller, bolgeler, final, yemekler, dusmanlar, OZEL_HAMLELER, siniflar, metinler, esyalar, gorevler, itibarKademeleri, basarimlar });
   const kelimeler = tumVeri.toLocaleLowerCase('tr').split(/[^\p{L}]+/u).filter(Boolean);
   const metin = kelimeler.join(' ');
 

@@ -2,7 +2,7 @@
 // SVG metnine çevrilir, sonra yalnızca kamera kayar. Renk ve biçimler bölgeye göre
 // değişir (plan.md Faz 6). Kırmızı çizgiler: ibadethane çizilmez.
 import { GENISLIK, YUKSEKLIK, KARO } from '../../oyun/gezinti.js';
-import { bolgeler } from '../../veri/bolgeler.js';
+import { bolgeler, final } from '../../veri/bolgeler.js';
 
 export const KARO_BOYU = 16;
 const T = KARO_BOYU;
@@ -119,6 +119,32 @@ function kervansaray(x, y) {
     <rect x="${x}" y="${y + 5}" width="2.5" height="3" fill="#2b2620"/><rect x="${x + 13.5}" y="${y + 5}" width="2.5" height="3" fill="#2b2620"/>`;
 }
 
+// Görev verenler (Faz 9): stilize, edepli, sade figürler.
+// Muhtar: lacivert ceket, kasket, ak bıyık ve baston.
+function muhtarCizimi(x, y) {
+  const cx = x + T / 2;
+  return `<ellipse cx="${cx}" cy="${y + T - 1}" rx="5.5" ry="1.8" fill="#000" opacity=".18"/>
+    <path d="M${cx + 6} ${y + T - 1} L${cx + 6} ${y + 6}" stroke="#5b3a24" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M${cx - 5} ${y + T - 1} L${cx - 4} ${y + 5} Q${cx} ${y + 3} ${cx + 4} ${y + 5} L${cx + 5} ${y + T - 1} Z" fill="#1b2a5c" ${CIZGI}/>
+    <path d="M${cx - 1.6} ${y + 4.4} L${cx} ${y + 9} L${cx + 1.6} ${y + 4.4} Z" fill="#f7efdc"/>
+    <path d="M${cx + 4} ${y + 8} L${cx + 6} ${y + 7}" stroke="#e9b98f" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${y + 1.5}" r="3.2" fill="#e9b98f" ${CIZGI}/>
+    <path d="M${cx - 3.6} ${y + 0.8} Q${cx - 0.5} ${y - 3.8} ${cx + 3.4} ${y + 0.4} L${cx + 5} ${y + 0.9} Z" fill="#6e5b45" ${CIZGI}/>
+    <path d="M${cx - 1.8} ${y + 2.9} q1.8 1 3.6 0" stroke="#f7efdc" stroke-width="1.1" fill="none"/>`;
+}
+
+// Ahi Baba: kahve cübbe, krem peştamal, keçe külah ve ak sakal.
+function ahiBabaCizimi(x, y) {
+  const cx = x + T / 2;
+  return `<ellipse cx="${cx}" cy="${y + T - 1}" rx="5.5" ry="1.8" fill="#000" opacity=".18"/>
+    <path d="M${cx - 5.5} ${y + T - 1} L${cx - 4} ${y + 5} Q${cx} ${y + 3} ${cx + 4} ${y + 5} L${cx + 5.5} ${y + T - 1} Z" fill="#7b5236" ${CIZGI}/>
+    <path d="M${cx - 3.5} ${y + 8} L${cx + 3.5} ${y + 8} L${cx + 4} ${y + T - 2} L${cx - 4} ${y + T - 2} Z" fill="#f7efdc" ${CIZGI}/>
+    <path d="M${cx - 4} ${y + 8} L${cx + 4} ${y + 8}" stroke="#d4a537" stroke-width="1.4"/>
+    <circle cx="${cx}" cy="${y + 1.5}" r="3.2" fill="#e9b98f" ${CIZGI}/>
+    <path d="M${cx - 2.8} ${y + 2.4} Q${cx} ${y + 7.5} ${cx + 2.8} ${y + 2.4} Z" fill="#f7efdc" ${CIZGI}/>
+    <path d="M${cx - 3} ${y} L${cx - 2} ${y - 5} Q${cx} ${y - 6} ${cx + 2} ${y - 5} L${cx + 3} ${y} Z" fill="#b39a6e" ${CIZGI}/>`;
+}
+
 // Boss ya da mini bossun beklediği in: dikili taşlardan bir halka.
 function inCizimi(p, x, y) {
   const cx = x + T / 2;
@@ -131,6 +157,25 @@ function inCizimi(p, x, y) {
   }).join('');
   return `<ellipse cx="${cx}" cy="${cy + 2}" rx="21" ry="15" fill="#1b2a5c" opacity=".12"/>
     <ellipse cx="${cx}" cy="${cy + 2}" rx="17" ry="11" fill="none" stroke="#6a4c93" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>${taslar}`;
+}
+
+// Zülmet'in Ağrı Dağı'ndaki kalesi (Faz 10): karanlık taş surlar, iki kule, mor
+// sancaklar ve kemerli kapı. Zülmet kapının önünde bekler.
+function kaleCizimi(x, y) {
+  const cx = x + T / 2;
+  const tas = '#5d5870';
+  const koyu = '#3a3550';
+  const burc = (bx) => `<rect x="${bx}" y="${y - 30}" width="12" height="40" fill="${tas}" ${CIZGI}/>
+    <path d="M${bx} ${y - 30} v-4 h3 v4 h3 v-4 h3 v4 h3 v-4" fill="none" stroke="#1b2a5c" stroke-width=".8"/>
+    <rect x="${bx + 4}" y="${y - 20}" width="4" height="6" rx="2" fill="#1b1330"/>
+    <path d="M${bx + 6} ${y - 34} v-12 l9 3 l-9 3" fill="#6a4c93" stroke="#1b2a5c" stroke-width=".6"/>`;
+  return `<ellipse cx="${cx}" cy="${y + T + 2}" rx="34" ry="7" fill="#1b2a5c" opacity=".18"/>
+    <rect x="${cx - 26}" y="${y - 18}" width="52" height="30" fill="${tas}" ${CIZGI}/>
+    <path d="M${cx - 26} ${y - 18} v-4 h4 v4 h4 v-4 h4 v4 h4 v-4 h4 v4 h4 v-4 h4 v4 h4 v-4 h4 v4 h4 v-4 h4 v4 h4 v-4 h4 v4" fill="none" stroke="#1b2a5c" stroke-width=".8"/>
+    <path d="M${cx - 26} ${y - 6} h52 M${cx - 26} ${y + 4} h52" stroke="${koyu}" stroke-width=".6" opacity=".7"/>
+    ${burc(cx - 36)}${burc(cx + 24)}
+    <path d="M${cx - 8} ${y + 12} v-12 q8 -10 16 0 v12 z" fill="#1b1330" ${CIZGI}/>
+    <path d="M${cx - 6} ${y + 1} q6 -8 12 0" fill="none" stroke="#b36ae0" stroke-width="1" opacity=".8"/>`;
 }
 
 // Haritanın sabit katmanı (zemin, yol, su, meydan, doğa, yapılar) — SVG içeriği.
@@ -161,6 +206,8 @@ export function haritaKatmani(harita) {
         case KARO.CESME:
         case KARO.TEZGAH:
         case KARO.TABELA:
+        case KARO.MUHTAR:
+        case KARO.AHI_BABA:
           parcalar.push(`<rect x="${px}" y="${py}" width="${T}" height="${T}" fill="#ddd3bf" stroke="#c4b89e" stroke-width=".6"/>`);
           break;
         case KARO.YABANI:
@@ -175,13 +222,17 @@ export function haritaKatmani(harita) {
       else if (t === KARO.TABELA) ustler.push(tabela(px, py));
       else if (t === KARO.DUKKAN) ustler.push(dukkan(px, py));
       else if (t === KARO.KERVANSARAY) ustler.push(kervansaray(px, py));
+      else if (t === KARO.MUHTAR) ustler.push(muhtarCizimi(px, py));
+      else if (t === KARO.AHI_BABA) ustler.push(ahiBabaCizimi(px, py));
     }
   }
   // Meydanın çini kenarı
   const m = harita.meydan;
   parcalar.push(`<rect x="${m.x1 * T}" y="${m.y1 * T}" width="${(m.x2 - m.x1 + 1) * T}" height="${(m.y2 - m.y1 + 1) * T}" fill="none" stroke="#2aa7a7" stroke-width="1.5" stroke-dasharray="4 2"/>`);
   const bolge = bolgeler.find((b) => b.anahtar === harita.bolge);
-  if (harita.in && (bolge.bossIli === harita.plaka || bolge.miniBossIlleri.includes(harita.plaka))) {
+  if (harita.in && harita.plaka === final.il) {
+    ustler.push(kaleCizimi(harita.in.x * T, (harita.in.y - 1) * T));
+  } else if (harita.in && (bolge.bossIli === harita.plaka || bolge.miniBossIlleri.includes(harita.plaka))) {
     parcalar.push(inCizimi(p, harita.in.x * T, harita.in.y * T));
   }
   return parcalar.join('') + ustler.join('');

@@ -14,6 +14,8 @@ import {
 } from '../oyun/ilerleme.js';
 import { bossDurumu, bossKosullari } from '../oyun/ilerleme.js';
 import { dusmanlar } from '../veri/dusmanlar.js';
+import { GOREV_VERENLER } from '../veri/gorevler.js';
+import { verenGorevleri, gorevDurumu } from '../oyun/gorevler.js';
 import { sablon, kacis, ilerlemeCubugu, bildirimGoster } from './bilesenler.js';
 import { karakterDugmesiniCiz } from './karakterDugmesi.js';
 
@@ -361,11 +363,20 @@ export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, ilGoster }
       <div class="kart-eylem">${eylem}</div>`;
   }
 
-  // İldeki kervansaray ve Ahi esnafı.
+  // İlde alınabilir görev veren muhtar ya da Ahi Baba.
+  function gorevSatiri(il) {
+    const durum = depo.al();
+    const verenler = GOREV_VERENLER.filter((v) =>
+      verenGorevleri(il.plaka, v).some((a) => gorevDurumu(durum, a) === 'alinabilir'));
+    return verenler.length ? sablon(M.gorev, { verenler: verenler.map((v) => metinler.gorev.verenler[v]).join(', ') }) : null;
+  }
+
+  // İldeki kervansaray, Ahi esnafı ve görev verenler.
   function olanaklarSatiri(il, bolge) {
     const olanaklar = [
       bolge.kervansarayIlleri.includes(il.plaka) && M.kervansaray,
       bolge.ahiIlleri.includes(il.plaka) && M.ahi,
+      gorevSatiri(il),
     ].filter(Boolean);
     return olanaklar.length ? `<div><dt>${M.olanaklar}</dt><dd>${olanaklar.join('<br>')}</dd></div>` : '';
   }

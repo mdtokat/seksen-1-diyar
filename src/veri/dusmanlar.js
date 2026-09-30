@@ -384,8 +384,24 @@ export const dusmanlar = {
     sinif: 'final',
     bolge: 'dogu_anadolu',
     ikon: '🧙',
-    carpan: { can: 5.0, guc: 2.0, savunma: 1.6, ceviklik: 1.2 },
+    carpan: { can: 5.0, guc: 1.1, savunma: 1.25, ceviklik: 1.2 },
     ozelHamleler: [{ ad: 'Kara Sihir Fırtınası', etki: 'hasar', carpan: 2.0 }, { ad: 'Zulüm Gölgesi', etki: 'zayiflatma', deger: 0.3, sure: 2 }],
+    // Üç evreli final savaşı (plan.md Faz 10): canı `can` oranının altına düşünce
+    // sıradaki evreye geçer; gücü `guc` ile çarpılır, yeni özel hamleleri kullanır.
+    evreler: [
+      {
+        can: 0.66,
+        guc: 1.15,
+        ozelHamleSansi: 0.35,
+        ozelHamleler: [{ ad: 'Gölge Oku', etki: 'hasar', carpan: 2.1 }, { ad: 'Karanlık Sis', etki: 'zayiflatma', deger: 0.35, sure: 2 }],
+      },
+      {
+        can: 0.33,
+        guc: 1.15,
+        ozelHamleSansi: 0.45,
+        ozelHamleler: [{ ad: 'Zulüm Fırtınası', etki: 'hasar', carpan: 2.3 }, { ad: 'Son Sihir', etki: 'hasar', carpan: 2.0 }],
+      },
+    ],
     aciklama: 'Yasak sihirle cinleri ve ifritleri Anadolu\'ya salan zalim sihirbaz.',
   },
 };
