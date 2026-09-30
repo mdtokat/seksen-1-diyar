@@ -77,7 +77,11 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 │  │  ├─ karakter.js         # stat hesapları, seviye atlama
 │  │  ├─ savas.js            # sıra tabanlı savaş motoru
 │  │  ├─ kesif.js            # keşif, karşılaşma üretimi, arınma
-│  │  ├─ envanter.js         # heybe, yemek kullanma, ekipman
+│  │  ├─ envanter.js         # heybe, yemek kullanma
+│  │  ├─ ekipman.js          # eşya kuşanma ve çıkarma
+│  │  ├─ ticaret.js          # arasta ve Ahi esnafı alışverişi
+│  │  ├─ kervansaray.js      # dinlenme ve hızlı yolculuk
+│  │  ├─ gezinti.js          # il içi karo harita, yürüme, haritadaki düşmanlar
 │  │  ├─ ilerleme.js         # bölge kilitleri, boss koşulları
 │  │  └─ kayit.js            # kaydet / yükle / şema göçü
 │  ├─ veri/                  # SADECE VERİ — mantık yok
@@ -90,6 +94,7 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 │  │  └─ metinler.js         # arayüz metinleri tek yerde
 │  ├─ arayuz/
 │  │  ├─ harita.js
+│  │  ├─ yeniOyunEkrani.js   # isim ve sınıf seçimi
 │  │  ├─ ilEkrani.js
 │  │  ├─ savasEkrani.js
 │  │  ├─ karakterEkrani.js
@@ -110,7 +115,8 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 - Renk paleti İznik ve Kütahya çinisinden esinlenir: turkuaz, lacivert, mercan kırmızısı, altın ve krem zemin.
 - Çerçevelerde ve ayraçlarda sade geometrik (Selçuklu yıldızı tarzı) motifler kullanılır. Bunlar CSS veya SVG ile çizilir, harici görsel kullanılmaz.
 - Başlıklarda Türkçe karakter destekli bir serif font, metinlerde okunaklı bir sans-serif font kullanılır.
-- Karakter ve düşmanlar sade SVG ikonlar veya emoji ile temsil edilir. İnsan figürleri edepli ve stilize olur.
+- Karakter ve düşmanlar koddan üretilen stilize SVG çizimlerle temsil edilir (Faz 5; `src/arayuz/cizimler/`). Emojiler yalnızca yemek ve arayüz simgelerinde kullanılır. İnsan figürleri edepli ve stilize olur.
+- Savaş arka planlarında ibadethane silueti ve tanrı heykeli ya da put bulunmaz.
 
 ---
 
@@ -126,9 +132,9 @@ Bölgeler aşağıdaki **sırayla** açılır:
 | 2 | Ege | 8 | 8–18 | Manisa (45) | Yelbegen | İzmir (35) |
 | 3 | Akdeniz | 8 | 15–25 | Antalya (07) | Şahmeran | Mersin (33) |
 | 4 | İç Anadolu | 13 | 20–32 | Konya (42) | Albastı | Nevşehir (50) |
-| 5 | Karadeniz | 18 | 28–40 | Bolu (14) | Karakoncolos | Trabzon (61) |
-| 6 | Güneydoğu | 9 | 35–45 | Gaziantep (27) | Tepegöz | Şanlıurfa (63) |
-| 7 | Doğu Anadolu | 14 | 42–50 | Malatya (44) | Van Gölü Canavarı | Van (65) |
+| 7 | Karadeniz | 18 | 28–40 | Bolu (14) | Karakoncolos | Trabzon (61) |
+| 8 | Güneydoğu | 9 | 35–45 | Gaziantep (27) | Tepegöz | Şanlıurfa (63) |
+| 9 | Doğu Anadolu | 14 | 42–50 | Malatya (44) | Van Gölü Canavarı | Van (65) |
 | Final | — | — | 48+ | — | **Zülmet** | Ağrı (04) |
 
 Bölge bossları tanrı değildir. Hepsi Zülmet'in sihriyle azmış mahlûklardır.
@@ -163,8 +169,8 @@ Formül (Faz 1): bölge aralığı `[a, b]`, en uzak mesafe `D` ve `kademe = (b 
 
 ### Harita
 - İller, `lat`/`lon` değerlerinden basit bir izdüşümle SVG koordinatına çevrilir: `x = (lon − 25.5) × k × cos(39°)`, `y = (42.2 − lat) × k`.
-- Her il bir düğüm, her komşuluk bir çizgi olarak çizilir.
-- Düğüm renkleri: kilitli (gri), açık (bölge rengi), bulunulan il (altın halka), %100 arınmış (yeşil). Yeşil yalnızca arınmış iller için kullanılır; bu yüzden Karadeniz'in bölge rengi fındık kahvesidir. Arınmış iller renge ek olarak ✓ işaretiyle de gösterilir.
+- İller gerçek sınırlarıyla (OpenStreetMap, `src/veri/ilSinirlari.js`) boyanır; üzerlerinde her il bir düğüm, her komşuluk bir çizgi olarak çizilir.
+- Düğüm renkleri: kilitli (gri), açık (bölge rengi), bulunulan il (altın halka), %100 arınmış (yeşil). Yeşil yalnızca arınmış iller için kullanılır; bu yüzden Karadeniz'in bölge rengi fındık kahvesidir. Arınmış iller renge ek olarak düğümde ✓ işaretiyle ve il şeklinde çizgili desenle de gösterilir.
 - Harita mobilde parmakla kaydırılabilir ve yakınlaştırılabilir olmalıdır.
 
 ---
@@ -199,18 +205,26 @@ Her seviyede sınıfa özgü otomatik stat artışı gelir. Ayrıca oyuncuya da�
 Arınma Işığı, cin ve ifrit türü düşmanlara ekstra hasar verir.
 
 ### Başlangıç formülleri
-Bu formüller ilk sürüm içindir. Faz 3'te dengeleme yapılabilir, değişiklik olursa bu dosyaya da yazılır.
+Bu formüller ilk sürüm içindir. Faz 3'te dengelendi; hesaplar `src/oyun/karakter.js` ve `src/oyun/savas.js` içindedir.
 
-- **Gereken XP:** `round(40 × sv^1.6)`
-- **Hasar:** `max(1, round(güç × rnd(0.9–1.1) − savunma × 0.5))`
-- **Kritik şansı:** `min(30%, çeviklik × 0.8%)`. Kritik vuruş ×1.5 hasar verir.
-- **Kaçma şansı:** `min(80%, 40% + (oyuncuÇev − düşmanÇev) × 2%)`. Bosslardan kaçılamaz.
-- **Düşman statları:** seviye ve tür çarpanıyla ölçeklenir, örneğin `can = (20 + sv × 12) × türÇarpanı`.
+- **Gereken XP:** `round(40 × sv^1.6)` — bir seviyeden sonrakine geçmek için. Seviye atlayınca XP sıfırlanır, artan kısım aktarılır.
+- **Seviye atlama:** sınıfın otomatik stat artışı + 3 stat puanı gelir, can ve nefes tamamen dolar.
+- **Stat puanı değeri:** 1 puan = +5 can, +3 nefes, +1 güç, +1 savunma ya da +1 çeviklik.
+- **Hasar:** `max(1, round(güç × yetenekÇarpanı × rnd(0.9–1.1) − savunma × 0.5))`
+- **Kritik şansı:** `min(30%, çeviklik × 0.8%)` (+ Kartal Gözü bonusu). Kritik vuruş ×1.5 hasar verir.
+- **Kaçınma şansı:** `min(20%, çeviklik × 0.5%)` — saldırılan taraf hamleden sıyrılır, hasar almaz.
+- **Kaçma şansı:** `max(0%, min(80%, 40% + (oyuncuÇev − düşmanÇev) × 2%))`. Bosslardan kaçılamaz.
+- **Düşman statları:** seviye ve tür çarpanıyla ölçeklenir:
+  `can = (20 + sv × 12) × c.can`, `güç = (6 + sv × 2) × c.güç`, `savunma = (4 + sv × 1.5) × c.savunma`, `çeviklik = (4 + sv) × c.çeviklik` (hepsi yuvarlanır).
+- **XP ödülü:** `round((5 + sv × 10) × sınıfÇarpanı)`; sınıf çarpanı sıradan 1, mini boss 3, bölge bossu 8, final 15.
+- **Düşman yapay zekâsı:** %20 ihtimalle türüne özgü özel hamle (hayvan, cin, ifrit, dev ve boss için güçlü vuruş; hortlak için oyuncunun gücünü 2 saldırı boyunca %25 azaltan ürkütme), aksi hâlde normal saldırı.
+- **Yetenek etkileri:** Kalkan Duruşu / Hikmet Kalkanı düşmanın sonraki N hamlesinde hasarı yarıya indirir; Yiğit Nârası (%30 güç) ve Kartal Gözü (+%25 kritik) oyuncunun sonraki 3 saldırısını etkiler.
+- **Denge ölçümü (Faz 3):** Sv 1 Akıncı, Sv 1 Aç Kurt'u yalnızca saldırarak ortalama ~3,2 turda yener (500 savaşlık testle denetlenir).
 
 ### Savaş akışı
 - Her turda oyuncu **Saldır / Yetenek / Yemek / Kaç** seçeneklerinden birini seçer, ardından düşman hamlesini yapar.
 - Savaş günlüğü kısa, edepli ve Türkçe cümlelerle ekranda akar.
-- **Bayılma** durumunda oyuncu, en son uğradığı kervansaraya (Faz 6'dan önce il merkezine) döner ve akçesinin %10'unu kaybeder.
+- **Bayılma** durumunda oyuncu, en son uğradığı kervansaraya (Faz 8'den önce bulunduğu ilin merkezine) döner ve akçesinin %10'unu (aşağı yuvarlanır) kaybeder. Kendine geldiğinde canı ve nefesi dolar.
 
 ---
 
@@ -372,12 +386,14 @@ Bir bölge bossu yenildiğinde, o bölgenin yemeklerinden oluşan bir sofra kuru
 | 0 | Proje kurulumu | ✅ |
 | 1 | Veri katmanı | ✅ |
 | 2 | Harita ve seyahat | ✅ |
-| 3 | Karakter ve savaş motoru | ⬜ |
-| 4 | Keşif, yemekler ve kayıt (**oynanabilir ilk sürüm**) | ⬜ |
-| 5 | Bosslar ve bölge ilerlemesi | ⬜ |
-| 6 | Arasta, Ahi esnafı, ekipman ve kervansaray | ⬜ |
-| 7 | Görevler ve itibar | ⬜ |
-| 8 | Final, ses, animasyon ve cila | ⬜ |
+| 3 | Karakter ve savaş motoru | ✅ |
+| 4 | Keşif, yemekler ve kayıt (**oynanabilir ilk sürüm**) | ✅ |
+| 5 | Görsel yenileme (SVG çizimler, savaş sahnesi, il sınırlı harita) | ✅ |
+| 6 | İl içi gezinti (kuşbakışı yürüme, haritada düşmanlar) | ✅ |
+| 7 | Bosslar ve bölge ilerlemesi | ✅ |
+| 8 | Arasta, Ahi esnafı, ekipman ve kervansaray | ✅ |
+| 9 | Görevler ve itibar | ⬜ |
+| 10 | Final, ses, animasyon ve cila | ⬜ |
 
 Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 
@@ -448,15 +464,15 @@ Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 ### Faz 3 — Karakter ve Savaş Motoru
 **Hedef:** Sınıf seçimi ve tam çalışan sıra tabanlı savaş.
 
-- [ ] Yeni oyun ekranı: oyuncu isim girer ve 3 sınıftan birini seçer. Her sınıfın tarifi ve statları gösterilir.
-- [ ] `karakter.js`: stat hesapları, XP eğrisi, seviye atlama, otomatik stat artışı ve dağıtılacak stat puanları.
-- [ ] `savas.js`: Saldır / Yetenek / Yemek / Kaç eylemleri. Hasar, kritik, kaçınma, nefes tüketimi, düşman yapay zekâsı (basit: çoğunlukla saldırır, bazen özel hamle yapar).
-- [ ] Bayılma kuralını uygula (Bölüm 5).
-- [ ] `savasEkrani.js`: can ve nefes çubukları, eylem butonları ve savaş günlüğü.
-- [ ] `karakterEkrani.js`: statlar, seviye, XP çubuğu, açık yetenekler ve stat puanı dağıtma.
-- [ ] Seviye atlayınca kutlama bildirimi göster, yeni yetenek açıldıysa belirt.
-- [ ] Testleri yaz: hasar formülü, kritik, kaçma, XP eğrisi, seviye atlama, yetenek açılışı (sabit tohumla).
-- [ ] Dengeleme: Sv 1 bir Akıncı, Sv 1 bir Aç Kurt'u ortalama 3–5 turda yenebilmeli. Formüllerde değişiklik yaparsan Bölüm 5'i güncelle.
+- [x] Yeni oyun ekranı: oyuncu isim girer ve 3 sınıftan birini seçer. Her sınıfın tarifi ve statları gösterilir.
+- [x] `karakter.js`: stat hesapları, XP eğrisi, seviye atlama, otomatik stat artışı ve dağıtılacak stat puanları.
+- [x] `savas.js`: Saldır / Yetenek / Yemek / Kaç eylemleri. Hasar, kritik, kaçınma, nefes tüketimi, düşman yapay zekâsı (basit: çoğunlukla saldırır, bazen özel hamle yapar).
+- [x] Bayılma kuralını uygula (Bölüm 5).
+- [x] `savasEkrani.js`: can ve nefes çubukları, eylem butonları ve savaş günlüğü.
+- [x] `karakterEkrani.js`: statlar, seviye, XP çubuğu, açık yetenekler ve stat puanı dağıtma.
+- [x] Seviye atlayınca kutlama bildirimi göster, yeni yetenek açıldıysa belirt.
+- [x] Testleri yaz: hasar formülü, kritik, kaçma, XP eğrisi, seviye atlama, yetenek açılışı (sabit tohumla).
+- [x] Dengeleme: Sv 1 bir Akıncı, Sv 1 bir Aç Kurt'u ortalama 3–5 turda yenebilmeli. Formüllerde değişiklik yaparsan Bölüm 5'i güncelle.
 
 **Kabul kriterleri:** Üç sınıf da seçilebiliyor. Savaş baştan sona oynanabiliyor. Seviye atlama ve yetenek açılışı çalışıyor.
 
@@ -467,14 +483,22 @@ Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 ### Faz 4 — Keşif, Yemekler ve Kayıt (Oynanabilir İlk Sürüm)
 **Hedef:** Oyunun temel döngüsünün baştan sona oynanabilmesi.
 
-- [ ] `ilEkrani.js`: bulunulan ilin ekranı. İl adı, meşhur yemek, arınma yüzdesi ve "Keşfe Çık" butonu.
-- [ ] `kesif.js`: keşfe çıkınca ilin düşman havuzundan ve seviye aralığından bir düşman üret. Kazanınca arınma artsın (%8–12 arası). %100 olunca il arınmış sayılsın ve haritada yeşile dönsün.
-- [ ] Ganimet: XP, akçe ve belirli bir şansla o ilin yöresel yemeği düşsün.
-- [ ] `envanter.js`: heybe (20 yuva, aynı yemekler üst üste biner, en fazla 10'a kadar). Yemek kullanımı savaş içinde ve dışında çalışsın.
-- [ ] `envanterEkrani.js`: yemekler ikon, ad, açıklama ve etkiyle listelensin.
-- [ ] Başlangıç envanterine 3 balık ekmek ve 2 höşmerim ekle.
-- [ ] `kayit.js`: her önemli olaydan sonra (savaş sonu, seyahat, seviye atlama) otomatik kayıt. Başlık ekranında "Devam Et" ve "Yeni Oyun" seçenekleri olsun. Kayıt şemasında `surum` alanı bulunsun. localStorage erişimi try/catch içinde olsun.
-- [ ] Testleri yaz: arınma artışı, ganimet üretimi, heybe kuralları, kaydet/yükle döngüsü.
+- [x] `ilEkrani.js`: bulunulan ilin ekranı. İl adı, meşhur yemek, arınma yüzdesi ve "Keşfe Çık" butonu. (Faz 6'da "Keşfe Çık" yerini ilde gezintiye bıraktı; ekran il bilgisi olarak kaldı.)
+- [x] `kesif.js`: keşfe çıkınca ilin düşman havuzundan ve seviye aralığından bir düşman üret. Kazanınca arınma artsın (%8–12 arası). %100 olunca il arınmış sayılsın ve haritada yeşile dönsün.
+- [x] Ganimet: XP, akçe ve belirli bir şansla o ilin yöresel yemeği düşsün.
+- [x] `envanter.js`: heybe (20 yuva, aynı yemekler üst üste biner, en fazla 10'a kadar). Yemek kullanımı savaş içinde ve dışında çalışsın.
+- [x] `envanterEkrani.js`: yemekler ikon, ad, açıklama ve etkiyle listelensin.
+- [x] Başlangıç envanterine 3 balık ekmek ve 2 höşmerim ekle.
+- [x] `kayit.js`: her önemli olaydan sonra (savaş sonu, seyahat, seviye atlama) otomatik kayıt. Başlık ekranında "Devam Et" ve "Yeni Oyun" seçenekleri olsun. Kayıt şemasında `surum` alanı bulunsun. localStorage erişimi try/catch içinde olsun.
+- [x] Testleri yaz: arınma artışı, ganimet üretimi, heybe kuralları, kaydet/yükle döngüsü.
+
+**Faz 4 kararları:**
+- **Akçe ganimeti:** `round((3 + sv × 2) × rnd(0.8–1.2) × sınıfÇarpanı)` (sınıf çarpanı XP ile aynı).
+- **Yemek düşme şansı:** her zaferde %30 ihtimalle ilin yöresel yemeği.
+- **Heybe:** 20 yuva; bir yuvada aynı yemekten en fazla 10 durur, fazlası yeni yuvaya geçer. Heybe doluysa bulunan yemek alınamaz (oyuncuya söylenir).
+- **Yemek yeme:** can ya da nefes zaten doluyken savaş dışında yemek yenmez (boşa gitmesin diye).
+- **Kayıt:** oyun durumu her değiştiğinde otomatik kaydedilir (savaş sonu, seyahat, seviye atlama, yemek, stat puanı). Kayıt anahtarı `seksen-bir-diyar/kayit`, şema `{ surum: 1, durum }`. Bozuk ya da tanınmayan kayıt yok sayılır.
+- **Akış:** Başlık → (Devam Et | Yeni Oyun) → İl ekranı. İl ekranından keşfe çıkılır; savaş bitince il ekranına dönülür. Haritadan başka ile gidilir.
 
 **Kabul kriterleri:** Oyuncu yeni oyun başlatıp Marmara'nın illerini gezebiliyor, savaşabiliyor, yemek toplayıp kullanabiliyor, seviye atlayabiliyor. Sayfa yenilenince kaldığı yerden devam ediyor.
 
@@ -482,41 +506,111 @@ Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 
 ---
 
-### Faz 5 — Bosslar ve Bölge İlerlemesi
+### Faz 5 — Görsel Yenileme
+**Hedef:** Emojiye bağlı kalmayan, tutarlı, çini paletine uygun ve telefonda akıcı bir 2D görsel dil.
+
+Kullanıcı kararı: 3D yerine **güçlendirilmiş 2D** (SVG + CSS). Oyun mantığı (`src/oyun/`) ve veriler (`src/veri/`) bu fazdan etkilenmez; yalnızca arayüz değişir.
+
+- [x] **Özgün SVG çizimler:** 3 sınıf ve tüm düşmanlar (bosslar dahil) için stilize, edepli SVG çizimler. Emojiler savaşçıları temsil etmez. Çizimler harici dosya değil, koddan üretilir; aynı türden yaratıklar ortak bir iskeletten türetilip renk ve ayrıntıyla ayrışabilir.
+- [x] **Bölge arka planları:** 7 bölgenin her biri için katmanlı SVG savaş arka planı (ör. Marmara: Boğaz ve kıyı; İç Anadolu: bozkır ve peri bacaları; Karadeniz: sisli yayla).
+- [x] **Savaş sahnesi:** oyuncu ve düşman karşı karşıya durur. Hasar sayıları, vurulanın sarsılması ve vuruş efekti. `prefers-reduced-motion` açıksa hareket azaltılır.
+- [x] **Gerçek il sınırlı harita:** OpenStreetMap il sınırları sadeleştirilip SVG yollarına çevrilir, iller şekilleriyle boyanır (kilitli, açık, arınmış renkleri korunur). Seyahat kuralları ve komşuluklar değişmez. OSM atfı (© OpenStreetMap katkıcıları, ODbL) haritada ve README'de gösterilir.
+- [x] Testleri yaz: her sınıf ve düşman için çizim var; her bölge için arka plan var; il sınır verisi 81 ili kapsıyor ve plakalar eşleşiyor.
+
+**Faz 5 kararları:**
+- **Sınır verisi:** OSM kaynaklı geoBoundaries (gbOpen TUR ADM1, 2023) sadeleştirilmiş sürümü, mapshaper ile komşu kenarlar korunarak %8'e indirildi (~43 KB, gzip ile ~15 KB). OSM servislerine bu ortamdan doğrudan erişilemediği için geoBoundaries'in GitHub'daki kopyası kullanıldı.
+- **Çizimler:** 22 beden iskeleti; 36 düşman renk ve ayrıntıyla ayrışır. Bölge bossları ve Zülmet sihir halesiyle çizilir.
+- **Savaş sahnesi:** olaylar sırayla oynatılır (vuruş ~0,5 sn); oynatma sırasında butonlar beklemeye alınır. Hareket azaltma açıkken figürler kıpırdamaz, yalnızca sayılar kısa süre görünür.
+- **Arınmış il:** haritada çizgili yeşil desen (yalnızca renge dayanmaz).
+
+**Kabul kriterleri:** Hiçbir savaşçı emojiyle gösterilmiyor. Harita il şekilleriyle tanınır biçimde Türkiye'yi veriyor. Telefon genişliğinde (375px) düzen bozulmuyor, animasyonlar akıcı.
+
+**Commit:** `Faz 5: görsel yenileme`
+
+---
+
+### Faz 6 — İl İçi Gezinti
+**Hedef:** Oyuncunun karakterini kendisi yürüterek illerin içinde gezmesi; düşmanlarla haritada karşılaşması.
+
+Kullanıcı kararları: kuşbakışı görünüm; düşmanlar haritada görünür; il haritaları koddan üretilir; telefonda hem dokun-yürü hem de ekran yön tuşları (masaüstünde ok tuşları ve WASD).
+
+- [x] `gezinti.js`: her il için sabit tohumla üretilen karo harita (her açılışta aynı). Bölgeye göre doku ve engeller (Karadeniz'de köknar ve dere, İç Anadolu'da bozkır ve peri bacaları, Güneydoğu'da kum ve kümbet evler, Doğu'da kar ve göl vb.).
+- [x] Her ilde il meydanı (çeşme, ilin yemeğini satan esnaf tezgâhı, il tabelası) ve her komşu ile giden, komşunun gerçek yönüne yerleştirilmiş bir çıkış yolu. Tüm çıkışlar meydandan yürünerek erişilebilir.
+- [x] Yürüme: haritaya dokununca en kısa yoldan yürüme, ekran yön tuşları, ok tuşları ve WASD. Kamera oyuncuyu izler.
+- [x] Çıkış yoluna yürüyünce komşu ile geçilir (seyahat kuralları aynen geçerli; kilitli bölgenin yolu sihirli bir engelle kapalıdır). Yeni ile, geri dönen yolun ağzından girilir.
+- [x] Düşmanlar ilin havuzundan ve seviye aralığından üretilip haritada dolaşır; oyuncu yaklaşınca peşine düşer, temas edince sıra tabanlı savaş başlar. Meydan güvenli bölgedir, düşmanlar giremez.
+- [x] Yenilen düşman haritadan kalkar, bir süre sonra başka bir yerde yenisi belirir. Kaçınca oyuncu kısa süre dokunulmaz olur. Bayılınca il meydanında kendine gelir.
+- [x] "Keşfe Çık" yerine ilde gezinti; il bilgisi tabeladan ve üst çubuktan açılır.
+- [x] Testleri yaz: harita üretiminin tekrarlanabilirliği, 81 ilin tamamında çıkış sayısı ve erişilebilirliği, yol bulma, düşman yerleşimi ve hareket kuralları.
+
+**Faz 6 kararları:**
+- **Harita:** 25×31 karo; meydan 7×5 ve ortada. Doğa öbekleri bölgeye göre (`BOLGE_DOGASI`). Meydandan ulaşılamayan açık alanlar engelle doldurulur.
+- **Çıkışlar:** komşunun gerçek yönündeki kenar karosuna; iki çıkış arasında en az 4 karo. Kilitli bölgeye giden yol mor sihirli engelle kapalıdır; üzerine yürüyünce oyuncu geri çekilir ve nedeni söylenir.
+- **Düşmanlar:** arınmamış ilde 4, arınmış ilde 2. Oyuncu 4 karo yakındaysa peşine düşer (meydandayken ya da dokunulmazken düşmez). Yenilen düşmanın yerine 25 adım sonra, oyuncudan en az 7 karo uzakta yenisi belirir. Kaçış ve bayılmadan sonra 8 adım dokunulmazlık.
+- **Hız:** oyuncu karo başına 0,17 sn; düşmanlar 0,65 sn'de bir hamle.
+- **Kayıt:** oyuncunun il içindeki yeri ve düşmanlar kaydedilmez; oyun yüklenince il meydanından başlanır.
+- **Yön tuşları:** dokunmatik cihazlarda varsayılan açık; 🎮 düğmesiyle gizlenir (tercih cihazda saklanır).
+
+**Kabul kriterleri:** Oyuncu İstanbul meydanından yürüyerek Kocaeli'ye geçebiliyor. Düşmanlar haritada görünüyor ve temas edince savaş başlıyor. Telefonda (375px) dokunarak ve yön tuşlarıyla rahat oynanıyor.
+
+**Commit:** `Faz 6: il içi gezinti`
+
+---
+
+### Faz 7 — Bosslar ve Bölge İlerlemesi
 **Hedef:** Bölgelerin sırayla açılması ve boss savaşları.
 
-- [ ] `ilerleme.js`: boss açılma koşulu şu olsun: bölgedeki illerin ortalama arınması en az %60 **ve** oyuncu seviyesi en az (bölge üst seviyesi − 1). Açılınca bildirim göster.
-- [ ] Boss savaşları: bosslardan kaçılamaz. Her bossun en az bir özel hamlesi ve can yarının altına düşünce güçlenme evresi olsun.
-- [ ] Boss yenilince sonraki bölge açılsın ve harita güncellensin. Kısa bir hikâye metni göster.
-- [ ] Zafer sofrasını uygula (Bölüm 7).
-- [ ] Her bölgeye 1–2 mini boss yerleştir (Bölüm 6). Mini bosslar ilin arınması %50'yi geçince çıksın.
-- [ ] Testleri yaz: boss açılma koşulu, bölge kilidi açılışı, zafer sofrası etkisi.
+- [x] `ilerleme.js`: boss açılma koşulu şu olsun: bölgedeki illerin ortalama arınması en az %60 **ve** oyuncu seviyesi en az (bölge üst seviyesi − 1). Açılınca bildirim göster.
+- [x] Boss savaşları: bosslardan kaçılamaz. Her bossun en az bir özel hamlesi ve can yarının altına düşünce güçlenme evresi olsun.
+- [x] Boss yenilince sonraki bölge açılsın ve harita güncellensin. Kısa bir hikâye metni göster.
+- [x] Zafer sofrasını uygula (Bölüm 7).
+- [x] Her bölgeye 1–2 mini boss yerleştir (Bölüm 6). Mini bosslar ilin arınması %50'yi geçince çıksın.
+- [x] Testleri yaz: boss açılma koşulu, bölge kilidi açılışı, zafer sofrası etkisi.
+
+**Faz 7 kararları:**
+- **Boss ini:** her ilin meydandan yürüyerek en uzak açık karosu. Bölge bossu, yenilene dek kendi ilinin ininde bekler; koşullar sağlanana dek mühürlüdür (yaklaşınca eksik koşullar söylenir). Mühür çözülünce bildirim gelir. Boss ve mini bosslar ininden ayrılmaz.
+- **Eşik:** ortalama arınma yuvarlanmadan karşılaştırılır (%59,5 yetmez); ekranda aşağı yuvarlanmış değer gösterilir.
+- **Boss savaşı:** bossların ve mini bossların kendi özel hamleleri vardır (bir güçlü vuruş, bir zayıflatma), özel hamle şansı %30. Bölge bossu canı yarının altına düşünce bir kez güçlenir: güç ×1,3, özel hamle şansı %40.
+- **Mini boss illeri:** Marmara: Bursa, Edirne · Ege: Denizli, Muğla · Akdeniz: Adana, Isparta · İç Anadolu: Kayseri, Sivas · Karadeniz: Kastamonu, Rize · Güneydoğu: Diyarbakır, Mardin · Doğu Anadolu: Erzurum, Kars. Mini boss seviyesi: ilin üst seviyesi + 1.
+- **Zafer sofrası:** bölgenin tüm yemeklerinden kurulur; can ve nefes dolar, sonraki 10 savaş (sonucu ne olursa olsun) boyunca güç ×1,1.
+- **Denge (simülasyonla):** oyuncu mührün açıldığı seviyede, stat puanları dağıtılmış ve heybesinde bölgenin yemekleriyle; bosslar ~10–16 turda, sınıfa göre %74–98 zaferle; mini bosslar 6–20 turda %78–100 zaferle yenilir. Boss çarpanları: can 2,4 (Marmara) → 4,4 (Doğu), güç 1,05 (Van Gölü Canavarı 1,1); mini boss canı ×1,3, gücü ×1,1.
+- **Kayıt:** şema sürüm 2 (`yenilenBosslar`, `yenilenMiniBosslar`, `sofra`). Sürüm 1 kayıtlar otomatik taşınır.
 
 **Kabul kriterleri:** Marmara'dan başlayarak bölgeler sırayla açılıyor. Kilitli bölgeye erişilemiyor.
 
-**Commit:** `Faz 5: bosslar ve bölge ilerlemesi`
+**Commit:** `Faz 7: bosslar ve bölge ilerlemesi`
 
 ---
 
-### Faz 6 — Arasta, Ahi Esnafı, Ekipman ve Kervansaray
+### Faz 8 — Arasta, Ahi Esnafı, Ekipman ve Kervansaray
 **Hedef:** Ekonomi, ekipman ve rahat seyahat.
 
-- [ ] **Arasta:** her ilde o ilin yöresel yemeği ve komşu illerden 1–2 yemek satılsın.
-- [ ] **Ahi esnafı:** silah ve zırh satan bir dükkân. Her 3–4 ilde bir, esnafın ahlakını yansıtan kısa ve samimi selamlama metinleriyle.
-- [ ] `esyalar.js`: sınıfa uygun silahlar (Akıncı: kılıç, Kemankeş: yay, Alperen: asa) ve zırhlar. Nadirlik seviyeleri: sıradan, nadir, efsanevi. Örnek: Sivas çakısı, Tokat yazması kuşak (zırh aksesuarı), Bursa ipeği cübbe.
-- [ ] Ekipman takma ve çıkarma, statlara yansıma.
-- [ ] Bosslar garanti efsanevi eşya düşürsün.
-- [ ] **Kervansaray:** bölgelerdeki belirli illerde bulunsun. Burada dinlenince can ve nefes dolsun. Bayılınca buraya dönülsün.
-- [ ] **Hızlı yolculuk:** arınmış illerdeki kervansaraylar arasında akçe karşılığı anında yolculuk.
-- [ ] Testleri yaz: alışveriş, ekipman stat etkisi, hızlı yolculuk koşulları.
+- [x] **Arasta:** her ilde o ilin yöresel yemeği ve komşu illerden 1–2 yemek satılsın.
+- [x] **Ahi esnafı:** silah ve zırh satan bir dükkân. Her 3–4 ilde bir, esnafın ahlakını yansıtan kısa ve samimi selamlama metinleriyle.
+- [x] `esyalar.js`: sınıfa uygun silahlar (Akıncı: kılıç, Kemankeş: yay, Alperen: asa) ve zırhlar. Nadirlik seviyeleri: sıradan, nadir, efsanevi. Örnek: Sivas çakısı, Tokat yazması kuşak (zırh aksesuarı), Bursa ipeği cübbe.
+- [x] Ekipman takma ve çıkarma, statlara yansıma.
+- [x] Bosslar garanti efsanevi eşya düşürsün.
+- [x] **Kervansaray:** bölgelerdeki belirli illerde bulunsun. Burada dinlenince can ve nefes dolsun. Bayılınca buraya dönülsün.
+- [x] **Hızlı yolculuk:** arınmış illerdeki kervansaraylar arasında akçe karşılığı anında yolculuk.
+- [x] Testleri yaz: alışveriş, ekipman stat etkisi, hızlı yolculuk koşulları.
+
+**Faz 8 kararları:**
+- **Eşyalar (91):** her bölgede sınıf başına bir sıradan, bir nadir ve bir efsanevi silah; bir sıradan ve bir nadir zırh; bir nadir kuşak; bir efsanevi zırh ya da kuşak. Yuvalar: silah, zırh, kuşak. Kuşanmak için bölgenin alt seviyesi gerekir. Statlar ve fiyatlar oyuncunun bölgedeki beklenen gücüne ve akçe kazancına oranlıdır (formüller `esyalar.js` başında).
+- **Arasta:** meydandaki tezgâh; ilin yemeği ve komşu illerden (plaka sırasıyla) iki yemek, Bölüm 7 fiyatlarıyla.
+- **Ahi esnafı (23 il):** bölgenin sıradan ve nadir eşyalarını satar, sahip olunan eşyayı yarı fiyatına geri alır (kuşanılı eşya satılmaz). Efsanevi eşya satılmaz. Her ustanın selamı Ahilik ahlakını yansıtır.
+- **Ganimet:** bölge bossu bölgenin efsanevi eşyalarından, mini boss nadir eşyalarından sınıfa uygun ve sahip olunmayan birini garanti düşürür.
+- **Kervansaray (17 il):** dinlenmek ücretsizdir; can ve nefes dolar, bayılınca bu kervansarayda kendine gelinir (hiç dinlenilmediyse bulunulan ilin meydanında).
+- **Hızlı yolculuk:** hem bulunulan hem hedef il %100 arınmış olmalı; ücret 15 + 5 × (iller arası en kısa kara yolu). Açılmamış bölgelerin kervansarayları listede görünmez.
+- **Kayıt:** şema sürüm 3 (`esyalar`, `sonKervansaray`, `oyuncu.kusanilan`); eski kayıtlar zincirleme taşınır.
+- **Not:** bossların dengesi (Faz 7) ekipmansız ölçüldü; ekipmanla savaşlar kolaylaşır. Genel dengeleme Faz 10'da yapılacak.
 
 **Kabul kriterleri:** Akçenin anlamlı bir kullanımı var. Ekipman güç farkı hissediliyor. Uzak bölgelere yürümek zorunlu değil.
 
-**Commit:** `Faz 6: arasta, ahi esnafı, ekipman ve kervansaray`
+**Commit:** `Faz 8: arasta, ahi esnafı, ekipman ve kervansaray`
 
 ---
 
-### Faz 7 — Görevler ve İtibar
+### Faz 9 — Görevler ve İtibar
 **Hedef:** İllere hikâye ve anlam katmak.
 
 - [ ] Görev sistemi: köy muhtarları ve Ahi Babalar görev verir. Türleri şunlar olsun: belirli düşmandan N tane yen, bir ili belirli yüzdeye kadar arındır, bir yemeği başka bir ile ulaştır.
@@ -527,25 +621,25 @@ Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 
 **Kabul kriterleri:** Oyuncunun her bölgede savaş dışında da yapacak anlamlı işleri var.
 
-**Commit:** `Faz 7: görevler ve itibar`
+**Commit:** `Faz 9: görevler ve itibar`
 
 ---
 
-### Faz 8 — Final, Ses, Animasyon ve Cila
+### Faz 10 — Final, Ses, Animasyon ve Cila
 **Hedef:** Oyunu tamamlamak ve parlatmak.
 
 - [ ] **Final:** Van Gölü Canavarı yenilip seviye 48'e ulaşınca Ağrı'daki kale açılsın. Zülmet ile üç evreli final savaşı yapılsın. Ardından hikâyeyi kapatan bir bitiş sahnesi ve 81 ilin özeti gelsin.
 - [ ] Oyun sonrası: oyuncu kalan illeri arındırmaya devam edebilsin.
 - [ ] **Başarımlar:** örneğin "İlk İl Arındı", "Bir Bölge Tamam", "81 Diyar", "Sofra Ustası" (tüm yemekleri toplamak), "Yiğit" (hiç bayılmadan bir bossu yenmek).
 - [ ] **Ses:** Web Audio API ile sentezlenmiş sade efektler (vuruş, kritik, seviye atlama, yemek). Ses açma/kapama ayarı olsun. Müzik eklenecekse telifsiz ve geleneksel çalgı tınılı olsun.
-- [ ] **Animasyonlar:** hasar sayıları, düşmanın sarsılması, seviye atlama parıltısı, harita geçişleri.
+- [ ] **Animasyonlar:** seviye atlama parıltısı, harita geçişleri (hasar sayıları ve sarsılma Faz 5'te yapıldı).
 - [ ] Erişilebilirlik: butonlar yeterince büyük, renkler yeterince kontrastlı, sadece renkle anlam taşınmıyor.
 - [ ] Genel dengeleme turu. Bir bölgenin ortalama 30–60 dakikada bitmesi hedeflenir.
 - [ ] README'yi güncelle: ekran görüntüleri, oyun rehberi ve yayın linki.
 
 **Kabul kriterleri:** Oyun baştan sona bitirilebiliyor. Kırmızı çizgiler (Bölüm 2) son bir kez tüm metin ve verilerde kontrol edildi.
 
-**Commit:** `Faz 8: final, ses, animasyon ve cila`
+**Commit:** `Faz 10: final, ses, animasyon ve cila`
 
 ---
 

@@ -1,14 +1,25 @@
 // Oyun durumu ve abonelik. Saf oyun mantığı — DOM'a dokunmaz.
 import { bolgeler } from '../veri/bolgeler.js';
+import { yeniKarakter } from './karakter.js';
+import { BASLANGIC_HEYBESI } from './envanter.js';
 
 // Yeni bir oyunun başlangıç durumu: yalnızca ilk bölge açık,
 // oyuncu o bölgenin giriş ilinde (İstanbul).
-export function yeniOyunDurumu() {
+// `ad` ve `sinif` verilirse karakter de oluşturulur.
+export function yeniOyunDurumu({ ad, sinif } = {}) {
   const ilkBolge = bolgeler.find((b) => b.sira === 1);
   return {
     konum: ilkBolge.giris,
     acikBolgeler: [ilkBolge.anahtar],
     arinma: {}, // { plaka: 0–100 }
+    oyuncu: sinif ? yeniKarakter(ad, sinif) : null,
+    akce: 0,
+    heybe: BASLANGIC_HEYBESI.map((y) => ({ ...y })),
+    yenilenBosslar: [], // bölge anahtarları
+    yenilenMiniBosslar: [], // il plakaları
+    sofra: null, // { bolge, kalan } — zafer sofrasının kalan savaş sayısı
+    esyalar: [], // sahip olunan eşyalar (esyalar.js anahtarları)
+    sonKervansaray: null, // en son dinlenilen kervansarayın ili; bayılınca buraya dönülür
   };
 }
 
