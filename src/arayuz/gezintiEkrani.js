@@ -5,7 +5,7 @@
 // Gezinti durumu (g) ekranlar arasında korunur (savaşa girip çıkınca kaldığı yerden
 // sürer) ve bu ekran tarafından güncellenir:
 //   { plaka, harita, oyuncu: {x, y}, yon, dusmanlar, halk, sonrakiId, dogusSayaclari, dokunulmaz,
-//     surprizAdimi }
+//     surprizAdimi, tuccar (seyyar tüccar kaydı ya da null), tuccarAdimi }
 import { iller } from '../veri/iller.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { metinler } from '../veri/metinler.js';
@@ -27,10 +27,11 @@ import {
   halkiYurut,
   surprizBaskin,
 } from '../oyun/gezinti.js';
+import { tuccarBelir, tuccarKonumdaMi } from '../oyun/tuccar.js';
 import { sablon, kacis, bildirimGoster, degerCubugu } from './bilesenler.js';
 import { karakterDugmesiniCiz } from './karakterDugmesi.js';
 import { haritaKatmani, kapiKatmani, KARO_BOYU } from './cizimler/karolar.js';
-import { sinifCizimi, halkCizimi } from './cizimler/karakterler.js';
+import { sinifCizimi, halkCizimi, tuccarCizimi } from './cizimler/karakterler.js';
 import { dusmanCizimi } from './cizimler/dusmanlar.js';
 import { verenIsareti } from '../oyun/gorevler.js';
 import { afisOzelligi } from './cografyaBilgisi.js';
@@ -78,7 +79,7 @@ function yonTuslariniKaydet(acik) {
 
 // secenekler: { g, rng, savasBaslat(dusmanKaydi), ileGec(plaka), ilBilgisi, haritaGoster,
 //               heybeGoster, karakterGoster, baslikaDon, ipucuGoster,
-//               arastaGoster, ahiGoster, kervansarayGoster, gorevVerenGoster(veren), gunlukGoster,
+//               arastaGoster, ahiGoster, tuccarGoster(tuccar), kervansarayGoster, gorevVerenGoster(veren), gunlukGoster,
 //               ilGirisi (başka ilden yeni gelindiyse true: il adı afişi gösterilir) }
 // Araç düğmelerinin klavye kısayolları (main.js → EKRAN_KISAYOLLARI ile aynı).
 const KISAYOL = { harita: 'M', heybe: 'B', gunluk: 'G', bilgi: 'L', karakter: 'K' };
@@ -259,6 +260,51 @@ export function gezintiEkrani(kap, depo, secenekler) {
     }
   }
 
+  // Seyyar tüccar: zararsız bir figür; değince alışveriş ekranı açılır.
+  let tuccarFiguru = null;
+  function tuccarCiz() {
+    if (!g.tuccar) {
+      tuccarFiguru?.remove();
+      tuccarFiguru = null;
+      return;
+    }
+    if (!tuccarFiguru) {
+      tuccarFiguru = document.createElement('div');
+      tuccarFiguru.className = 'harita-figuru tuccar-figuru';
+      tuccarFiguru.title = metinler.tuccar.etiket;
+      tuccarFiguru.innerHTML = `<div class="figur-ic">${tuccarCizimi()}</div>
+        <span class="tuccar-rozeti" aria-hidden="true">🛍️</span>`;
+      figurKatmani.appendChild(tuccarFiguru);
+    }
+    tuccarFiguru.classList.toggle('sola', g.tuccar.yon === -1);
+    figurKonumla(tuccarFiguru, g.tuccar.x, g.tuccar.y);
+  }
+
+  function tuccarDuyur() {
+    if (!g.tuccar || g.tuccar.duyuruldu) return;
+    g.tuccar.duyuruldu = true;
+    bildirimGoster(ekran, metinler.tuccar.gorundu, { tur: 'kutlama', sure: 3200 });
+  }
+
+  // Tüccar bir süre bekler ve yoluna devam eder; yürürken de yenisiyle karşılaşılabilir.
+  function tuccarTuru() {
+    g.tuccarAdimi = (g.tuccarAdimi ?? 0) + 1;
+    if (g.tuccar) {
+      if (--g.tuccar.omur > 0) return;
+      g.tuccar = null;
+      g.tuccarAdimi = 0;
+      tuccarCiz();
+      bildirimGoster(ekran, metinler.tuccar.gitti, { sure: 2200 });
+      return;
+    }
+    const t = tuccarBelir(harita, { tuccar: g.tuccar, oyuncu: g.oyuncu, dolu: g.dusmanlar, adim: g.tuccarAdimi }, rng);
+    if (!t) return;
+    g.tuccar = t;
+    g.tuccarAdimi = 0;
+    tuccarCiz();
+    tuccarDuyur();
+  }
+
   function oyuncuyuCiz() {
     oyuncuFiguru.classList.toggle('sola', g.yon === -1);
     oyuncuFiguru.classList.toggle('dokunulmaz', g.dokunulmaz > 0);
@@ -287,6 +333,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     oyuncuyuCiz();
     dusmanlariCiz();
     halkiCiz();
+    tuccarCiz();
     isaretleriKonumla();
     kamera();
     void dunya.getBoundingClientRect();
@@ -322,6 +369,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     if (tur === 'tezgah') return secenekler.arastaGoster?.();
     if (tur === 'dukkan') return secenekler.ahiGoster?.();
     if (tur === 'kervansaray') return secenekler.kervansarayGoster?.();
+    if (tur === 'tuccar') return secenekler.tuccarGoster?.(g.tuccar);
     if (tur === 'muhtar' || tur === 'ahi_baba') return secenekler.gorevVerenGoster?.(tur);
     if (tur === 'cesme') return bildirimGoster(ekran, M.cesme);
   }
@@ -417,7 +465,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     const enCok = dusmanSayisi(arinmaYuzdesi(depo.al(), g.plaka), harita);
     for (let i = 0; i < hazir && siradanDusmanSayisi(g.dusmanlar) < enCok; i++) {
       const d = dusmanDogur(harita, g.plaka, rng, {
-        dolu: g.dusmanlar, oyuncu: g.oyuncu, enAzUzaklik: 7, id: g.sonrakiId++, bosslar: true,
+        dolu: [...g.dusmanlar, ...(g.tuccar ? [g.tuccar] : [])], oyuncu: g.oyuncu, enAzUzaklik: 7, id: g.sonrakiId++, bosslar: true,
       });
       if (d) g.dusmanlar.push(d);
     }
@@ -435,7 +483,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     }
     if (!yon) {
       if (varista) {
-        const tur = etkilesimTuru(harita, varista.x, varista.y);
+        const tur = tuccarKonumdaMi(g.tuccar, varista) ? 'tuccar' : etkilesimTuru(harita, varista.x, varista.y);
         varista = null;
         if (tur) etkiles(tur);
       }
@@ -444,6 +492,13 @@ export function gezintiEkrani(kap, depo, secenekler) {
     }
     if (yon.dx) g.yon = yon.dx;
     const hedef = { x: g.oyuncu.x + yon.dx, y: g.oyuncu.y + yon.dy };
+    if (tuccarKonumdaMi(g.tuccar, hedef)) {
+      // Tüccarın üstünden geçilmez; değmek alışveriş ekranını açar
+      kuyruk = [];
+      tutulanYon = null;
+      oyuncuyuCiz();
+      return etkiles('tuccar');
+    }
     if (g.dusmanlar.some((d) => d.x === hedef.x && d.y === hedef.y)) {
       // Düşmanın içinden geçilmez; değmek savaşı (ya da mühür uyarısını) başlatır
       kuyruk = [];
@@ -472,6 +527,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     dusmanlariCiz();
     const kapi = kapiBul(harita, g.oyuncu);
     if (kapi) return kapidanGec(kapi);
+    tuccarTuru();
     if (surprizDene()) return;
     temasKontrol();
   }
@@ -479,7 +535,9 @@ export function gezintiEkrani(kap, depo, secenekler) {
   function dusmanTuru() {
     if (mesgul) return;
     const onceki = g.dusmanlar;
-    g.dusmanlar = dusmanlariYurut(harita, g.dusmanlar, g.oyuncu, rng, { dokunulmaz: g.dokunulmaz > 0 });
+    g.dusmanlar = dusmanlariYurut(harita, g.dusmanlar, g.oyuncu, rng, {
+      dokunulmaz: g.dokunulmaz > 0, engeller: g.tuccar ? [g.tuccar] : [],
+    });
     // Takipçi bir düşman peşine takılınca oyuncu uyarılır
     const takipci = yeniKovalayanlar(onceki, g.dusmanlar).find((d) => d.dusman.takipci);
     if (takipci && performance.now() - sonTakipUyarisi > TAKIP_UYARI_ARALIGI) {
@@ -501,13 +559,16 @@ export function gezintiEkrani(kap, depo, secenekler) {
   function dokunYuru(e) {
     if (mesgul || e.target.closest('button')) return;
     ipucu.hidden = true;
-    const hedef = ekranNoktasiniKaroyaCevir(e);
+    let hedef = ekranNoktasiniKaroyaCevir(e);
     if (hedef.x < 0 || hedef.y < 0 || hedef.x >= GENISLIK || hedef.y >= YUKSEKLIK) return;
-    const yol = yolBul(harita, g.oyuncu, hedef);
+    // Tüccarın kendisine ya da başının üstüne dokunmak ona gitmektir
+    const t = g.tuccar;
+    if (t && hedef.x === t.x && (hedef.y === t.y || hedef.y === t.y - 1)) hedef = { x: t.x, y: t.y };
+    const yol = yolBul(harita, g.oyuncu, hedef, { engeller: t ? [t] : [] });
     if (!yol) return;
     tutulanYon = null;
     kuyruk = yol;
-    varista = etkilesimTuru(harita, hedef.x, hedef.y) ? hedef : null;
+    varista = etkilesimTuru(harita, hedef.x, hedef.y) || tuccarKonumdaMi(t, hedef) ? hedef : null;
     hedefIsareti.hidden = false;
     hedefIsareti.style.transform = `translate3d(${hedef.x * T}px, ${hedef.y * T}px, 0)`;
     hedefIsareti.classList.remove('beliriyor');
@@ -605,6 +666,11 @@ export function gezintiEkrani(kap, depo, secenekler) {
   sesDugmesiniCiz();
   if (secenekler.ipucuGoster) ipucu.hidden = false;
   kapilariCiz();
+  // İle girişte tüccar haritada bekliyorsa, il adı afişi kalkınca haber verilir
+  if (g.tuccar && !g.tuccar.duyuruldu) {
+    if (secenekler.ilGirisi) setTimeout(() => ekran.isConnected && tuccarDuyur(), 2400);
+    else tuccarDuyur();
+  }
   const aboneliktenCik = depo.abone(ustCubuguCiz);
   ustCubuguCiz(depo.al());
   const gozlemci = new ResizeObserver(boyutla);

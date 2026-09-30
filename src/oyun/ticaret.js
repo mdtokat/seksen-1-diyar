@@ -5,9 +5,12 @@ import { esyalar } from '../veri/esyalar.js';
 import { yemekFiyati, yemekEkle } from './envanter.js';
 import { kusaniliMi } from './ekipman.js';
 import { indirimliFiyat } from './itibar.js';
+import { rastgeleUreteci, sec } from './rastgele.js';
 
 export const SATIS_ORANI = 0.5; // Ahi, eşyayı fiyatının yarısına geri alır
 export const ARASTA_KOMSU_YEMEGI = 2;
+export const AHI_STOK = 6; // bir Ahi tezgâhında aynı anda bulunan eşya sayısı
+export const AHI_DONEM_ZAFERI = 4; // tezgâh kaç zaferde bir başka mallarla dolar
 
 const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
 const bolgeHaritasi = new Map(bolgeler.map((b) => [b.anahtar, b]));
@@ -51,12 +54,46 @@ export function ahiVarMi(plaka) {
   return bolgeHaritasi.get(il.bolge).ahiIlleri.includes(plaka);
 }
 
-// Ahi dükkânında satılan eşyalar: bölgenin sıradan ve nadir eşyaları.
-// Efsanevi eşyalar satılmaz; yalnızca bosslar düşürür.
-export function ahiMallari(plaka) {
+// Bölgenin Ahi esnafının satabileceği bütün eşyalar: sıradan ve nadir olanlar.
+// Efsanevi eşyalar Ahi'de satılmaz; onları yalnızca bosslar düşürür (ve seyyar tüccar
+// nadiren getirir, bkz. tuccar.js).
+export function ahiTumMallari(plaka) {
   if (!ahiVarMi(plaka)) return [];
   const bolge = ilHaritasi.get(plaka).bolge;
   return Object.keys(esyalar).filter((a) => esyalar[a].bolge === bolge && esyalar[a].nadirlik !== 'efsanevi');
+}
+
+// Pazar dönemi: oyuncunun her `AHI_DONEM_ZAFERI` zaferinde bir artar. Ahi tezgâhları
+// dönem değişince yeniden dizilir; kayda yeni alan gerekmez (zaferler zaten sayılıyor).
+export function pazarDonemi(durum) {
+  return Math.floor((durum.istatistik?.zafer ?? 0) / AHI_DONEM_ZAFERI);
+}
+
+// Yeni döneme kalan zafer sayısı (1 … AHI_DONEM_ZAFERI).
+export function pazarYenilenmesineKalan(durum) {
+  return AHI_DONEM_ZAFERI - ((durum.istatistik?.zafer ?? 0) % AHI_DONEM_ZAFERI);
+}
+
+const stokTohumu = (plaka, donem) => Math.imul(plaka * 1000 + donem + 1, 2654435761) >>> 0;
+
+// Ahi tezgâhı: ilin `donem`indeki malları. Her tezgâh, bölgenin eşyalarından `AHI_STOK`
+// tanesini taşır; seçim (plaka, dönem) çiftinden türetilir: aynı ilde, aynı dönemde hep
+// aynı, başka il ya da başka dönemde başka. Her sınıf için en az bir silah ve en az bir
+// zırh ya da kuşak her zaman bulunur, böylece hiçbir yiğit eli boş dönmez.
+export function ahiMallari(plaka, donem = 0) {
+  const havuz = ahiTumMallari(plaka);
+  if (havuz.length <= AHI_STOK) return havuz;
+  const rng = rastgeleUreteci(stokTohumu(plaka, donem));
+  const gruplar = new Map();
+  for (const a of havuz) {
+    const e = esyalar[a];
+    const grup = e.yuva === 'silah' ? e.sinif : 'giyim';
+    gruplar.set(grup, [...(gruplar.get(grup) ?? []), a]);
+  }
+  const secilen = [...gruplar.values()].map((g) => sec(rng, g));
+  const kalan = havuz.filter((a) => !secilen.includes(a));
+  while (secilen.length < AHI_STOK && kalan.length) secilen.push(...kalan.splice(Math.floor(rng() * kalan.length), 1));
+  return havuz.filter((a) => secilen.includes(a)); // veri sırası korunur
 }
 
 export function satisFiyati(anahtar) {
@@ -65,7 +102,7 @@ export function satisFiyati(anahtar) {
 
 // neden: 'satilmiyor' | 'zaten_var' | 'akce_yetersiz'
 export function esyaAlKontrol(durum, anahtar) {
-  if (!ahiMallari(durum.konum).includes(anahtar)) return { olur: false, neden: 'satilmiyor' };
+  if (!ahiMallari(durum.konum, pazarDonemi(durum)).includes(anahtar)) return { olur: false, neden: 'satilmiyor' };
   if ((durum.esyalar ?? []).includes(anahtar)) return { olur: false, neden: 'zaten_var' };
   if (durum.akce < esyalar[anahtar].fiyat) return { olur: false, neden: 'akce_yetersiz' };
   return { olur: true };

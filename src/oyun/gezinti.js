@@ -549,11 +549,14 @@ export function surprizBaskin(harita, { dusmanlar, oyuncu, adim, id }, rng) {
 // hemen bir adım atılır; oyuncu bırakma uzaklığından öteye kaçana, meydana girene
 // ya da dokunulmaz olana dek kovalar. Kovalamayan düşman yuvasına döner ve çevresinde
 // gezinir. Hız, tık başına biriken adım payıyla uygulanır. Meydana ve çıkışlara
-// girmez, birbirinin ve oyuncunun üstüne basmaz. Yeni dizi döndürür.
-export function dusmanlariYurut(harita, dusmanlar, oyuncu, rng, { dokunulmaz = false } = {}) {
+// girmez, birbirinin ve oyuncunun üstüne basmaz; `engeller` (ör. seyyar tüccar) de
+// geçilmez. Yeni dizi döndürür.
+export function dusmanlariYurut(harita, dusmanlar, oyuncu, rng, { dokunulmaz = false, engeller = [] } = {}) {
   const sonuc = dusmanlar.map((d) => ({ ...d }));
   const dolu = (x, y, ben) =>
-    (x === oyuncu.x && y === oyuncu.y) || sonuc.some((d) => d !== ben && d.x === x && d.y === y);
+    (x === oyuncu.x && y === oyuncu.y)
+    || engeller.some((e) => e.x === x && e.y === y)
+    || sonuc.some((d) => d !== ben && d.x === x && d.y === y);
   const guvende = dokunulmaz || meydandaMi(harita, oyuncu);
   for (const d of sonuc) {
     if (d.sabit) continue; // boss ve mini bosslar ininden ayrılmaz

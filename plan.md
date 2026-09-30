@@ -79,7 +79,8 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 │  │  ├─ kesif.js            # keşif, karşılaşma üretimi, arınma
 │  │  ├─ envanter.js         # heybe, yemek kullanma
 │  │  ├─ ekipman.js          # eşya kuşanma ve çıkarma
-│  │  ├─ ticaret.js          # arasta ve Ahi esnafı alışverişi
+│  │  ├─ ticaret.js          # arasta ve Ahi esnafı alışverişi (dönen tezgâh)
+│  │  ├─ tuccar.js           # seyyar tüccar: güçlü mallar, haritada belirme
 │  │  ├─ kervansaray.js      # dinlenme ve hızlı yolculuk
 │  │  ├─ gezinti.js          # il içi karo harita, yürüme, haritadaki düşmanlar
 │  │  ├─ gorevler.js         # görev alma, ilerleme, teslim ve ödül
@@ -609,7 +610,9 @@ Kullanıcı kararları: kuşbakışı görünüm; düşmanlar haritada görünü
 **Faz 8 kararları:**
 - **Eşyalar (91):** her bölgede sınıf başına bir sıradan, bir nadir ve bir efsanevi silah; bir sıradan ve bir nadir zırh; bir nadir kuşak; bir efsanevi zırh ya da kuşak. Yuvalar: silah, zırh, kuşak. Kuşanmak için bölgenin alt seviyesi gerekir. Statlar ve fiyatlar oyuncunun bölgedeki beklenen gücüne ve akçe kazancına oranlıdır (formüller `esyalar.js` başında).
 - **Arasta:** meydandaki tezgâh; ilin yemeği ve komşu illerden (plaka sırasıyla) iki yemek, Bölüm 7 fiyatlarıyla.
-- **Ahi esnafı (23 il):** bölgenin sıradan ve nadir eşyalarını satar, sahip olunan eşyayı yarı fiyatına geri alır (kuşanılı eşya satılmaz). Efsanevi eşya satılmaz. Her ustanın selamı Ahilik ahlakını yansıtır.
+- **Ahi esnafı (23 il):** bölgenin sıradan ve nadir eşyalarını (dönen tezgâh, aşağıya bkz.) satar, sahip olunan eşyayı yarı fiyatına geri alır (kuşanılı eşya satılmaz). Efsanevi eşya satılmaz (seyyar tüccar hariç). Her ustanın selamı Ahilik ahlakını yansıtır.
+- **Dönen tezgâh (sonradan eklendi):** Ahi dükkânı bölgenin 9 sıradan ve nadir eşyasından `AHI_STOK` = 6 tanesini sergiler. Seçim `(il plakası, pazar dönemi)` tohumundan türetilir; pazar dönemi = `floor(zafer / 4)` olduğundan kayıt şeması değişmez, kayıt yükleyerek tezgâh yeniden çekilemez. Her tezgâhta her sınıfın bir silahı ve bir zırh ya da kuşak garantidir. Aynı bölgedeki dükkânların tezgâhı birbirinden farklıdır; dükkân ekranı yenilenmeye kalan zaferi gösterir.
+- **Seyyar tüccar (sonradan eklendi, `tuccar.js`):** zararsız bir gezgin satıcı. İle girerken %22 ihtimalle haritada (oyuncudan ≥ 4 karo uzakta, yol karolarında) bekler; oyuncu meydan dışında yürürken, son gelişten/gidişten en az 60 adım sonra her adımda %0,6 ihtimalle 3–7 karo çevresinde belirir. 150–260 adım kalır, sonra gider. Tezgâhı oyuncunun sınıfına uygun 3 eşyadır: bölgenin efsanevi eşyaları ve bir sonraki bölgenin sıradan/nadir eşyaları (son bölgede kendi nadirleri). Fiyat Ahi fiyatının 1,5 katıdır (yol masrafı), itibar indirimi ve geri alım yoktur. Efsanevi eşyanın bosslardan başka tek kaynağı budur; boss ganimeti zaten sahip olunanı vermez. Tüccarın tezgâhı `tohum`undan türer, gezinti durumunda tutulur (kayda yazılmaz).
 - **Ganimet:** bölge bossu bölgenin efsanevi eşyalarından, mini boss nadir eşyalarından sınıfa uygun ve sahip olunmayan birini garanti düşürür.
 - **Kervansaray (17 il):** dinlenmek ücretsizdir; can ve nefes dolar, bayılınca bu kervansarayda kendine gelinir (hiç dinlenilmediyse bulunulan ilin meydanında).
 - **Hızlı yolculuk:** hem bulunulan hem hedef il %100 arınmış olmalı; ücret 15 + 5 × (iller arası en kısa kara yolu). Açılmamış bölgelerin kervansarayları listede görünmez.

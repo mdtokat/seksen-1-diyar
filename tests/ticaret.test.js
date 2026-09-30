@@ -12,6 +12,8 @@ import {
   yemekAlKontrol,
   ahiVarMi,
   ahiMallari,
+  ahiTumMallari,
+  pazarDonemi,
   esyaAl,
   esyaAlKontrol,
   esyaSat,
@@ -177,13 +179,18 @@ describe('Ahi esnafı', () => {
 
   it('eşya alınır, aynı eşya ikinci kez alınamaz, akçe yetmezse alınamaz', () => {
     const d = { ...yeniOyunDurumu({ ad: 'A', sinif: 'akinci' }), akce: 500 };
-    const s = esyaAl(d, 'bursa_celigi_pala');
-    expect(s.akce).toBe(500 - esyalar.bursa_celigi_pala.fiyat);
-    expect(s.esyalar).toEqual(['bursa_celigi_pala']);
-    expect(esyaAlKontrol(s, 'bursa_celigi_pala')).toEqual({ olur: false, neden: 'zaten_var' });
-    expect(esyaAlKontrol({ ...d, akce: 10 }, 'edirne_kilici')).toEqual({ olur: false, neden: 'akce_yetersiz' });
-    expect(esyaAlKontrol(d, 'boğaz_kilici')).toEqual({ olur: false, neden: 'satilmiyor' });
-    expect(esyaAlKontrol({ ...d, konum: 41 }, 'edirne_kilici')).toEqual({ olur: false, neden: 'satilmiyor' });
+    // Tezgâhta hangi eşyaların olduğu döneme göre değişir; satılan bir Akıncı silahı seçilir
+    const [a] = ahiMallari(34, pazarDonemi(d)).filter((x) => esyalar[x].sinif === 'akinci');
+    const s = esyaAl(d, a);
+    expect(s.akce).toBe(500 - esyalar[a].fiyat);
+    expect(s.esyalar).toEqual([a]);
+    expect(esyaAlKontrol(s, a)).toEqual({ olur: false, neden: 'zaten_var' });
+    expect(esyaAlKontrol({ ...d, akce: 10 }, a)).toEqual({ olur: false, neden: 'akce_yetersiz' });
+    expect(esyaAlKontrol(d, 'bogaz_kilici')).toEqual({ olur: false, neden: 'satilmiyor' });
+    expect(esyaAlKontrol({ ...d, konum: 41 }, a)).toEqual({ olur: false, neden: 'satilmiyor' });
+    // Tezgâhta olmayan (ama bölgede satılabilir) eşya alınamaz
+    const yok = ahiTumMallari(34).find((x) => !ahiMallari(34, pazarDonemi(d)).includes(x));
+    expect(esyaAlKontrol(d, yok)).toEqual({ olur: false, neden: 'satilmiyor' });
   });
 
   it('eşya yarı fiyatına satılır; kuşanılı eşya satılamaz', () => {

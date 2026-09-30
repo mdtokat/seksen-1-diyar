@@ -97,3 +97,21 @@ export function halkCizimi(tur) {
   }[h.bas];
   return svgSar(`${golge(24)}${govde(h)}${bas}`, { sinif: 'cizim cizim-halk' });
 }
+
+// Seyyar tüccar: sırtında büyük bir yük, elinde asa; başında geniş sarık.
+export function tuccarCizimi() {
+  return svgSar(`${golge(30)}
+    <path d="M22 44 Q14 56 18 84 Q34 92 44 84 L46 52 Z" fill="#b0564a"/>
+    <path d="M22 44 Q28 40 44 46 L46 52 L20 58 Z" fill="#d9483b"/>
+    <path d="M18 60 L44 66 M19 74 L45 78" stroke="#7e3a31" stroke-width="2.4" fill="none"/>
+    <circle cx="26" cy="46" r="4" fill="#d4a537"/>
+    <path d="M20 52 L24 84 M40 54 L42 82" stroke="#f7efdc" stroke-width="1.4" fill="none"/>
+    ${govde({ kaftan: '#c98f3a', kaftanKoyu: '#94662a', kusak: '#1b2a5c', cizme: '#5b3a24' })}
+    <path d="M40 66 L80 66 L80 72 L40 72 Z" fill="#1b2a5c"/>
+    <path d="M46 30 Q46 14 60 12 Q74 14 74 30 Q60 22 46 30 Z" fill="#f7efdc"/>
+    <path d="M46 30 Q60 24 74 30 L74 34 Q60 28 46 34 Z" fill="#2aa7a7"/>
+    <path d="M78 58 L90 58" stroke="${TEN}" stroke-width="6"/>
+    <path d="M94 104 L94 30" stroke="#5b3a24" stroke-width="4.5"/>
+    <path d="M94 34 Q104 34 102 44 Q100 50 94 48" fill="none" stroke="#d4a537" stroke-width="2.6"/>
+    <path d="M34 50 L40 44 L44 52" fill="#e8e1d2"/>`, { sinif: 'cizim cizim-halk cizim-tuccar' });
+}
