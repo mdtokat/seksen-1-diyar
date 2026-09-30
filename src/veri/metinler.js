@@ -339,6 +339,7 @@ export const metinler = {
     gunluk: 'Görev günlüğü ve başarımlar',
     girisAfisi: '{il}',
     fark: '{dusman} seni fark etti!',
+    farkKalabalik: '{sayi} yaratık birden saldırıya geçti!',
     alanEtiketi: '{il} il haritası',
     kisayollar: 'Klavye kısayolları',
     takip: '👣 {dusman} peşine takıldı! Kolay kolay bırakmaz; meydana sığın ya da savaş.',
@@ -517,7 +518,12 @@ export const metinler = {
     sahne: {
       siyrildi: 'Sıyrıldı',
       guclendi: 'Güçlendi!',
+      dustu: 'Püskürtüldü',
     },
+    hedef: 'Hedef',
+    hedefSec: 'Vuracağın yaratığı seç',
+    // Aynı türden birden fazla yaratıkta ad numaralanır: "Aç kurt 2"
+    ve: ' ve ',
     etkiler: {
       sofra: '🍽️ Zafer sofrası ({kalan})',
       savunma: '🛡️ Korunma ({kalan})',
@@ -527,6 +533,9 @@ export const metinler = {
     },
     gunluk: {
       baslangic: '{dusman} (Sv {seviye}) yolunu kesti!',
+      baslangicGrup: '{dusmanlar} birlikte saldırıya geçti! Hepsi aynı anda vuruyor; kalabalıktan kaçmak daha zor.',
+      kacisBasarisizGrup: 'Kaçamadın! Yaratıklar yolunu kesti.',
+      grupZafer: 'Saldıran yaratıkların hepsini püskürttün!',
       saldiri: 'Saldırdın: {hasar} hasar.',
       yetenekHasar: '{yetenek}: {hasar} hasar.',
       kritik: 'Kritik vuruş!',

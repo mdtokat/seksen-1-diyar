@@ -12,7 +12,7 @@ import { iller } from '../veri/iller.js';
 import { bolgeler, final } from '../veri/bolgeler.js';
 import { ilSinirlari } from '../veri/ilSinirlari.js';
 import { karsilasmaUret } from './kesif.js';
-import { dusmanOlustur } from './savas.js';
+import { dusmanOlustur, EN_COK_SALDIRGAN } from './savas.js';
 import { bossDurumu, miniBossVarMi, finalDurumu } from './ilerleme.js';
 import { rastgeleUreteci, tamSayi, sans } from './rastgele.js';
 import { gezginBossUret, GEZGIN_BOSS } from './gezginBoss.js';
@@ -507,14 +507,48 @@ export function dusmanDogur(harita, plaka, rng, { dolu = [], oyuncu = null, enAz
 // Haritadaki inlerde bekleyen boss yaratıkları: gezgin olarak bir daha çıkmazlar.
 const inBosslari = (dusmanlar) => dusmanlar.filter((d) => d.sabit).map((d) => d.dusman.anahtar);
 
+// Sürü: kurt, çakal gibi takipçi yaratıklar bazen tek başına değil, 2–3'lü sürü hâlinde
+// doğar. Sürü üyeleri aynı türdendir ve öncünün 1–2 karo çevresinde durur; oyuncuyu birlikte
+// kovalar, temas edince aynı savaşa girerler.
+export const SURU = {
+  sansi: 0.4, // doğan takipçinin sürüyle gelme şansı
+  ucluSansi: 0.25, // sürünün 2 yerine 3 yaratık olma şansı
+};
+
+// `onc` bir takipçiyse yanına (0–2) sürü üyesi üretir. `dolu`: haritada duran yaratıklar.
+export function suruUyeleri(harita, onc, rng, { dolu = [], ilkId = 1 } = {}) {
+  if (onc.sabit || onc.dusman.gezgin || !onc.dusman.takipci || !sans(rng, SURU.sansi)) return [];
+  const il = ilHaritasi.get(harita.plaka);
+  const uyeler = [];
+  for (let i = 0; i < (sans(rng, SURU.ucluSansi) ? 2 : 1); i++) {
+    const yerler = dogusNoktalari(harita).filter((n) => {
+      const u = mesafe(n, onc);
+      return u >= 1 && u <= 2 && ![...dolu, onc, ...uyeler].some((d) => d.x === n.x && d.y === n.y);
+    });
+    if (!yerler.length) break;
+    const n = yerler[Math.floor(rng() * yerler.length)];
+    uyeler.push({
+      id: ilkId + i,
+      dusman: dusmanOlustur(onc.dusman.anahtar, tamSayi(rng, il.seviye[0], il.seviye[1])),
+      x: n.x, y: n.y, evX: n.x, evY: n.y,
+    });
+  }
+  return uyeler;
+}
+
 // İlin düşmanlarını yerleştirir (arınmış illerde daha az düşman olur).
 // `bosslar` true ise aralarında gezgin bosslar da bulunabilir; `dolu` ise haritada
 // zaten duran düşmanlardır (inlerdeki bosslar).
 export function dusmanlariYerlestir(harita, arinma, rng, { oyuncu = null, ilkId = 1, bosslar = false, dolu = [] } = {}) {
   const dusmanlar = [];
-  for (let i = 0; i < dusmanSayisi(arinma, harita); i++) {
-    const d = dusmanDogur(harita, harita.plaka, rng, { dolu: [...dolu, ...dusmanlar], oyuncu, id: ilkId + i, bosslar });
-    if (d) dusmanlar.push(d);
+  const enCok = dusmanSayisi(arinma, harita);
+  // Sürü üyeleri de toplam düşman sayısından sayılır
+  for (let i = 0; i < enCok && dusmanlar.length < enCok; i++) {
+    const d = dusmanDogur(harita, harita.plaka, rng, { dolu: [...dolu, ...dusmanlar], oyuncu, id: ilkId + dusmanlar.length, bosslar });
+    if (!d) continue;
+    dusmanlar.push(d);
+    const suru = suruUyeleri(harita, d, rng, { dolu: [...dolu, ...dusmanlar], ilkId: ilkId + dusmanlar.length });
+    dusmanlar.push(...suru.slice(0, enCok - dusmanlar.length));
   }
   return dusmanlar;
 }
@@ -597,6 +631,23 @@ export function dusmanlariYurut(harita, dusmanlar, oyuncu, rng, { dokunulmaz = f
 export function yeniKovalayanlar(onceki, sonraki) {
   const eski = new Map(onceki.map((d) => [d.id, d]));
   return sonraki.filter((d) => d.kovaliyor && !eski.get(d.id)?.kovaliyor);
+}
+
+// Kalabalık saldırı: oyuncuya değen düşmana (`ilk`), peşinde koşan ve yakınındaki ya da hemen
+// yanındaki sıradan düşmanlar katılır (en çok EN_COK_SALDIRGAN yaratık, en yakınlar öncelikli).
+// Bosslar, mini bosslar ve gezgin bosslar hep tek başına çıkar. Sonuç: [ilk, ...katılanlar].
+export const TOPLU_SALDIRI = { yaricap: 5, yanindaYaricap: 2 };
+export function saldiriGrubu(dusmanlar, oyuncu, ilk) {
+  const tek = (d) => d.sabit || d.dusman.gezgin;
+  if (tek(ilk)) return [ilk];
+  const katilanlar = dusmanlar
+    .filter((d) => d.id !== ilk.id && !tek(d))
+    .map((d) => ({ d, u: mesafe(d, oyuncu) }))
+    .filter(({ d, u }) => (d.kovaliyor && u <= TOPLU_SALDIRI.yaricap) || u <= TOPLU_SALDIRI.yanindaYaricap)
+    .sort((a, b) => a.u - b.u)
+    .slice(0, EN_COK_SALDIRGAN - 1)
+    .map(({ d }) => d);
+  return [ilk, ...katilanlar];
 }
 
 // Oyuncuya değen (aynı ya da bitişik karodaki) ilk düşman. Meydanda temas olmaz.

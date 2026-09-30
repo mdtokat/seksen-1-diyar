@@ -305,10 +305,12 @@ function heybeGoster(geri) {
   ekranGoster((kap) => envanterEkrani(kap, depo, { geri }), 'heybe');
 }
 
-// Haritada temas edilen düşmanla savaş. Sonuca göre gezinti durumu güncellenir:
-// zaferde düşman haritadan kalkar (bir süre sonra yenisi gelir), kaçışta oyuncu kısa
-// süre dokunulmaz olur, bayılınca il meydanında kendine gelir.
-function savasGoster(kayit) {
+// Haritada temas edilen düşmanla (ve ona katılan yoldaşlarıyla) savaş. Sonuca göre gezinti
+// durumu güncellenir: zaferde bütün düşmanlar haritadan kalkar (bir süre sonra yenileri
+// gelir), kaçışta oyuncu kısa süre dokunulmaz olur, bayılınca il meydanında kendine gelir.
+function savasGoster(kayit, yoldaslar = []) {
+  const katilanlar = [kayit, ...yoldaslar];
+  const idler = new Set(katilanlar.map((d) => d.id));
   const plaka = depo.al().konum;
   let sonuc = null;
   let finalBitti = false;
@@ -318,13 +320,13 @@ function savasGoster(kayit) {
     islendi = true;
     const g = gezinti;
     if (sonuc === 'zafer') {
-      g.dusmanlar = g.dusmanlar.filter((d) => d.id !== kayit.id);
-      if (!kayit.sabit) g.dogusSayaclari.push(YENIDEN_DOGUS_ADIMI);
+      g.dusmanlar = g.dusmanlar.filter((d) => !idler.has(d.id));
+      for (const d of katilanlar) if (!d.sabit) g.dogusSayaclari.push(YENIDEN_DOGUS_ADIMI);
       g.dokunulmaz = 2;
     } else if (sonuc === 'kacis') {
       // Kısa bir soluklanma: takipçiler az sonra yeniden peşine düşebilir
       g.dokunulmaz = 4;
-      g.dusmanlar = g.dusmanlar.map((d) => (d.id === kayit.id ? { ...d, kovaliyor: false, birikim: 0 } : d));
+      g.dusmanlar = g.dusmanlar.map((d) => (idler.has(d.id) ? { ...d, kovaliyor: false, birikim: 0 } : d));
     } else if (depo.al().konum !== g.plaka) {
       // Başka ildeki son kervansarayda kendine geldi: o ilin meydanından başlanır
       gezinti = null;
@@ -336,6 +338,7 @@ function savasGoster(kayit) {
   ekranGoster((kap) =>
     savasEkrani(kap, depo, {
       dusman: kayit.dusman,
+      yoldaslar: yoldaslar.map((y) => y.dusman),
       rng,
       sonucuUygula: (durum, savas) => {
         const r = kesifSonucunuUygula(durum, savas, plaka, rng);

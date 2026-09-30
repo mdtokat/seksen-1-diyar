@@ -8,6 +8,9 @@ import { metinler } from '../veri/metinler.js';
 import {
   savasBaslat,
   oyuncuEylemi,
+  hedefSec,
+  canlilar,
+  kalabalikMi,
   eylemKontrol,
   yetenekBul,
   kacilabilirMi,
@@ -30,13 +33,26 @@ const G = M.gunluk;
 const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
 const dusmanAdi = (anahtar) => dusmanVerisi[anahtar].ad;
 
+// Kalabalık savaşta aynı türden yaratıklar numaralanır ("Aç kurt 2"); diğer durumlarda ad olduğu gibi.
+export function yaratikAdi(d, savas) {
+  const ayni = (savas.grup ?? []).filter((g) => g.anahtar === d.anahtar).length > 1;
+  return ayni && d.no ? `${d.ad} ${d.no}` : d.ad;
+}
+
 // Savaş günlüğündeki bir olayı Türkçe cümleye çevirir.
 // Sonuç: { metin, sinif } — sinif: 'oyuncu' | 'dusman' | 'bilgi' | 'zafer' | 'yenilgi'.
 export function olayMetni(olay, savas) {
-  const d = savas.dusman;
+  // Kalabalık savaşta olay hangi yaratığa aitse o; yoksa hedef
+  const y = olay.no ? (savas.grup ?? []).find((g) => g.no === olay.no) ?? savas.dusman : savas.dusman;
+  const d = { ...y, ad: yaratikAdi(y, savas) };
   const ek = (...parcalar) => parcalar.filter(Boolean).join(' ');
   switch (olay.tip) {
     case 'baslangic':
+      if (kalabalikMi(savas)) {
+        const adlar = savas.grup.map((g) => kacis(yaratikAdi(g, savas)));
+        const liste = adlar.length > 2 ? `${adlar.slice(0, -1).join(', ')}${M.ve}${adlar.at(-1)}` : adlar.join(M.ve);
+        return { sinif: 'bilgi', metin: sablon(G.baslangicGrup, { dusmanlar: liste }) };
+      }
       return { sinif: 'bilgi', metin: sablon(G.baslangic, { dusman: d.ad, seviye: d.seviye }) };
     case 'saldiri':
       if (olay.kim === 'oyuncu') {
@@ -89,9 +105,13 @@ export function olayMetni(olay, savas) {
     case 'kacis':
       return {
         sinif: 'bilgi',
-        metin: olay.basarili ? G.kacisBasarili : sablon(G.kacisBasarisiz, { dusman: d.ad }),
+        metin: olay.basarili ? G.kacisBasarili
+          : kalabalikMi(savas) ? G.kacisBasarisizGrup : sablon(G.kacisBasarisiz, { dusman: d.ad }),
       };
+    case 'dusman_dustu':
+      return { sinif: 'zafer', metin: sablon(M.dagilma[d.tur], { dusman: d.ad }) };
     case 'zafer':
+      if (kalabalikMi(savas)) return { sinif: 'zafer', metin: G.grupZafer };
       return { sinif: 'zafer', metin: sablon(M.dagilma[d.tur], { dusman: d.ad }) };
     case 'evre':
       return { sinif: 'dusman', metin: sablon(olay.no ? metinler.final.evreler[olay.no] : G.evre, { dusman: d.ad }) };
@@ -140,15 +160,18 @@ function vurusGoster(figur) {
 }
 
 // Ekranı `kap` içine kurar. Savaş bitince sonuç depoya yazılır. Temizlik fonksiyonu döndürür.
-// secenekler: { dusman, rng, sonucuUygula, bitince, karakterGoster }
+// secenekler: { dusman, yoldaslar (aynı anda saldıran diğer yaratıklar), rng, sonucuUygula, bitince, karakterGoster }
 // sonucuUygula(durum, savas) → { durum, ozet }: varsayılanı savasSonucunuUygula;
 // keşif savaşında arınma ve ganimeti de ekleyen sürüm verilir.
-export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucunuUygula, bitince, karakterGoster } = {}) {
+export function savasEkrani(kap, depo, { dusman, yoldaslar = [], rng, sonucuUygula = savasSonucunuUygula, bitince, karakterGoster } = {}) {
   const baslangic = depo.al();
   const il = ilHaritasi.get(baslangic.konum);
   let savas = savasBaslat(baslangic.oyuncu, dusman, baslangic.heybe ?? [], {
     gucCarpani: sofraGucCarpani(baslangic),
+    yoldaslar,
   });
+  const grup = savas.grup;
+  const kalabalik = grup.length > 1;
   const sofraKalan = baslangic.sofra?.kalan ?? 0;
   let panel = 'ana'; // 'ana' | 'yetenek' | 'yemek' | 'kisayol' | 'son'
   let duzenle = false; // kısayol yuvaları düzenleniyor mu
@@ -157,27 +180,32 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
   let sonDurum = null;
   let oynatiliyor = false;
   // Çubuklarda gösterilen değerler; olaylar oynatıldıkça adım adım güncellenir.
-  const gosterilen = { dusmanCan: savas.dusman.can, oyuncuCan: savas.oyuncu.can, oyuncuNefes: savas.oyuncu.nefes };
+  // Kalabalıkta her yaratığın canı ayrı tutulur (anahtar: yaratığın numarası; tek yaratıkta 1).
+  const dusmanCanlari = () => Object.fromEntries(grup.map((g) => [g.no ?? 1, canlilar(savas).find((c) => c.no === g.no)?.can ?? 0]));
+  const gosterilen = { dusmanCan: dusmanCanlari(), oyuncuCan: savas.oyuncu.can, oyuncuNefes: savas.oyuncu.nefes };
 
   kap.innerHTML = `
     <div class="savas-ekrani">
       <header class="ust-cubuk">
         <h1 class="ust-baslik">⚔️ ${M.baslik} <span class="ust-alt">${kacis(il.ad)}</span></h1>
       </header>
-      <section class="sahne">
+      <section class="sahne" data-grup="${grup.length}">
         ${bolgeArkaPlani(il.bolge)}
-        <div class="figur figur-dusman giris">${dusmanCizimi(dusman.anahtar, { etiket: kacis(dusman.ad) })}</div>
+        ${grup.map((g, i) => `<div class="figur figur-dusman${i === 0 ? ' giris' : ''}" data-no="${g.no ?? 1}" data-yuva="${i + 1}">${
+          dusmanCizimi(g.anahtar, { etiket: kacis(yaratikAdi(g, savas)) })}</div>`).join('')}
         <div class="figur figur-oyuncu">${sinifCizimi(baslangic.oyuncu.sinif, { etiket: kacis(baslangic.oyuncu.ad) })}</div>
-        <div class="bilgi-plakasi bilgi-plakasi-dusman" aria-label="${kacis(dusman.ad)}"></div>
+        ${kalabalik ? '' : `<div class="bilgi-plakasi bilgi-plakasi-dusman" aria-label="${kacis(dusman.ad)}"></div>`}
         <div class="bilgi-plakasi bilgi-plakasi-oyuncu" aria-label="${kacis(baslangic.oyuncu.ad)}"></div>
       </section>
+      ${kalabalik ? `<div class="dusman-seridi" role="group" aria-label="${M.hedefSec}"></div>` : ''}
       <ol class="savas-gunlugu" aria-live="polite"></ol>
       <div class="kisayol-cubugu" role="toolbar" aria-label="${metinler.kisayol.baslik}"></div>
       <nav class="eylem-paneli"></nav>
     </div>`;
 
   const ekran = kap.querySelector('.savas-ekrani');
-  const figurDusman = ekran.querySelector('.figur-dusman');
+  const figurler = new Map([...ekran.querySelectorAll('.figur-dusman')].map((el) => [Number(el.dataset.no), el]));
+  const figurDusman = figurler.get(1);
   // Giriş animasyonu bitince sınıf kaldırılır; yoksa sonraki animasyonları (sarsılma,
   // dağılma) ezer. Hareket azaltılmışsa animasyon hiç çalışmayabilir.
   const girisBitti = () => figurDusman.classList.remove('giris');
@@ -185,20 +213,41 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
   setTimeout(girisBitti, 600);
   const figurOyuncu = ekran.querySelector('.figur-oyuncu');
   const plakaDusman = ekran.querySelector('.bilgi-plakasi-dusman');
+  const dusmanSeridi = ekran.querySelector('.dusman-seridi');
   const plakaOyuncu = ekran.querySelector('.bilgi-plakasi-oyuncu');
   const gunluk = ekran.querySelector('.savas-gunlugu');
   const eylemPaneli = ekran.querySelector('.eylem-paneli');
   const kisayolCubugu = ekran.querySelector('.kisayol-cubugu');
   const azHareket = hareketAzMi();
 
+  // Kalabalıkta: yaratık kartları (dokununca hedef seçilir) ve sahnede hedef işareti.
+  function dusmanSeridiniCiz() {
+    const hedefNo = savas.dusman.no;
+    dusmanSeridi.innerHTML = grup.map((g) => {
+      const can = gosterilen.dusmanCan[g.no];
+      const canli = can > 0;
+      const hedef = g.no === hedefNo;
+      return `<button class="dusman-karti${hedef ? ' hedef' : ''}${canli ? '' : ' dustu'}" data-hedef="${g.no}"
+          aria-pressed="${hedef}" ${canli ? '' : 'disabled'}>
+        <strong>${kacis(yaratikAdi(g, savas))}</strong>
+        <small>${sablon(M.seviye, { seviye: g.seviye })}${hedef && canli ? ` · 🎯 ${M.hedef}` : ''}</small>
+        ${degerCubugu(can, g.canEnCok, { etiket: metinler.statAdlari.can, renk: 'var(--mercan)' })}
+      </button>`;
+    }).join('');
+    for (const [no, el] of figurler) el.classList.toggle('hedef', no === hedefNo);
+  }
+
   function plakalariCiz() {
     const d = savas.dusman;
     const o = savas.oyuncu;
-    plakaDusman.innerHTML = `
+    if (kalabalik) dusmanSeridiniCiz();
+    else {
+      plakaDusman.innerHTML = `
       <h2>${kacis(d.ad)} <span class="rozet">${sablon(M.seviye, { seviye: d.seviye })}</span></h2>
       <p class="savasci-tur">${metinler.dusmanTurleri[d.tur]}${d.gezgin
         ? ` · <span class="tehlike-rozeti tehlike-${d.tehlike}">${metinler.gezginBoss.tehlike[d.tehlike]}</span>` : ''}</p>
-      ${degerCubugu(gosterilen.dusmanCan, d.canEnCok, { etiket: metinler.statAdlari.can, renk: 'var(--mercan)' })}`;
+      ${degerCubugu(gosterilen.dusmanCan[1], d.canEnCok, { etiket: metinler.statAdlari.can, renk: 'var(--mercan)' })}`;
+    }
     const etkiler = savas.etkiler
       .filter((e) => e.hedef === 'oyuncu')
       .map((e) => `<li class="etki etki-${e.etki}">${sablon(M.etkiler[e.etki], { kalan: e.kalan })}</li>`)
@@ -226,9 +275,11 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
     const hasarli = (olay.tip === 'saldiri' || olay.tip === 'ozel_hamle' || (olay.tip === 'yetenek' && olay.hasar !== undefined));
     if (olay.tip === 'yetenek') gosterilen.oyuncuNefes -= yetenekBul(savas.oyuncu.sinif, olay.yetenek).nefes;
 
+    const figurNo = olay.no ?? 1;
+    const dusmanFigur = figurler.get(figurNo) ?? figurDusman;
     if (hasarli && olay.etki !== 'zayiflatma') {
-      const saldiran = oyuncudan ? figurOyuncu : figurDusman;
-      const hedef = oyuncudan ? figurDusman : figurOyuncu;
+      const saldiran = oyuncudan ? figurOyuncu : dusmanFigur;
+      const hedef = oyuncudan ? dusmanFigur : figurOyuncu;
       if (olay.tip === 'ozel_hamle') yaziUcur(saldiran, olay.hamle, 'bilgi');
       titret(saldiran, oyuncudan ? 'hamle-sag' : 'hamle-sol', 400);
       if (!azHareket) await bekle(180);
@@ -241,7 +292,7 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
         vurusGoster(hedef);
         titret(hedef, 'sarsil', 420);
         yaziUcur(hedef, `-${olay.hasar}${olay.kritik ? '!' : ''}`, olay.kritik ? 'kritik' : 'hasar');
-        if (oyuncudan) gosterilen.dusmanCan = Math.max(0, gosterilen.dusmanCan - olay.hasar);
+        if (oyuncudan) gosterilen.dusmanCan[figurNo] = Math.max(0, gosterilen.dusmanCan[figurNo] - olay.hasar);
         else gosterilen.oyuncuCan = Math.max(0, gosterilen.oyuncuCan - olay.hasar);
       }
     } else if (olay.tip === 'yetenek' || olay.tip === 'yemek') {
@@ -256,14 +307,18 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
         yaziUcur(figurOyuncu, yetenekBul(savas.oyuncu.sinif, olay.yetenek).ad, 'bilgi');
       }
     } else if (olay.tip === 'ozel_hamle') {
-      yaziUcur(figurDusman, olay.hamle, 'bilgi');
+      yaziUcur(dusmanFigur, olay.hamle, 'bilgi');
       titret(figurOyuncu, 'urkme', 500);
     } else if (olay.tip === 'kacis') {
       if (olay.basarili) figurOyuncu.classList.add('geri-cekil');
       else titret(figurOyuncu, 'sarsil', 420);
+    } else if (olay.tip === 'dusman_dustu') {
+      yaziUcur(dusmanFigur, M.sahne.dustu, 'bilgi');
+      dusmanFigur.classList.add('dagil');
+      gosterilen.dusmanCan[figurNo] = 0;
     } else if (olay.tip === 'zafer') {
       sesCal('zafer');
-      figurDusman.classList.add('dagil');
+      if (!kalabalik) figurDusman.classList.add('dagil');
     } else if (olay.tip === 'evre') {
       sesCal('evre');
       titret(figurDusman, 'sarsil', 420);
@@ -280,7 +335,7 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
   }
 
   function anaPanel() {
-    const kacmaYok = !kacilabilirMi(savas.dusman);
+    const kacmaYok = !canlilar(savas).every(kacilabilirMi);
     return `
       <div class="eylem-izgarasi">
         <button class="buton buton-ana" data-eylem="saldir">⚔️ ${M.saldir}</button>
@@ -491,7 +546,7 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
     duzenle = false;
     panelCiz();
     for (const olay of olaylar) await olayiOynat(olay);
-    Object.assign(gosterilen, { dusmanCan: savas.dusman.can, oyuncuCan: savas.oyuncu.can, oyuncuNefes: savas.oyuncu.nefes });
+    Object.assign(gosterilen, { dusmanCan: dusmanCanlari(), oyuncuCan: savas.oyuncu.can, oyuncuNefes: savas.oyuncu.nefes });
     plakalariCiz();
     if (savas.sonuc) savasBitti();
     oynatiliyor = false;
@@ -502,6 +557,10 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
   ekran.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b || b.disabled || oynatiliyor) return;
+    if (b.dataset.hedef !== undefined) {
+      savas = hedefSec(savas, Number(b.dataset.hedef));
+      return plakalariCiz();
+    }
     if (b.dataset.kisayol !== undefined) return yuvaSec(Number(b.dataset.kisayol));
     if (b.dataset.kisayolIcerik !== undefined) {
       depo.ayarla(kisayolAta(depo.al(), secilenYuva, koddanIcerik(b.dataset.kisayolIcerik)));

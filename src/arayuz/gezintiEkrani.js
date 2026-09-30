@@ -26,6 +26,8 @@ import {
   halkiYerlestir,
   halkiYurut,
   surprizBaskin,
+  saldiriGrubu,
+  suruUyeleri,
 } from '../oyun/gezinti.js';
 import { tuccarBelir, tuccarKonumdaMi } from '../oyun/tuccar.js';
 import { sablon, kacis, bildirimGoster, degerCubugu } from './bilesenler.js';
@@ -77,7 +79,7 @@ function yonTuslariniKaydet(acik) {
   }
 }
 
-// secenekler: { g, rng, savasBaslat(dusmanKaydi), ileGec(plaka), ilBilgisi, haritaGoster,
+// secenekler: { g, rng, savasBaslat(dusmanKaydi, yoldasKayitlari), ileGec(plaka), ilBilgisi, haritaGoster,
 //               heybeGoster, karakterGoster, baslikaDon, ipucuGoster,
 //               arastaGoster, ahiGoster, tuccarGoster(tuccar), kervansarayGoster, gorevVerenGoster(veren), gunlukGoster,
 //               ilGirisi (başka ilden yeni gelindiyse true: il adı afişi gösterilir) }
@@ -426,10 +428,13 @@ export function gezintiEkrani(kap, depo, secenekler) {
     mesgul = true;
     kuyruk = [];
     tutulanYon = null;
-    const el = dusmanFigurleri.get(d.id);
-    el?.classList.add('fark');
-    bildirimGoster(ekran, sablon(M.fark, { dusman: d.dusman.ad }), { sure: 900 });
-    setTimeout(() => secenekler.savasBaslat?.(d), 550);
+    // Peşindeki yakın yaratıklar da aynı anda saldırır
+    const [ilk, ...yoldaslar] = saldiriGrubu(g.dusmanlar, g.oyuncu, d);
+    for (const y of [ilk, ...yoldaslar]) dusmanFigurleri.get(y.id)?.classList.add('fark');
+    bildirimGoster(ekran, yoldaslar.length
+      ? sablon(M.farkKalabalik, { sayi: yoldaslar.length + 1 })
+      : sablon(M.fark, { dusman: ilk.dusman.ad }), { sure: 900 });
+    setTimeout(() => secenekler.savasBaslat?.(ilk, yoldaslar), 550);
   }
 
   // Yürürken bazen bölgenin boss yaratıklarından biri bir anda oyuncunun önüne çıkar.
@@ -464,10 +469,19 @@ export function gezintiEkrani(kap, depo, secenekler) {
     g.dogusSayaclari = g.dogusSayaclari.filter((s) => s > 0);
     const enCok = dusmanSayisi(arinmaYuzdesi(depo.al(), g.plaka), harita);
     for (let i = 0; i < hazir && siradanDusmanSayisi(g.dusmanlar) < enCok; i++) {
+      const dolu = [...g.dusmanlar, ...(g.tuccar ? [g.tuccar] : [])];
       const d = dusmanDogur(harita, g.plaka, rng, {
-        dolu: [...g.dusmanlar, ...(g.tuccar ? [g.tuccar] : [])], oyuncu: g.oyuncu, enAzUzaklik: 7, id: g.sonrakiId++, bosslar: true,
+        dolu, oyuncu: g.oyuncu, enAzUzaklik: 7, id: g.sonrakiId++, bosslar: true,
       });
-      if (d) g.dusmanlar.push(d);
+      if (!d) continue;
+      g.dusmanlar.push(d);
+      // Takipçiler sürü hâlinde de gelebilir; sürü üyeleri de toplam sayıdan sayılır
+      const kalan = enCok - siradanDusmanSayisi(g.dusmanlar);
+      if (kalan > 0) {
+        const suru = suruUyeleri(harita, d, rng, { dolu: [...dolu, d], ilkId: g.sonrakiId }).slice(0, kalan);
+        g.sonrakiId += suru.length;
+        g.dusmanlar.push(...suru);
+      }
     }
   }
 
