@@ -356,8 +356,18 @@ export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, ilGoster }
         <div><dt>${M.yemek}</dt><dd><span aria-hidden="true">${yemek.ikon}</span> ${kacis(yemek.ad)}<small>${kacis(yemek.aciklama)}</small></dd></div>
         <div><dt>${M.arinma}</dt><dd>${ilerlemeCubugu(yuzde, { etiket: M.arinma, renk: 'var(--arinmis)' })}</dd></div>
         ${bossSatiri(durum, il, bolge)}
+        ${olanaklarSatiri(il, bolge)}
       </dl>
       <div class="kart-eylem">${eylem}</div>`;
+  }
+
+  // İldeki kervansaray ve Ahi esnafı.
+  function olanaklarSatiri(il, bolge) {
+    const olanaklar = [
+      bolge.kervansarayIlleri.includes(il.plaka) && M.kervansaray,
+      bolge.ahiIlleri.includes(il.plaka) && M.ahi,
+    ].filter(Boolean);
+    return olanaklar.length ? `<div><dt>${M.olanaklar}</dt><dd>${olanaklar.join('<br>')}</dd></div>` : '';
   }
 
   // Bossun ilinde: bossun adı ve mühür durumu.

@@ -2,6 +2,7 @@
 import { iller } from '../veri/iller.js';
 import { yemekler } from '../veri/yemekler.js';
 import { dusmanlar as dusmanVerisi } from '../veri/dusmanlar.js';
+import { esyalar as esyaVerisi } from '../veri/esyalar.js';
 import { metinler } from '../veri/metinler.js';
 import {
   savasBaslat,
@@ -327,6 +328,10 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
       if (ozet.arinmaArtisi) satirlar.push(sablon(S.arinma, { artis: ozet.arinmaArtisi, yuzde: ozet.arinma }));
       if (ozet.arindi) satirlar.push(`<strong class="kutlama">${sablon(S.arindi, { il: kacis(il.ad) })}</strong>`);
       const B = metinler.boss;
+      if (ozet.esya) {
+        const e = esyaVerisi[ozet.esya];
+        satirlar.push(`<strong class="kutlama">${sablon(S.esya, { ikon: e.ikon, esya: kacis(e.ad), nadirlik: metinler.nadirlik[e.nadirlik] })}</strong>`);
+      }
       if (ozet.miniBossYenildi) satirlar.push(`<strong>${sablon(B.miniYenildi, { boss: kacis(savas.dusman.ad) })}</strong>`);
       if (ozet.miniBossBelirdi) {
         satirlar.push(`<strong class="kutlama">${sablon(B.miniBelirdi, { boss: kacis(dusmanAdi(ozet.miniBossBelirdi)) })}</strong>`);
@@ -344,7 +349,8 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
         }
       }
     } else if (ozet.sonuc === 'yenilgi') {
-      satirlar.push(sablon(S.bayilma, { il: kacis(il.ad) }));
+      const donulen = ilHaritasi.get(ozet.donulenIl ?? il.plaka);
+      satirlar.push(sablon(ozet.kervansarayda ? S.bayilmaKervansaray : S.bayilma, { il: kacis(donulen.ad) }));
       if (ozet.akceKaybi > 0) satirlar.push(sablon(S.akceKaybi, { akce: ozet.akceKaybi }));
     } else {
       satirlar.push(S.kacis);

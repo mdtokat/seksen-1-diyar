@@ -5,10 +5,11 @@
 import { iller } from '../veri/iller.js';
 import { siniflar } from '../veri/siniflar.js';
 import { yemekler } from '../veri/yemekler.js';
+import { esyalar } from '../veri/esyalar.js';
 import { STATLAR } from './karakter.js';
 
 export const KAYIT_ANAHTARI = 'seksen-bir-diyar/kayit';
-export const KAYIT_SURUMU = 2;
+export const KAYIT_SURUMU = 3;
 
 function varsayilanDepo() {
   try {
@@ -30,11 +31,26 @@ function birdenIkiye(veri) {
   };
 }
 
+// Sürüm 2 → 3 (Faz 8): eşyalar, kuşanılanlar ve son kervansaray eklendi.
+function ikidenUce(veri) {
+  const d = veri.durum;
+  return {
+    surum: 3,
+    durum: {
+      esyalar: [],
+      sonKervansaray: null,
+      ...d,
+      oyuncu: d.oyuncu && { kusanilan: { silah: null, zirh: null, aksesuar: null }, ...d.oyuncu },
+    },
+  };
+}
+
 // Eski sürümdeki bir kaydı adım adım güncel şemaya taşır. Tanınmayan sürüm → null.
 export function goc(veri) {
   if (!veri || typeof veri !== 'object' || !veri.durum) return null;
   let v = veri;
   if (v.surum === 1) v = birdenIkiye(v);
+  if (v.surum === 2) v = ikidenUce(v);
   return v.surum === KAYIT_SURUMU ? v : null;
 }
 
@@ -55,6 +71,9 @@ export function durumGecerliMi(d) {
   if (!o || !siniflar[o.sinif] || typeof o.ad !== 'string') return false;
   if (![o.seviye, o.xp, o.statPuani, o.can, o.nefes].every(sayiMi) || o.seviye < 1) return false;
   if (!o.dagitilan || !STATLAR.every((s) => sayiMi(o.dagitilan[s]))) return false;
+  if (!Array.isArray(d.esyalar) || !d.esyalar.every((a) => esyalar[a])) return false;
+  if (d.sonKervansaray !== null && !plakalar.has(d.sonKervansaray)) return false;
+  if (!o.kusanilan || !Object.values(o.kusanilan).every((a) => a === null || d.esyalar.includes(a))) return false;
   return true;
 }
 

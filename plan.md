@@ -77,7 +77,11 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 │  │  ├─ karakter.js         # stat hesapları, seviye atlama
 │  │  ├─ savas.js            # sıra tabanlı savaş motoru
 │  │  ├─ kesif.js            # keşif, karşılaşma üretimi, arınma
-│  │  ├─ envanter.js         # heybe, yemek kullanma, ekipman
+│  │  ├─ envanter.js         # heybe, yemek kullanma
+│  │  ├─ ekipman.js          # eşya kuşanma ve çıkarma
+│  │  ├─ ticaret.js          # arasta ve Ahi esnafı alışverişi
+│  │  ├─ kervansaray.js      # dinlenme ve hızlı yolculuk
+│  │  ├─ gezinti.js          # il içi karo harita, yürüme, haritadaki düşmanlar
 │  │  ├─ ilerleme.js         # bölge kilitleri, boss koşulları
 │  │  └─ kayit.js            # kaydet / yükle / şema göçü
 │  ├─ veri/                  # SADECE VERİ — mantık yok
@@ -387,7 +391,7 @@ Bir bölge bossu yenildiğinde, o bölgenin yemeklerinden oluşan bir sofra kuru
 | 5 | Görsel yenileme (SVG çizimler, savaş sahnesi, il sınırlı harita) | ✅ |
 | 6 | İl içi gezinti (kuşbakışı yürüme, haritada düşmanlar) | ✅ |
 | 7 | Bosslar ve bölge ilerlemesi | ✅ |
-| 8 | Arasta, Ahi esnafı, ekipman ve kervansaray | ⬜ |
+| 8 | Arasta, Ahi esnafı, ekipman ve kervansaray | ✅ |
 | 9 | Görevler ve itibar | ⬜ |
 | 10 | Final, ses, animasyon ve cila | ⬜ |
 
@@ -581,14 +585,24 @@ Kullanıcı kararları: kuşbakışı görünüm; düşmanlar haritada görünü
 ### Faz 8 — Arasta, Ahi Esnafı, Ekipman ve Kervansaray
 **Hedef:** Ekonomi, ekipman ve rahat seyahat.
 
-- [ ] **Arasta:** her ilde o ilin yöresel yemeği ve komşu illerden 1–2 yemek satılsın.
-- [ ] **Ahi esnafı:** silah ve zırh satan bir dükkân. Her 3–4 ilde bir, esnafın ahlakını yansıtan kısa ve samimi selamlama metinleriyle.
-- [ ] `esyalar.js`: sınıfa uygun silahlar (Akıncı: kılıç, Kemankeş: yay, Alperen: asa) ve zırhlar. Nadirlik seviyeleri: sıradan, nadir, efsanevi. Örnek: Sivas çakısı, Tokat yazması kuşak (zırh aksesuarı), Bursa ipeği cübbe.
-- [ ] Ekipman takma ve çıkarma, statlara yansıma.
-- [ ] Bosslar garanti efsanevi eşya düşürsün.
-- [ ] **Kervansaray:** bölgelerdeki belirli illerde bulunsun. Burada dinlenince can ve nefes dolsun. Bayılınca buraya dönülsün.
-- [ ] **Hızlı yolculuk:** arınmış illerdeki kervansaraylar arasında akçe karşılığı anında yolculuk.
-- [ ] Testleri yaz: alışveriş, ekipman stat etkisi, hızlı yolculuk koşulları.
+- [x] **Arasta:** her ilde o ilin yöresel yemeği ve komşu illerden 1–2 yemek satılsın.
+- [x] **Ahi esnafı:** silah ve zırh satan bir dükkân. Her 3–4 ilde bir, esnafın ahlakını yansıtan kısa ve samimi selamlama metinleriyle.
+- [x] `esyalar.js`: sınıfa uygun silahlar (Akıncı: kılıç, Kemankeş: yay, Alperen: asa) ve zırhlar. Nadirlik seviyeleri: sıradan, nadir, efsanevi. Örnek: Sivas çakısı, Tokat yazması kuşak (zırh aksesuarı), Bursa ipeği cübbe.
+- [x] Ekipman takma ve çıkarma, statlara yansıma.
+- [x] Bosslar garanti efsanevi eşya düşürsün.
+- [x] **Kervansaray:** bölgelerdeki belirli illerde bulunsun. Burada dinlenince can ve nefes dolsun. Bayılınca buraya dönülsün.
+- [x] **Hızlı yolculuk:** arınmış illerdeki kervansaraylar arasında akçe karşılığı anında yolculuk.
+- [x] Testleri yaz: alışveriş, ekipman stat etkisi, hızlı yolculuk koşulları.
+
+**Faz 8 kararları:**
+- **Eşyalar (91):** her bölgede sınıf başına bir sıradan, bir nadir ve bir efsanevi silah; bir sıradan ve bir nadir zırh; bir nadir kuşak; bir efsanevi zırh ya da kuşak. Yuvalar: silah, zırh, kuşak. Kuşanmak için bölgenin alt seviyesi gerekir. Statlar ve fiyatlar oyuncunun bölgedeki beklenen gücüne ve akçe kazancına oranlıdır (formüller `esyalar.js` başında).
+- **Arasta:** meydandaki tezgâh; ilin yemeği ve komşu illerden (plaka sırasıyla) iki yemek, Bölüm 7 fiyatlarıyla.
+- **Ahi esnafı (23 il):** bölgenin sıradan ve nadir eşyalarını satar, sahip olunan eşyayı yarı fiyatına geri alır (kuşanılı eşya satılmaz). Efsanevi eşya satılmaz. Her ustanın selamı Ahilik ahlakını yansıtır.
+- **Ganimet:** bölge bossu bölgenin efsanevi eşyalarından, mini boss nadir eşyalarından sınıfa uygun ve sahip olunmayan birini garanti düşürür.
+- **Kervansaray (17 il):** dinlenmek ücretsizdir; can ve nefes dolar, bayılınca bu kervansarayda kendine gelinir (hiç dinlenilmediyse bulunulan ilin meydanında).
+- **Hızlı yolculuk:** hem bulunulan hem hedef il %100 arınmış olmalı; ücret 15 + 5 × (iller arası en kısa kara yolu). Açılmamış bölgelerin kervansarayları listede görünmez.
+- **Kayıt:** şema sürüm 3 (`esyalar`, `sonKervansaray`, `oyuncu.kusanilan`); eski kayıtlar zincirleme taşınır.
+- **Not:** bossların dengesi (Faz 7) ekipmansız ölçüldü; ekipmanla savaşlar kolaylaşır. Genel dengeleme Faz 10'da yapılacak.
 
 **Kabul kriterleri:** Akçenin anlamlı bir kullanımı var. Ekipman güç farkı hissediliyor. Uzak bölgelere yürümek zorunlu değil.
 

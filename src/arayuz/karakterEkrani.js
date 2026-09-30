@@ -4,6 +4,40 @@ import { metinler } from '../veri/metinler.js';
 import { statlar, gerekenXp, statPuaniDagit, STATLAR } from '../oyun/karakter.js';
 import { kacis, sablon, degerCubugu } from './bilesenler.js';
 import { sinifCizimi } from './cizimler/karakterler.js';
+import { esyalar, YUVALAR } from '../veri/esyalar.js';
+import { kusan, kusanKontrol, cikar, kusaniliMi } from '../oyun/ekipman.js';
+import { esyaKarti } from './esyaKarti.js';
+
+const E = metinler.ekipman;
+
+// Ekipman bölümü: üç yuva ve çantadaki eşyalar.
+function ekipmanBolumu(durum) {
+  const o = durum.oyuncu;
+  const yuvalar = YUVALAR.map((yuva) => {
+    const a = o.kusanilan?.[yuva];
+    if (!a) return `<li class="bos-yuva"><span>${metinler.yuvaAdlari[yuva]}</span><em>${E.bos}</em></li>`;
+    return esyaKarti(a, { sag: `<button class="buton buton-kucuk" data-cikar="${yuva}">${E.cikar}</button>` });
+  }).join('');
+  const canta = (durum.esyalar ?? []).filter((a) => !kusaniliMi(durum, a));
+  const cantaListesi = canta.length
+    ? `<ul class="esya-listesi">${canta.map((a) => {
+        const k = kusanKontrol(durum, a);
+        const not = k.olur ? '' : sablon(E.neden[k.neden] ?? '', { seviye: esyalar[a].seviye });
+        return esyaKarti(a, {
+          sag: `<button class="buton buton-kucuk" data-kusan="${a}" ${k.olur ? '' : 'disabled'}>${E.kusan}</button>`,
+          not,
+          soluk: !k.olur,
+        });
+      }).join('')}</ul>`
+    : `<p class="bos-not">${E.cantaBos}</p>`;
+  return `
+    <section class="kart">
+      <h3>⚔️ ${E.baslik}</h3>
+      <ul class="esya-listesi ekipman-yuvalari">${yuvalar}</ul>
+      <h3 class="alt-baslik-kucuk">🎒 ${E.canta}</h3>
+      ${cantaListesi}
+    </section>`;
+}
 
 const M = metinler.karakter;
 
@@ -66,6 +100,7 @@ function icerik(durum) {
       </p>
       <ul class="stat-listesi">${statSatirlari}</ul>
     </section>
+    ${ekipmanBolumu(durum)}
     <section class="kart">
       <h3>${M.yetenekler}</h3>
       <ul class="yetenek-listesi">${yetenekler}</ul>
@@ -93,6 +128,10 @@ export function karakterEkrani(kap, depo, { geri } = {}) {
     if (!buton) return;
     if (buton.dataset.eylem === 'geri') {
       geri?.();
+    } else if (buton.dataset.kusan) {
+      depo.ayarla(kusan(depo.al(), buton.dataset.kusan));
+    } else if (buton.dataset.cikar) {
+      depo.ayarla(cikar(depo.al(), buton.dataset.cikar));
     } else if (buton.dataset.stat) {
       const durum = depo.al();
       depo.ayarla({ ...durum, oyuncu: statPuaniDagit(durum.oyuncu, buton.dataset.stat) });

@@ -27,6 +27,8 @@ export const KARO = {
   TEZGAH: 9,
   TABELA: 10,
   KAPI: 11, // komşu ile çıkış
+  DUKKAN: 12, // Ahi esnafının silah ve zırh dükkânı
+  KERVANSARAY: 13,
 };
 
 const OYUNCU_YURUR = new Set([KARO.CIM, KARO.YOL, KARO.YABANI, KARO.MEYDAN, KARO.KAPI]);
@@ -210,10 +212,15 @@ export function ilHaritasiUret(plaka) {
   koy(tezgah.x, tezgah.y, KARO.TEZGAH);
   koy(cesme.x, cesme.y, KARO.CESME);
   koy(tabela.x, tabela.y, KARO.TABELA);
+  const bolgeVerisi = bolgeler.find((b) => b.anahtar === il.bolge);
+  const dukkan = bolgeVerisi.ahiIlleri.includes(plaka) ? { x: merkez.x - 2, y: merkez.y + 1 } : null;
+  const kervansaray = bolgeVerisi.kervansarayIlleri.includes(plaka) ? { x: merkez.x + 2, y: merkez.y + 1 } : null;
+  if (dukkan) koy(dukkan.x, dukkan.y, KARO.DUKKAN);
+  if (kervansaray) koy(kervansaray.x, kervansaray.y, KARO.KERVANSARAY);
   const dogus = { x: merkez.x, y: merkez.y + 1 };
 
   // 7. Bağlantı: meydandan yürünerek ulaşılamayan açık alanlar engelle doldurulur
-  const harita = { plaka, bolge: il.bolge, karolar: k, kapilar, meydan, dogus, tezgah, cesme, tabela };
+  const harita = { plaka, bolge: il.bolge, karolar: k, kapilar, meydan, dogus, tezgah, cesme, tabela, dukkan, kervansaray };
   const ulasilan = ulasilabilir(harita, dogus, yurunurMu);
   for (let y = 0; y < Y; y++) {
     for (let x = 0; x < G; x++) {
@@ -284,9 +291,16 @@ export function kapiBul(harita, p) {
   return harita.kapilar.find((k) => k.x === p.x && k.y === p.y);
 }
 
-// Engelle karşılaşılan karo bir yapıysa türü: 'cesme' | 'tezgah' | 'tabela'.
+// Engelle karşılaşılan karo bir yapıysa türü:
+// 'cesme' | 'tezgah' | 'tabela' | 'dukkan' | 'kervansaray'.
 export function etkilesimTuru(harita, x, y) {
-  return { [KARO.CESME]: 'cesme', [KARO.TEZGAH]: 'tezgah', [KARO.TABELA]: 'tabela' }[karo(harita, x, y)] ?? null;
+  return {
+    [KARO.CESME]: 'cesme',
+    [KARO.TEZGAH]: 'tezgah',
+    [KARO.TABELA]: 'tabela',
+    [KARO.DUKKAN]: 'dukkan',
+    [KARO.KERVANSARAY]: 'kervansaray',
+  }[karo(harita, x, y)] ?? null;
 }
 
 // İlk adımı ile birlikte en kısa yol (başlangıç hariç). Hedef yürünemiyorsa ona

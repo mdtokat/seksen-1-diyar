@@ -1,3 +1,123 @@
-// Yalnızca veri — mantık kodu yok. İçerik Faz 1'de eklenecek.
+// Ekipman: silahlar, zırhlar ve kuşaklar. Yalnızca veri — mantık kodu yok.
+// yuva: 'silah' | 'zirh' | 'aksesuar'. Silahlar sınıfa özgüdür (sinif): Akıncı kılıç,
+// Kemankeş yay, Alperen asa kuşanır. Zırh ve kuşakları herkes kuşanabilir.
+// nadirlik: 'siradan' | 'nadir' (Ahi esnafı satar) | 'efsanevi' (yalnızca bosslar düşürür).
+// seviye: kuşanmak için gereken en düşük seviye (bölgenin alt seviyesi).
+// statlar: kuşanınca statlara eklenen değerler. fiyat: akçe (Ahi yarı fiyatına geri alır).
+//
+// Değerler, oyuncunun bölgenin orta seviyesindeki (L) yaklaşık statlarına oranlanarak
+// hesaplandı (plan.md Faz 8): güç ≈ 12 + 3L, savunma ≈ 10 + 2,5L, can ≈ 110 + 15L,
+// nefes ≈ 40 + 5L, çeviklik ≈ 8 + 1,5L.
+//   Silah gücü: sıradan %15, nadir %25, efsanevi %35 (+ sınıfa göre can / çeviklik / nefes).
+//   Zırh savunması: sıradan %20, nadir %30 (+%5 can), efsanevi %40 (+%10 can).
+//   Fiyat: taban × (3 + 2L) / 13 (akçe kazancıyla orantılı), 5'e yuvarlanır.
 
-export {};
+export const YUVALAR = ['silah', 'zirh', 'aksesuar'];
+export const NADIRLIKLER = ['siradan', 'nadir', 'efsanevi'];
+
+export const esyalar = {
+  // ── Marmara ──
+  edirne_kilici: { ad: 'Edirne kılıcı', yuva: 'silah', sinif: 'akinci', nadirlik: 'siradan', bolge: 'marmara', seviye: 1, ikon: '🗡️', statlar: { guc: 4 }, fiyat: 120, aciklama: 'Marmara ustalarının elinden çıkma sağlam bir kılıç.' },
+  talim_yayi: { ad: 'Talim yayı', yuva: 'silah', sinif: 'kemankes', nadirlik: 'siradan', bolge: 'marmara', seviye: 1, ikon: '🏹', statlar: { guc: 4, ceviklik: 2 }, fiyat: 120, aciklama: 'Marmara ustalarının elinden çıkma sağlam bir yay.' },
+  mese_asa: { ad: 'Meşe asa', yuva: 'silah', sinif: 'alperen', nadirlik: 'siradan', bolge: 'marmara', seviye: 1, ikon: '🪵', statlar: { guc: 4, nefes: 6 }, fiyat: 120, aciklama: 'Marmara ustalarının elinden çıkma sağlam bir asa.' },
+  bursa_celigi_pala: { ad: 'Bursa çeliği pala', yuva: 'silah', sinif: 'akinci', nadirlik: 'nadir', bolge: 'marmara', seviye: 1, ikon: '🗡️', statlar: { guc: 7, can: 9 }, fiyat: 320, aciklama: 'Marmara ustalarının elinden çıkma özenle işlenmiş bir kılıç.' },
+  okmeydani_yayi: { ad: 'Okmeydanı yayı', yuva: 'silah', sinif: 'kemankes', nadirlik: 'nadir', bolge: 'marmara', seviye: 1, ikon: '🏹', statlar: { guc: 7, ceviklik: 3 }, fiyat: 320, aciklama: 'Marmara ustalarının elinden çıkma özenle işlenmiş bir yay.' },
+  bilecik_ceviz_asasi: { ad: 'Bilecik ceviz asası', yuva: 'silah', sinif: 'alperen', nadirlik: 'nadir', bolge: 'marmara', seviye: 1, ikon: '🪵', statlar: { guc: 7, nefes: 13 }, fiyat: 320, aciklama: 'Marmara ustalarının elinden çıkma özenle işlenmiş bir asa.' },
+  bogaz_kilici: { ad: 'Boğaz Kılıcı', yuva: 'silah', sinif: 'akinci', nadirlik: 'efsanevi', bolge: 'marmara', seviye: 1, ikon: '🗡️', statlar: { guc: 9, can: 18 }, fiyat: 700, aciklama: 'Marmara bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  dalga_yayi: { ad: 'Dalga Yayı', yuva: 'silah', sinif: 'kemankes', nadirlik: 'efsanevi', bolge: 'marmara', seviye: 1, ikon: '🏹', statlar: { guc: 9, ceviklik: 5 }, fiyat: 700, aciklama: 'Marmara bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  bogaz_ruzgari_asasi: { ad: 'Boğaz Rüzgârı Asası', yuva: 'silah', sinif: 'alperen', nadirlik: 'efsanevi', bolge: 'marmara', seviye: 1, ikon: '🪵', statlar: { guc: 9, nefes: 20 }, fiyat: 700, aciklama: 'Marmara bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  kece_yelek: { ad: 'Keçe yelek', yuva: 'zirh', nadirlik: 'siradan', bolge: 'marmara', seviye: 1, ikon: '🥋', statlar: { savunma: 4 }, fiyat: 100, aciklama: 'Marmara tezgâhlarında sağlamca dikilmiş, yolcuyu koruyan bir giysi.' },
+  bursa_ipegi_cubbe: { ad: 'Bursa ipeği cübbe', yuva: 'zirh', nadirlik: 'nadir', bolge: 'marmara', seviye: 1, ikon: '🥋', statlar: { savunma: 7, can: 9 }, fiyat: 280, aciklama: 'Marmara tezgâhlarında ince işçilikle dikilmiş, yolcuyu koruyan bir giysi.' },
+  hereke_ipegi_kusak: { ad: 'Hereke ipeği kuşak', yuva: 'aksesuar', nadirlik: 'nadir', bolge: 'marmara', seviye: 1, ikon: '🧣', statlar: { ceviklik: 2, can: 9 }, fiyat: 240, aciklama: 'Marmara zanaatkârlarının göz nuru; yolcuya çeviklik ve dayanıklılık verir.' },
+  ejder_pulu_zirh: { ad: 'Ejder Pulu Zırh', yuva: 'zirh', nadirlik: 'efsanevi', bolge: 'marmara', seviye: 1, ikon: '🥋', statlar: { savunma: 9, can: 18 }, fiyat: 650, aciklama: 'Marmara bossunun sihri bozulunca geride kalan, dillere destan bir zırh.' },
+
+  // ── Ege ──
+  ege_palasi: { ad: 'Ege palası', yuva: 'silah', sinif: 'akinci', nadirlik: 'siradan', bolge: 'ege', seviye: 8, ikon: '🗡️', statlar: { guc: 8 }, fiyat: 270, aciklama: 'Ege ustalarının elinden çıkma sağlam bir kılıç.' },
+  zeytin_dali_yay: { ad: 'Zeytin dalı yay', yuva: 'silah', sinif: 'kemankes', nadirlik: 'siradan', bolge: 'ege', seviye: 8, ikon: '🏹', statlar: { guc: 8, ceviklik: 3 }, fiyat: 270, aciklama: 'Ege ustalarının elinden çıkma sağlam bir yay.' },
+  zeytin_agaci_asa: { ad: 'Zeytin ağacı asa', yuva: 'silah', sinif: 'alperen', nadirlik: 'siradan', bolge: 'ege', seviye: 8, ikon: '🪵', statlar: { guc: 8, nefes: 10 }, fiyat: 270, aciklama: 'Ege ustalarının elinden çıkma sağlam bir asa.' },
+  kutahya_cinili_kilic: { ad: 'Kütahya çinili kılıç', yuva: 'silah', sinif: 'akinci', nadirlik: 'nadir', bolge: 'ege', seviye: 8, ikon: '🗡️', statlar: { guc: 13, can: 15 }, fiyat: 715, aciklama: 'Ege ustalarının elinden çıkma özenle işlenmiş bir kılıç.' },
+  usak_sinirli_yay: { ad: 'Uşak sinirli yay', yuva: 'silah', sinif: 'kemankes', nadirlik: 'nadir', bolge: 'ege', seviye: 8, ikon: '🏹', statlar: { guc: 13, ceviklik: 6 }, fiyat: 715, aciklama: 'Ege ustalarının elinden çıkma özenle işlenmiş bir yay.' },
+  denizli_cinar_asasi: { ad: 'Denizli çınar asası', yuva: 'silah', sinif: 'alperen', nadirlik: 'nadir', bolge: 'ege', seviye: 8, ikon: '🪵', statlar: { guc: 13, nefes: 21 }, fiyat: 715, aciklama: 'Ege ustalarının elinden çıkma özenle işlenmiş bir asa.' },
+  yel_kesen_kilic: { ad: 'Yel Kesen Kılıç', yuva: 'silah', sinif: 'akinci', nadirlik: 'efsanevi', bolge: 'ege', seviye: 8, ikon: '🗡️', statlar: { guc: 18, can: 30 }, fiyat: 1560, aciklama: 'Ege bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  yel_yayi: { ad: 'Yel Yayı', yuva: 'silah', sinif: 'kemankes', nadirlik: 'efsanevi', bolge: 'ege', seviye: 8, ikon: '🏹', statlar: { guc: 18, ceviklik: 8 }, fiyat: 1560, aciklama: 'Ege bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  yel_asasi: { ad: 'Yel Asası', yuva: 'silah', sinif: 'alperen', nadirlik: 'efsanevi', bolge: 'ege', seviye: 8, ikon: '🪵', statlar: { guc: 18, nefes: 32 }, fiyat: 1560, aciklama: 'Ege bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  denizli_bezi_gomlek: { ad: 'Denizli bezi gömlek', yuva: 'zirh', nadirlik: 'siradan', bolge: 'ege', seviye: 8, ikon: '🥋', statlar: { savunma: 8 }, fiyat: 225, aciklama: 'Ege tezgâhlarında sağlamca dikilmiş, yolcuyu koruyan bir giysi.' },
+  usak_deri_zirh: { ad: 'Uşak deri zırh', yuva: 'zirh', nadirlik: 'nadir', bolge: 'ege', seviye: 8, ikon: '🥋', statlar: { savunma: 13, can: 15 }, fiyat: 625, aciklama: 'Ege tezgâhlarında ince işçilikle dikilmiş, yolcuyu koruyan bir giysi.' },
+  cini_tokali_kemer: { ad: 'Çini tokalı kemer', yuva: 'aksesuar', nadirlik: 'nadir', bolge: 'ege', seviye: 8, ikon: '🧣', statlar: { ceviklik: 4, can: 15 }, fiyat: 535, aciklama: 'Ege zanaatkârlarının göz nuru; yolcuya çeviklik ve dayanıklılık verir.' },
+  yel_kusagi: { ad: 'Yel Kuşağı', yuva: 'aksesuar', nadirlik: 'efsanevi', bolge: 'ege', seviye: 8, ikon: '🧣', statlar: { ceviklik: 6, guc: 5, nefes: 10 }, fiyat: 1450, aciklama: 'Ege bossunun sihri bozulunca geride kalan, dillere destan bir kuşak.' },
+
+  // ── Akdeniz ──
+  toros_palasi: { ad: 'Toros palası', yuva: 'silah', sinif: 'akinci', nadirlik: 'siradan', bolge: 'akdeniz', seviye: 15, ikon: '🗡️', statlar: { guc: 11 }, fiyat: 395, aciklama: 'Akdeniz ustalarının elinden çıkma sağlam bir kılıç.' },
+  sedir_yay: { ad: 'Sedir yay', yuva: 'silah', sinif: 'kemankes', nadirlik: 'siradan', bolge: 'akdeniz', seviye: 15, ikon: '🏹', statlar: { guc: 11, ceviklik: 4 }, fiyat: 395, aciklama: 'Akdeniz ustalarının elinden çıkma sağlam bir yay.' },
+  sedir_asa: { ad: 'Sedir asa', yuva: 'silah', sinif: 'alperen', nadirlik: 'siradan', bolge: 'akdeniz', seviye: 15, ikon: '🪵', statlar: { guc: 11, nefes: 14 }, fiyat: 395, aciklama: 'Akdeniz ustalarının elinden çıkma sağlam bir asa.' },
+  antalya_yatagani: { ad: 'Antalya yatağanı', yuva: 'silah', sinif: 'akinci', nadirlik: 'nadir', bolge: 'akdeniz', seviye: 15, ikon: '🗡️', statlar: { guc: 18, can: 20 }, fiyat: 1060, aciklama: 'Akdeniz ustalarının elinden çıkma özenle işlenmiş bir kılıç.' },
+  isparta_gul_agaci_yay: { ad: 'Isparta gül ağacı yay', yuva: 'silah', sinif: 'kemankes', nadirlik: 'nadir', bolge: 'akdeniz', seviye: 15, ikon: '🏹', statlar: { guc: 18, ceviklik: 8 }, fiyat: 1060, aciklama: 'Akdeniz ustalarının elinden çıkma özenle işlenmiş bir yay.' },
+  mersin_zeytin_asasi: { ad: 'Mersin zeytin asası', yuva: 'silah', sinif: 'alperen', nadirlik: 'nadir', bolge: 'akdeniz', seviye: 15, ikon: '🪵', statlar: { guc: 18, nefes: 28 }, fiyat: 1060, aciklama: 'Akdeniz ustalarının elinden çıkma özenle işlenmiş bir asa.' },
+  yilan_disi_kilic: { ad: 'Yılan Dişi Kılıç', yuva: 'silah', sinif: 'akinci', nadirlik: 'efsanevi', bolge: 'akdeniz', seviye: 15, ikon: '🗡️', statlar: { guc: 25, can: 41 }, fiyat: 2315, aciklama: 'Akdeniz bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  toros_kartali_yayi: { ad: 'Toros Kartalı Yayı', yuva: 'silah', sinif: 'kemankes', nadirlik: 'efsanevi', bolge: 'akdeniz', seviye: 15, ikon: '🏹', statlar: { guc: 25, ceviklik: 11 }, fiyat: 2315, aciklama: 'Akdeniz bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  akdeniz_isigi_asasi: { ad: 'Akdeniz Işığı Asası', yuva: 'silah', sinif: 'alperen', nadirlik: 'efsanevi', bolge: 'akdeniz', seviye: 15, ikon: '🪵', statlar: { guc: 25, nefes: 42 }, fiyat: 2315, aciklama: 'Akdeniz bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  pamuk_kaftan: { ad: 'Pamuk kaftan', yuva: 'zirh', nadirlik: 'siradan', bolge: 'akdeniz', seviye: 15, ikon: '🥋', statlar: { savunma: 12 }, fiyat: 330, aciklama: 'Akdeniz tezgâhlarında sağlamca dikilmiş, yolcuyu koruyan bir giysi.' },
+  adana_kapitone_zirh: { ad: 'Adana kapitone zırh', yuva: 'zirh', nadirlik: 'nadir', bolge: 'akdeniz', seviye: 15, ikon: '🥋', statlar: { savunma: 18, can: 20 }, fiyat: 925, aciklama: 'Akdeniz tezgâhlarında ince işçilikle dikilmiş, yolcuyu koruyan bir giysi.' },
+  isparta_gulu_kusak: { ad: 'Isparta gülü kuşak', yuva: 'aksesuar', nadirlik: 'nadir', bolge: 'akdeniz', seviye: 15, ikon: '🧣', statlar: { ceviklik: 6, can: 20 }, fiyat: 795, aciklama: 'Akdeniz zanaatkârlarının göz nuru; yolcuya çeviklik ve dayanıklılık verir.' },
+  yilan_pulu_zirh: { ad: 'Yılan Pulu Zırh', yuva: 'zirh', nadirlik: 'efsanevi', bolge: 'akdeniz', seviye: 15, ikon: '🥋', statlar: { savunma: 24, can: 41 }, fiyat: 2150, aciklama: 'Akdeniz bossunun sihri bozulunca geride kalan, dillere destan bir zırh.' },
+
+  // ── İç Anadolu ──
+  bozkir_kilici: { ad: 'Bozkır kılıcı', yuva: 'silah', sinif: 'akinci', nadirlik: 'siradan', bolge: 'ic_anadolu', seviye: 20, ikon: '🗡️', statlar: { guc: 14 }, fiyat: 510, aciklama: 'İç Anadolu ustalarının elinden çıkma sağlam bir kılıç.' },
+  bozkir_yayi: { ad: 'Bozkır yayı', yuva: 'silah', sinif: 'kemankes', nadirlik: 'siradan', bolge: 'ic_anadolu', seviye: 20, ikon: '🏹', statlar: { guc: 14, ceviklik: 5 }, fiyat: 510, aciklama: 'İç Anadolu ustalarının elinden çıkma sağlam bir yay.' },
+  kavak_asa: { ad: 'Kavak asa', yuva: 'silah', sinif: 'alperen', nadirlik: 'siradan', bolge: 'ic_anadolu', seviye: 20, ikon: '🪵', statlar: { guc: 14, nefes: 17 }, fiyat: 510, aciklama: 'İç Anadolu ustalarının elinden çıkma sağlam bir asa.' },
+  sivas_celigi_kilic: { ad: 'Sivas çeliği kılıç', yuva: 'silah', sinif: 'akinci', nadirlik: 'nadir', bolge: 'ic_anadolu', seviye: 20, ikon: '🗡️', statlar: { guc: 22, can: 25 }, fiyat: 1355, aciklama: 'İç Anadolu ustalarının elinden çıkma özenle işlenmiş bir kılıç.' },
+  konya_boynuz_yayi: { ad: 'Konya boynuz yayı', yuva: 'silah', sinif: 'kemankes', nadirlik: 'nadir', bolge: 'ic_anadolu', seviye: 20, ikon: '🏹', statlar: { guc: 22, ceviklik: 9 }, fiyat: 1355, aciklama: 'İç Anadolu ustalarının elinden çıkma özenle işlenmiş bir yay.' },
+  kayseri_ardic_asasi: { ad: 'Kayseri ardıç asası', yuva: 'silah', sinif: 'alperen', nadirlik: 'nadir', bolge: 'ic_anadolu', seviye: 20, ikon: '🪵', statlar: { guc: 22, nefes: 34 }, fiyat: 1355, aciklama: 'İç Anadolu ustalarının elinden çıkma özenle işlenmiş bir asa.' },
+  gun_isigi_kilici: { ad: 'Gün Işığı Kılıcı', yuva: 'silah', sinif: 'akinci', nadirlik: 'efsanevi', bolge: 'ic_anadolu', seviye: 20, ikon: '🗡️', statlar: { guc: 31, can: 50 }, fiyat: 2960, aciklama: 'İç Anadolu bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  safak_yayi: { ad: 'Şafak Yayı', yuva: 'silah', sinif: 'kemankes', nadirlik: 'efsanevi', bolge: 'ic_anadolu', seviye: 20, ikon: '🏹', statlar: { guc: 31, ceviklik: 14 }, fiyat: 2960, aciklama: 'İç Anadolu bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  safak_asasi: { ad: 'Şafak Asası', yuva: 'silah', sinif: 'alperen', nadirlik: 'efsanevi', bolge: 'ic_anadolu', seviye: 20, ikon: '🪵', statlar: { guc: 31, nefes: 51 }, fiyat: 2960, aciklama: 'İç Anadolu bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  kece_kepenek: { ad: 'Keçe kepenek', yuva: 'zirh', nadirlik: 'siradan', bolge: 'ic_anadolu', seviye: 20, ikon: '🥋', statlar: { savunma: 15 }, fiyat: 425, aciklama: 'İç Anadolu tezgâhlarında sağlamca dikilmiş, yolcuyu koruyan bir giysi.' },
+  kayseri_deri_zirh: { ad: 'Kayseri deri zırh', yuva: 'zirh', nadirlik: 'nadir', bolge: 'ic_anadolu', seviye: 20, ikon: '🥋', statlar: { savunma: 22, can: 25 }, fiyat: 1185, aciklama: 'İç Anadolu tezgâhlarında ince işçilikle dikilmiş, yolcuyu koruyan bir giysi.' },
+  sivas_cakisi: { ad: 'Sivas çakısı', yuva: 'aksesuar', nadirlik: 'nadir', bolge: 'ic_anadolu', seviye: 20, ikon: '🧣', statlar: { guc: 7, ceviklik: 7 }, fiyat: 1015, aciklama: 'İç Anadolu zanaatkârlarının göz nuru; yolcuya çeviklik ve dayanıklılık verir.' },
+  tan_yeri_kusagi: { ad: 'Tan Yeri Kuşağı', yuva: 'aksesuar', nadirlik: 'efsanevi', bolge: 'ic_anadolu', seviye: 20, ikon: '🧣', statlar: { ceviklik: 9, guc: 9, nefes: 17 }, fiyat: 2750, aciklama: 'İç Anadolu bossunun sihri bozulunca geride kalan, dillere destan bir kuşak.' },
+
+  // ── Karadeniz ──
+  yayla_kilici: { ad: 'Yayla kılıcı', yuva: 'silah', sinif: 'akinci', nadirlik: 'siradan', bolge: 'karadeniz', seviye: 28, ikon: '🗡️', statlar: { guc: 17 }, fiyat: 655, aciklama: 'Karadeniz ustalarının elinden çıkma sağlam bir kılıç.' },
+  kizilagac_yay: { ad: 'Kızılağaç yay', yuva: 'silah', sinif: 'kemankes', nadirlik: 'siradan', bolge: 'karadeniz', seviye: 28, ikon: '🏹', statlar: { guc: 17, ceviklik: 6 }, fiyat: 655, aciklama: 'Karadeniz ustalarının elinden çıkma sağlam bir yay.' },
+  kestane_asa: { ad: 'Kestane asa', yuva: 'silah', sinif: 'alperen', nadirlik: 'siradan', bolge: 'karadeniz', seviye: 28, ikon: '🪵', statlar: { guc: 17, nefes: 21 }, fiyat: 655, aciklama: 'Karadeniz ustalarının elinden çıkma sağlam bir asa.' },
+  trabzon_telkari_kabzali_kilic: { ad: 'Trabzon telkari kabzalı kılıç', yuva: 'silah', sinif: 'akinci', nadirlik: 'nadir', bolge: 'karadeniz', seviye: 28, ikon: '🗡️', statlar: { guc: 28, can: 31 }, fiyat: 1750, aciklama: 'Karadeniz ustalarının elinden çıkma özenle işlenmiş bir kılıç.' },
+  kastamonu_simsir_yay: { ad: 'Kastamonu şimşir yay', yuva: 'silah', sinif: 'kemankes', nadirlik: 'nadir', bolge: 'karadeniz', seviye: 28, ikon: '🏹', statlar: { guc: 28, ceviklik: 12 }, fiyat: 1750, aciklama: 'Karadeniz ustalarının elinden çıkma özenle işlenmiş bir yay.' },
+  bolu_ihlamur_asasi: { ad: 'Bolu ıhlamur asası', yuva: 'silah', sinif: 'alperen', nadirlik: 'nadir', bolge: 'karadeniz', seviye: 28, ikon: '🪵', statlar: { guc: 28, nefes: 42 }, fiyat: 1750, aciklama: 'Karadeniz ustalarının elinden çıkma özenle işlenmiş bir asa.' },
+  kis_kiran_kilic: { ad: 'Kış Kıran Kılıç', yuva: 'silah', sinif: 'akinci', nadirlik: 'efsanevi', bolge: 'karadeniz', seviye: 28, ikon: '🗡️', statlar: { guc: 40, can: 62 }, fiyat: 3825, aciklama: 'Karadeniz bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  kar_kartali_yayi: { ad: 'Kar Kartalı Yayı', yuva: 'silah', sinif: 'kemankes', nadirlik: 'efsanevi', bolge: 'karadeniz', seviye: 28, ikon: '🏹', statlar: { guc: 40, ceviklik: 18 }, fiyat: 3825, aciklama: 'Karadeniz bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  bahar_asasi: { ad: 'Bahar Asası', yuva: 'silah', sinif: 'alperen', nadirlik: 'efsanevi', bolge: 'karadeniz', seviye: 28, ikon: '🪵', statlar: { guc: 40, nefes: 63 }, fiyat: 3825, aciklama: 'Karadeniz bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  yun_yamci: { ad: 'Yün yamçı', yuva: 'zirh', nadirlik: 'siradan', bolge: 'karadeniz', seviye: 28, ikon: '🥋', statlar: { savunma: 19 }, fiyat: 545, aciklama: 'Karadeniz tezgâhlarında sağlamca dikilmiş, yolcuyu koruyan bir giysi.' },
+  kastamonu_keten_zirh: { ad: 'Kastamonu keten zırh', yuva: 'zirh', nadirlik: 'nadir', bolge: 'karadeniz', seviye: 28, ikon: '🥋', statlar: { savunma: 28, can: 31 }, fiyat: 1530, aciklama: 'Karadeniz tezgâhlarında ince işçilikle dikilmiş, yolcuyu koruyan bir giysi.' },
+  tokat_yazmasi_kusak: { ad: 'Tokat yazması kuşak', yuva: 'aksesuar', nadirlik: 'nadir', bolge: 'karadeniz', seviye: 28, ikon: '🧣', statlar: { ceviklik: 9, can: 31 }, fiyat: 1310, aciklama: 'Karadeniz zanaatkârlarının göz nuru; yolcuya çeviklik ve dayanıklılık verir.' },
+  kis_gunesi_zirhi: { ad: 'Kış Güneşi Zırhı', yuva: 'zirh', nadirlik: 'efsanevi', bolge: 'karadeniz', seviye: 28, ikon: '🥋', statlar: { savunma: 38, can: 62 }, fiyat: 3550, aciklama: 'Karadeniz bossunun sihri bozulunca geride kalan, dillere destan bir zırh.' },
+
+  // ── Güneydoğu ──
+  harran_kilici: { ad: 'Harran kılıcı', yuva: 'silah', sinif: 'akinci', nadirlik: 'siradan', bolge: 'guneydogu', seviye: 35, ikon: '🗡️', statlar: { guc: 20 }, fiyat: 765, aciklama: 'Güneydoğu ustalarının elinden çıkma sağlam bir kılıç.' },
+  fistik_agaci_yay: { ad: 'Fıstık ağacı yay', yuva: 'silah', sinif: 'kemankes', nadirlik: 'siradan', bolge: 'guneydogu', seviye: 35, ikon: '🏹', statlar: { guc: 20, ceviklik: 7 }, fiyat: 765, aciklama: 'Güneydoğu ustalarının elinden çıkma sağlam bir yay.' },
+  fistik_agaci_asa: { ad: 'Fıstık ağacı asa', yuva: 'silah', sinif: 'alperen', nadirlik: 'siradan', bolge: 'guneydogu', seviye: 35, ikon: '🪵', statlar: { guc: 20, nefes: 24 }, fiyat: 765, aciklama: 'Güneydoğu ustalarının elinden çıkma sağlam bir asa.' },
+  gaziantep_bakir_kabzali_kilic: { ad: 'Gaziantep bakır kabzalı kılıç', yuva: 'silah', sinif: 'akinci', nadirlik: 'nadir', bolge: 'guneydogu', seviye: 35, ikon: '🗡️', statlar: { guc: 33, can: 36 }, fiyat: 2045, aciklama: 'Güneydoğu ustalarının elinden çıkma özenle işlenmiş bir kılıç.' },
+  mardin_telkari_yay: { ad: 'Mardin telkari yay', yuva: 'silah', sinif: 'kemankes', nadirlik: 'nadir', bolge: 'guneydogu', seviye: 35, ikon: '🏹', statlar: { guc: 33, ceviklik: 14 }, fiyat: 2045, aciklama: 'Güneydoğu ustalarının elinden çıkma özenle işlenmiş bir yay.' },
+  mardin_tasi_basli_asa: { ad: 'Mardin taşı başlı asa', yuva: 'silah', sinif: 'alperen', nadirlik: 'nadir', bolge: 'guneydogu', seviye: 35, ikon: '🪵', statlar: { guc: 33, nefes: 48 }, fiyat: 2045, aciklama: 'Güneydoğu ustalarının elinden çıkma özenle işlenmiş bir asa.' },
+  ova_gunesi_kilici: { ad: 'Ova Güneşi Kılıcı', yuva: 'silah', sinif: 'akinci', nadirlik: 'efsanevi', bolge: 'guneydogu', seviye: 35, ikon: '🗡️', statlar: { guc: 46, can: 71 }, fiyat: 4470, aciklama: 'Güneydoğu bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  col_ruzgari_yayi: { ad: 'Çöl Rüzgârı Yayı', yuva: 'silah', sinif: 'kemankes', nadirlik: 'efsanevi', bolge: 'guneydogu', seviye: 35, ikon: '🏹', statlar: { guc: 46, ceviklik: 20 }, fiyat: 4470, aciklama: 'Güneydoğu bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  bereket_asasi: { ad: 'Bereket Asası', yuva: 'silah', sinif: 'alperen', nadirlik: 'efsanevi', bolge: 'guneydogu', seviye: 35, ikon: '🪵', statlar: { guc: 46, nefes: 72 }, fiyat: 4470, aciklama: 'Güneydoğu bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  kutnu_kaftan: { ad: 'Kutnu kaftan', yuva: 'zirh', nadirlik: 'siradan', bolge: 'guneydogu', seviye: 35, ikon: '🥋', statlar: { savunma: 22 }, fiyat: 640, aciklama: 'Güneydoğu tezgâhlarında sağlamca dikilmiş, yolcuyu koruyan bir giysi.' },
+  diyarbakir_deri_zirh: { ad: 'Diyarbakır deri zırh', yuva: 'zirh', nadirlik: 'nadir', bolge: 'guneydogu', seviye: 35, ikon: '🥋', statlar: { savunma: 33, can: 36 }, fiyat: 1790, aciklama: 'Güneydoğu tezgâhlarında ince işçilikle dikilmiş, yolcuyu koruyan bir giysi.' },
+  mardin_telkari_kemer: { ad: 'Mardin telkari kemer', yuva: 'aksesuar', nadirlik: 'nadir', bolge: 'guneydogu', seviye: 35, ikon: '🧣', statlar: { ceviklik: 10, can: 36 }, fiyat: 1530, aciklama: 'Güneydoğu zanaatkârlarının göz nuru; yolcuya çeviklik ve dayanıklılık verir.' },
+  harman_kusagi: { ad: 'Harman Kuşağı', yuva: 'aksesuar', nadirlik: 'efsanevi', bolge: 'guneydogu', seviye: 35, ikon: '🧣', statlar: { ceviklik: 14, guc: 13, nefes: 24 }, fiyat: 4150, aciklama: 'Güneydoğu bossunun sihri bozulunca geride kalan, dillere destan bir kuşak.' },
+
+  // ── Doğu Anadolu ──
+  dag_kilici: { ad: 'Dağ kılıcı', yuva: 'silah', sinif: 'akinci', nadirlik: 'siradan', bolge: 'dogu_anadolu', seviye: 42, ikon: '🗡️', statlar: { guc: 22 }, fiyat: 875, aciklama: 'Doğu Anadolu ustalarının elinden çıkma sağlam bir kılıç.' },
+  ardic_yay: { ad: 'Ardıç yay', yuva: 'silah', sinif: 'kemankes', nadirlik: 'siradan', bolge: 'dogu_anadolu', seviye: 42, ikon: '🏹', statlar: { guc: 22, ceviklik: 8 }, fiyat: 875, aciklama: 'Doğu Anadolu ustalarının elinden çıkma sağlam bir yay.' },
+  ardic_asa: { ad: 'Ardıç asa', yuva: 'silah', sinif: 'alperen', nadirlik: 'siradan', bolge: 'dogu_anadolu', seviye: 42, ikon: '🪵', statlar: { guc: 22, nefes: 27 }, fiyat: 875, aciklama: 'Doğu Anadolu ustalarının elinden çıkma sağlam bir asa.' },
+  erzurum_celigi_kilic: { ad: 'Erzurum çeliği kılıç', yuva: 'silah', sinif: 'akinci', nadirlik: 'nadir', bolge: 'dogu_anadolu', seviye: 42, ikon: '🗡️', statlar: { guc: 38, can: 40 }, fiyat: 2340, aciklama: 'Doğu Anadolu ustalarının elinden çıkma özenle işlenmiş bir kılıç.' },
+  kars_boynuz_yayi: { ad: 'Kars boynuz yayı', yuva: 'silah', sinif: 'kemankes', nadirlik: 'nadir', bolge: 'dogu_anadolu', seviye: 42, ikon: '🏹', statlar: { guc: 38, ceviklik: 15 }, fiyat: 2340, aciklama: 'Doğu Anadolu ustalarının elinden çıkma özenle işlenmiş bir yay.' },
+  oltu_tasi_basli_asa: { ad: 'Oltu taşı başlı asa', yuva: 'silah', sinif: 'alperen', nadirlik: 'nadir', bolge: 'dogu_anadolu', seviye: 42, ikon: '🪵', statlar: { guc: 38, nefes: 54 }, fiyat: 2340, aciklama: 'Doğu Anadolu ustalarının elinden çıkma özenle işlenmiş bir asa.' },
+  gol_isigi_kilici: { ad: 'Göl Işığı Kılıcı', yuva: 'silah', sinif: 'akinci', nadirlik: 'efsanevi', bolge: 'dogu_anadolu', seviye: 42, ikon: '🗡️', statlar: { guc: 52, can: 80 }, fiyat: 5115, aciklama: 'Doğu Anadolu bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  agri_kartali_yayi: { ad: 'Ağrı Kartalı Yayı', yuva: 'silah', sinif: 'kemankes', nadirlik: 'efsanevi', bolge: 'dogu_anadolu', seviye: 42, ikon: '🏹', statlar: { guc: 52, ceviklik: 23 }, fiyat: 5115, aciklama: 'Doğu Anadolu bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  van_isigi_asasi: { ad: 'Van Işığı Asası', yuva: 'silah', sinif: 'alperen', nadirlik: 'efsanevi', bolge: 'dogu_anadolu', seviye: 42, ikon: '🪵', statlar: { guc: 52, nefes: 81 }, fiyat: 5115, aciklama: 'Doğu Anadolu bossunun sihri bozulunca geride kalan, dillere destan bir silah.' },
+  kars_yun_kaftan: { ad: 'Kars yün kaftan', yuva: 'zirh', nadirlik: 'siradan', bolge: 'dogu_anadolu', seviye: 42, ikon: '🥋', statlar: { savunma: 25 }, fiyat: 730, aciklama: 'Doğu Anadolu tezgâhlarında sağlamca dikilmiş, yolcuyu koruyan bir giysi.' },
+  erzurum_deri_zirh: { ad: 'Erzurum deri zırh', yuva: 'zirh', nadirlik: 'nadir', bolge: 'dogu_anadolu', seviye: 42, ikon: '🥋', statlar: { savunma: 38, can: 40 }, fiyat: 2045, aciklama: 'Doğu Anadolu tezgâhlarında ince işçilikle dikilmiş, yolcuyu koruyan bir giysi.' },
+  van_kilimi_kusak: { ad: 'Van kilimi kuşak', yuva: 'aksesuar', nadirlik: 'nadir', bolge: 'dogu_anadolu', seviye: 42, ikon: '🧣', statlar: { ceviklik: 12, can: 40 }, fiyat: 1755, aciklama: 'Doğu Anadolu zanaatkârlarının göz nuru; yolcuya çeviklik ve dayanıklılık verir.' },
+  agri_kari_zirhi: { ad: 'Ağrı Karı Zırhı', yuva: 'zirh', nadirlik: 'efsanevi', bolge: 'dogu_anadolu', seviye: 42, ikon: '🥋', statlar: { savunma: 50, can: 80 }, fiyat: 4750, aciklama: 'Doğu Anadolu bossunun sihri bozulunca geride kalan, dillere destan bir zırh.' },
+};

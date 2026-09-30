@@ -99,6 +99,26 @@ function tabela(x, y) {
     <path d="M${x + 4} ${y + 4} h8 M${x + 4} ${y + 6.5} h6" stroke="#1b2a5c" stroke-width=".8"/>`;
 }
 
+// Ahi dükkânı: tabelalı, önünde örs olan küçük bir dükkân.
+function dukkan(x, y) {
+  return `<rect x="${x + 1}" y="${y + 3}" width="14" height="12" fill="#b08a6a" ${CIZGI}/>
+    <path d="M${x - 1} ${y + 4} L${x + 8} ${y - 3} L${x + 17} ${y + 4} Z" fill="#7b5236" ${CIZGI}/>
+    <rect x="${x + 3}" y="${y + 1}" width="10" height="4" rx="1" fill="#d4a537" ${CIZGI}/>
+    <path d="M${x + 5.5} ${y + 3} l2 -1 l2 1 l2 -1" fill="none" stroke="#1b2a5c" stroke-width=".6"/>
+    <rect x="${x + 6}" y="${y + 9}" width="4" height="6" fill="#5b3a24"/>
+    <path d="M${x + 11} ${y + 12} h4 l-1 2 h-2 Z" fill="#6b7280" ${CIZGI}/>`;
+}
+
+// Kervansaray: taş duvarlı, kemerli kapılı han.
+function kervansaray(x, y) {
+  return `<rect x="${x - 2}" y="${y + 1}" width="20" height="14" fill="#d8c29a" ${CIZGI}/>
+    <path d="M${x - 2} ${y + 1} h20" stroke="#b39a6e" stroke-width="2"/>
+    <path d="M${x - 2} ${y - 1} h3 v2 h2 v-2 h3 v2 h2 v-2 h3 v2 h2 v-2 h3 v2" fill="none" stroke="#1b2a5c" stroke-width=".8"/>
+    <path d="M${x + 4} ${y + 15} L${x + 4} ${y + 9} Q${x + 8} ${y + 4} ${x + 12} ${y + 9} L${x + 12} ${y + 15} Z" fill="#5b3a24" ${CIZGI}/>
+    <path d="M${x + 4.5} ${y + 9} Q${x + 8} ${y + 5} ${x + 11.5} ${y + 9}" fill="none" stroke="#2aa7a7" stroke-width="1.2"/>
+    <rect x="${x}" y="${y + 5}" width="2.5" height="3" fill="#2b2620"/><rect x="${x + 13.5}" y="${y + 5}" width="2.5" height="3" fill="#2b2620"/>`;
+}
+
 // Boss ya da mini bossun beklediği in: dikili taşlardan bir halka.
 function inCizimi(p, x, y) {
   const cx = x + T / 2;
@@ -136,6 +156,8 @@ export function haritaKatmani(harita) {
             <path d="M${px + 2} ${py + 6} q2 -2 4 0 q2 2 4 0 M${px + 5} ${py + 12} q2 -2 4 0" fill="none" stroke="#cfe9f4" stroke-width=".8" opacity=".8"/>`);
           break;
         case KARO.MEYDAN:
+        case KARO.DUKKAN:
+        case KARO.KERVANSARAY:
         case KARO.CESME:
         case KARO.TEZGAH:
         case KARO.TABELA:
@@ -151,6 +173,8 @@ export function haritaKatmani(harita) {
       else if (t === KARO.CESME) ustler.push(cesme(px, py));
       else if (t === KARO.TEZGAH) ustler.push(tezgah(px, py));
       else if (t === KARO.TABELA) ustler.push(tabela(px, py));
+      else if (t === KARO.DUKKAN) ustler.push(dukkan(px, py));
+      else if (t === KARO.KERVANSARAY) ustler.push(kervansaray(px, py));
     }
   }
   // Meydanın çini kenarı

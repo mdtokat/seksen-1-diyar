@@ -3,6 +3,8 @@
 // `giris` ve `bossIli` il plakasıdır, `boss` dusmanlar.js anahtarıdır.
 // `miniBoss` bölgenin mini bossu, `miniBossIlleri` onun ortaya çıktığı illerdir
 // (ilin arınması %50'yi geçince, plan.md Faz 7).
+// `ahiIlleri`: Ahi esnafının silah ve zırh dükkânı olan iller (her 3–4 ilde bir).
+// `kervansarayIlleri`: dinlenilen, bayılınca dönülen ve hızlı yolculuk yapılan iller.
 // `yemekCarpani`, yöresel yemeklerin güç ve fiyat çarpanıdır (plan.md Bölüm 7).
 
 export const bolgeler = [
@@ -16,6 +18,8 @@ export const bolgeler = [
     bossIli: 34,
     miniBoss: 'gulyabani',
     miniBossIlleri: [16, 22],
+    ahiIlleri: [34, 16, 22],
+    kervansarayIlleri: [34, 17],
     renk: '#2aa7a7',
     yemekCarpani: 1.0,
   },
@@ -29,6 +33,8 @@ export const bolgeler = [
     bossIli: 35,
     miniBoss: 'carsamba_karisi',
     miniBossIlleri: [20, 48],
+    ahiIlleri: [45, 20],
+    kervansarayIlleri: [45, 48],
     renk: '#3b7dc4',
     yemekCarpani: 1.5,
   },
@@ -42,6 +48,8 @@ export const bolgeler = [
     bossIli: 33,
     miniBoss: 'yilan_beyi',
     miniBossIlleri: [1, 32],
+    ahiIlleri: [7, 1],
+    kervansarayIlleri: [7, 1],
     renk: '#d9483b',
     yemekCarpani: 2.2,
   },
@@ -55,6 +63,8 @@ export const bolgeler = [
     bossIli: 50,
     miniBoss: 'golge_albasti',
     miniBossIlleri: [38, 58],
+    ahiIlleri: [42, 6, 38, 58],
+    kervansarayIlleri: [42, 68, 58],
     renk: '#d4a537',
     yemekCarpani: 3.0,
   },
@@ -68,6 +78,8 @@ export const bolgeler = [
     bossIli: 61,
     miniBoss: 'yayla_devi',
     miniBossIlleri: [37, 53],
+    ahiIlleri: [14, 37, 55, 61, 53],
+    kervansarayIlleri: [14, 55, 61],
     renk: '#7b5236',
     yemekCarpani: 4.0,
   },
@@ -81,6 +93,8 @@ export const bolgeler = [
     bossIli: 63,
     miniBoss: 'tepegozun_muhafizi',
     miniBossIlleri: [21, 47],
+    ahiIlleri: [27, 63, 47],
+    kervansarayIlleri: [27, 21],
     renk: '#c9772f',
     yemekCarpani: 5.0,
   },
@@ -94,6 +108,8 @@ export const bolgeler = [
     bossIli: 65,
     miniBoss: 'tipi_ifriti',
     miniBossIlleri: [25, 36],
+    ahiIlleri: [44, 25, 36, 65],
+    kervansarayIlleri: [44, 25, 65],
     renk: '#6a4c93',
     yemekCarpani: 6.0,
   },

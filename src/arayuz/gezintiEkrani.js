@@ -7,7 +7,6 @@
 //   { plaka, harita, oyuncu: {x, y}, yon, dusmanlar, sonrakiId, dogusSayaclari, dokunulmaz }
 import { iller } from '../veri/iller.js';
 import { bolgeler } from '../veri/bolgeler.js';
-import { yemekler } from '../veri/yemekler.js';
 import { metinler } from '../veri/metinler.js';
 import { arinmaYuzdesi, seyahatKontrol, bolgeAcikMi, bossDurumu, bossKosullari } from '../oyun/ilerleme.js';
 import {
@@ -70,7 +69,8 @@ function yonTuslariniKaydet(acik) {
 }
 
 // secenekler: { g, rng, savasBaslat(dusmanKaydi), ileGec(plaka), ilBilgisi, haritaGoster,
-//               heybeGoster, karakterGoster, baslikaDon, ipucuGoster }
+//               heybeGoster, karakterGoster, baslikaDon, ipucuGoster,
+//               arastaGoster, ahiGoster, kervansarayGoster }
 export function gezintiEkrani(kap, depo, secenekler) {
   const { g, rng } = secenekler;
   const harita = g.harita;
@@ -232,7 +232,9 @@ export function gezintiEkrani(kap, depo, secenekler) {
     kuyruk = [];
     varista = null;
     if (tur === 'tabela') return secenekler.ilBilgisi?.();
-    if (tur === 'tezgah') return bildirimGoster(ekran, sablon(M.tezgah, { yemek: yemekler[il.yemek].ad }));
+    if (tur === 'tezgah') return secenekler.arastaGoster?.();
+    if (tur === 'dukkan') return secenekler.ahiGoster?.();
+    if (tur === 'kervansaray') return secenekler.kervansarayGoster?.();
     if (tur === 'cesme') return bildirimGoster(ekran, M.cesme);
   }
 

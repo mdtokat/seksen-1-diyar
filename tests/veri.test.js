@@ -6,6 +6,7 @@ import { yemekler, YEMEK_TABANI } from '../src/veri/yemekler.js';
 import { dusmanlar, DUSMAN_TURLERI, OZEL_HAMLELER, SINIF_XP_CARPANI } from '../src/veri/dusmanlar.js';
 import { siniflar, STAT_PUANI_DEGERI } from '../src/veri/siniflar.js';
 import { metinler } from '../src/veri/metinler.js';
+import { esyalar } from '../src/veri/esyalar.js';
 import { ilSeviyeleriniHesapla, bolgeIciMesafeler } from '../src/oyun/ilerleme.js';
 
 const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
@@ -298,7 +299,7 @@ describe('sınıflar', () => {
 });
 
 describe('kırmızı çizgiler (plan.md Bölüm 2)', () => {
-  const tumVeri = JSON.stringify({ iller, bolgeler, final, yemekler, dusmanlar, OZEL_HAMLELER, siniflar, metinler });
+  const tumVeri = JSON.stringify({ iller, bolgeler, final, yemekler, dusmanlar, OZEL_HAMLELER, siniflar, metinler, esyalar });
   const kelimeler = tumVeri.toLocaleLowerCase('tr').split(/[^\p{L}]+/u).filter(Boolean);
   const metin = kelimeler.join(' ');
 

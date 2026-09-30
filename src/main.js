@@ -19,6 +19,10 @@ import { yeniOyunEkrani } from './arayuz/yeniOyunEkrani.js';
 import { karakterEkrani } from './arayuz/karakterEkrani.js';
 import { savasEkrani } from './arayuz/savasEkrani.js';
 import { gezintiEkrani, YENIDEN_DOGUS_ADIMI } from './arayuz/gezintiEkrani.js';
+import { arastaEkrani } from './arayuz/arastaEkrani.js';
+import { ahiEkrani } from './arayuz/ahiEkrani.js';
+import { kervansarayEkrani } from './arayuz/kervansarayEkrani.js';
+import { hizliYolculuk } from './oyun/kervansaray.js';
 
 // Sekiz köşeli Selçuklu yıldızı: biri 45° döndürülmüş iki karenin birleşimi.
 const yildiz = (sinif) => `
@@ -193,6 +197,28 @@ function gezintiGoster() {
       heybeGoster: () => heybeGoster(gezintiGoster),
       karakterGoster: () => karakterGoster(gezintiGoster),
       baslikaDon: baslikGoster,
+      arastaGoster: () => ekranGoster((kap) => arastaEkrani(kap, depo, { geri: gezintiGoster })),
+      ahiGoster: () => ekranGoster((kap) => ahiEkrani(kap, depo, { geri: gezintiGoster })),
+      kervansarayGoster,
+    }),
+  );
+}
+
+function kervansarayGoster() {
+  ekranGoster((kap) =>
+    kervansarayEkrani(kap, depo, {
+      geri: gezintiGoster,
+      yolculukYap: (hedef) => {
+        const once = depo.al();
+        const sonra = hizliYolculuk(once, hedef);
+        if (sonra === once) return;
+        depo.ayarla(sonra);
+        gezinti = null; // yeni ilde meydandan, kervansarayın yanından başlanır
+        gezintiGoster();
+        bildirimGoster(uygulama.querySelector('.gezinti-ekrani'), sablon(metinler.kervansaray.vardin, {
+          il: iller.find((il) => il.plaka === hedef).ad,
+        }));
+      },
     }),
   );
 }
@@ -243,6 +269,9 @@ function savasGoster(kayit) {
       g.dokunulmaz = 2;
     } else if (sonuc === 'kacis') {
       g.dokunulmaz = 8;
+    } else if (depo.al().konum !== g.plaka) {
+      // Başka ildeki son kervansarayda kendine geldi: o ilin meydanından başlanır
+      gezinti = null;
     } else {
       g.oyuncu = { ...g.harita.dogus };
       g.dokunulmaz = 8;

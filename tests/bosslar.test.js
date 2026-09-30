@@ -24,7 +24,7 @@ import { kesifSonucunuUygula } from '../src/oyun/kesif.js';
 import { ilHaritasiUret, ozelDusmanlar, dusmanlariYurut, dogusNoktalari, mesafe, meydandaMi } from '../src/oyun/gezinti.js';
 import { yeniOyunDurumu } from '../src/oyun/durum.js';
 import { yeniKarakter, xpEkle, gerekenXp, statlar } from '../src/oyun/karakter.js';
-import { goc, yukle, KAYIT_ANAHTARI } from '../src/oyun/kayit.js';
+import { goc, yukle, KAYIT_ANAHTARI, KAYIT_SURUMU } from '../src/oyun/kayit.js';
 import { rastgeleUreteci } from '../src/oyun/rastgele.js';
 import { iller } from '../src/veri/iller.js';
 import { bolgeler } from '../src/veri/bolgeler.js';
@@ -262,13 +262,17 @@ describe('boss inleri (gezinti)', () => {
   });
 });
 
-describe('kayıt göçü (sürüm 1 → 2)', () => {
+describe('kayıt göçü (sürüm 1 → güncel)', () => {
   it('eski kayıt yeni alanlarla yüklenir', () => {
     const d = yeniOyunDurumu({ ad: 'Eski', sinif: 'alperen' });
-    const { yenilenBosslar, yenilenMiniBosslar, sofra, ...eski } = d;
+    // Sürüm 1 kaydında Faz 7 ve Faz 8 alanları yoktu
+    const { yenilenBosslar, yenilenMiniBosslar, sofra, esyalar, sonKervansaray, ...eski } = d;
+    const { kusanilan, ...eskiOyuncu } = d.oyuncu;
+    eski.oyuncu = eskiOyuncu;
     const v = goc({ surum: 1, durum: eski });
-    expect(v.surum).toBe(2);
-    expect(v.durum).toMatchObject({ yenilenBosslar: [], yenilenMiniBosslar: [], sofra: null });
+    expect(v.surum).toBe(KAYIT_SURUMU);
+    expect(v.durum).toMatchObject({ yenilenBosslar: [], yenilenMiniBosslar: [], sofra: null, esyalar: [], sonKervansaray: null });
+    expect(v.durum.oyuncu.kusanilan).toEqual({ silah: null, zirh: null, aksesuar: null });
     const depo = new Map([[KAYIT_ANAHTARI, JSON.stringify({ surum: 1, durum: eski })]]);
     const yuklenen = yukle({ getItem: (k) => depo.get(k) ?? null });
     expect(yuklenen.oyuncu.ad).toBe('Eski');

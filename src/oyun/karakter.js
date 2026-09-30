@@ -1,6 +1,7 @@
 // Karakter: stat hesapları, XP eğrisi, seviye atlama ve stat puanları.
 // Saf oyun mantığı — DOM'a dokunmaz.
 import { siniflar, STAT_PUANI_SEVIYE_BASI, STAT_PUANI_DEGERI } from '../veri/siniflar.js';
+import { esyalar } from '../veri/esyalar.js';
 
 export const STATLAR = ['can', 'nefes', 'guc', 'savunma', 'ceviklik'];
 export const AD_EN_FAZLA = 20;
@@ -32,19 +33,33 @@ export function yeniKarakter(ad, sinifAnahtari) {
     dagitilan: Object.fromEntries(STATLAR.map((s) => [s, 0])),
     can: sinif.baslangic.can,
     nefes: sinif.baslangic.nefes,
+    kusanilan: { silah: null, zirh: null, aksesuar: null }, // esyalar.js anahtarları
   };
 }
 
+// Kuşanılan eşyaların statlara toplam katkısı.
+export function ekipmanStatlari(oyuncu) {
+  const toplam = Object.fromEntries(STATLAR.map((s) => [s, 0]));
+  for (const anahtar of Object.values(oyuncu.kusanilan ?? {})) {
+    const esya = esyalar[anahtar];
+    if (!esya) continue;
+    for (const [stat, deger] of Object.entries(esya.statlar)) toplam[stat] += deger;
+  }
+  return toplam;
+}
+
 // Karakterin güncel statları: başlangıç + otomatik seviye artışları +
-// dağıtılan stat puanları. `can` ve `nefes` burada en yüksek değerlerdir.
+// dağıtılan stat puanları + kuşanılan eşyalar. `can` ve `nefes` en yüksek değerlerdir.
 export function statlar(oyuncu) {
   const sinif = siniflar[oyuncu.sinif];
+  const ekipman = ekipmanStatlari(oyuncu);
   const sonuc = {};
   for (const s of STATLAR) {
     sonuc[s] =
       sinif.baslangic[s] +
       (oyuncu.seviye - 1) * sinif.seviyeArtisi[s] +
-      (oyuncu.dagitilan[s] ?? 0) * STAT_PUANI_DEGERI[s];
+      (oyuncu.dagitilan[s] ?? 0) * STAT_PUANI_DEGERI[s] +
+      ekipman[s];
   }
   return sonuc;
 }

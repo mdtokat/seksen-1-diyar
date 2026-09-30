@@ -333,15 +333,18 @@ export function oyuncuEylemi(savas, eylem, rng) {
 
 // ── Savaş sonu ───────────────────────────────────────────
 
-// Bayılma (plan.md Bölüm 5): oyuncu il merkezinde (Faz 8'den sonra en son
-// uğradığı kervansarayda) kendine gelir, canı ve nefesi dolar, akçesinin
-// %10'unu kaybeder. Sonuç: { durum, akceKaybi }.
+// Bayılma (plan.md Bölüm 5): oyuncu en son dinlendiği kervansarayda (hiç
+// dinlenmediyse bulunduğu ilin merkezinde) kendine gelir, canı ve nefesi dolar,
+// akçesinin %10'unu kaybeder. Sonuç: { durum, akceKaybi, donulenIl, kervansarayda }.
 export function bayilmaUygula(durum) {
   const akce = durum.akce ?? 0;
   const akceKaybi = Math.floor(akce * BAYILMA_AKCE_KAYBI);
+  const donulenIl = durum.sonKervansaray ?? durum.konum;
   return {
-    durum: { ...durum, akce: akce - akceKaybi, oyuncu: tamIyilestir(durum.oyuncu) },
+    durum: { ...durum, konum: donulenIl, akce: akce - akceKaybi, oyuncu: tamIyilestir(durum.oyuncu) },
     akceKaybi,
+    donulenIl,
+    kervansarayda: Boolean(durum.sonKervansaray),
   };
 }
 
@@ -356,7 +359,7 @@ export function savasSonucunuUygula(durum, savas) {
     heybe: savas.heybe,
     oyuncu: { ...durum.oyuncu, can: savas.oyuncu.can, nefes: savas.oyuncu.nefes },
   };
-  const ozet = { sonuc: savas.sonuc, xp: 0, seviyeler: [], yeniYetenekler: [], akceKaybi: 0 };
+  const ozet = { sonuc: savas.sonuc, xp: 0, seviyeler: [], yeniYetenekler: [], akceKaybi: 0, donulenIl: null, kervansarayda: false };
 
   if (savas.sonuc === 'zafer') {
     const r = xpEkle(yeni.oyuncu, savas.xpOdulu);
@@ -365,7 +368,7 @@ export function savasSonucunuUygula(durum, savas) {
   } else if (savas.sonuc === 'yenilgi') {
     const r = bayilmaUygula(yeni);
     yeni = r.durum;
-    ozet.akceKaybi = r.akceKaybi;
+    Object.assign(ozet, { akceKaybi: r.akceKaybi, donulenIl: r.donulenIl, kervansarayda: r.kervansarayda });
   }
   return { durum: yeni, ozet };
 }

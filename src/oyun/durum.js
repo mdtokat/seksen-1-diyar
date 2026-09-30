@@ -18,6 +18,8 @@ export function yeniOyunDurumu({ ad, sinif } = {}) {
     yenilenBosslar: [], // bölge anahtarları
     yenilenMiniBosslar: [], // il plakaları
     sofra: null, // { bolge, kalan } — zafer sofrasının kalan savaş sayısı
+    esyalar: [], // sahip olunan eşyalar (esyalar.js anahtarları)
+    sonKervansaray: null, // en son dinlenilen kervansarayın ili; bayılınca buraya dönülür
   };
 }
 

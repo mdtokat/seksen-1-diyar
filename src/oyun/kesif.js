@@ -5,6 +5,7 @@ import { dusmanOlustur, savasSonucunuUygula } from './savas.js';
 import { yemekEkle } from './envanter.js';
 import { bossYenildi, MINI_BOSS_ARINMA_ESIGI } from './ilerleme.js';
 import { bolgeler } from '../veri/bolgeler.js';
+import { esyalar } from '../veri/esyalar.js';
 import { aralik, sans, sec, tamSayi } from './rastgele.js';
 
 export const ARINMA_ARTISI = [8, 12]; // zafer başına % (iki uç dahil)
@@ -43,11 +44,25 @@ export function ganimetUret(dusman, plaka, rng) {
   return { akce, yemek };
 }
 
+// Bossların garanti eşya ganimeti (plan.md Faz 8): bölge bossu bölgenin efsanevi,
+// mini boss nadir eşyalarından, oyuncunun sınıfına uygun ve henüz sahip olmadığı
+// birini düşürür. Uygun eşya kalmadıysa null.
+export function bossGanimeti(durum, bolge, nadirlik, rng) {
+  const adaylar = Object.keys(esyalar).filter((a) => {
+    const e = esyalar[a];
+    return e.bolge === bolge && e.nadirlik === nadirlik
+      && (!e.sinif || e.sinif === durum.oyuncu.sinif)
+      && !(durum.esyalar ?? []).includes(a);
+  });
+  return adaylar.length ? sec(rng, adaylar) : null;
+}
+
 // Keşif savaşının sonucunu uygular: savaş sonucu (XP, seviye, bayılma) +
 // zaferde arınma artışı, akçe ve yemek. Sonuç: { durum, ozet }.
 // ozet, savasSonucunuUygula özetine ek olarak:
 //   { arinmaArtisi, arinma, arindi, akce, yemek, yemekSigmadi,
-//     bossYenildi (bölge anahtarı | null), acilanBolge, miniBossYenildi, miniBossBelirdi }
+//     bossYenildi (bölge anahtarı | null), acilanBolge, miniBossYenildi, miniBossBelirdi,
+//     esya (düşen eşyanın anahtarı | null) }
 export function kesifSonucunuUygula(durum, savas, plaka, rng) {
   const r = savasSonucunuUygula(durum, savas);
   if (!r.ozet) return r;
@@ -64,6 +79,7 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
     acilanBolge: null,
     miniBossYenildi: false,
     miniBossBelirdi: null,
+    esya: null,
   };
   if (savas.sonuc !== 'zafer') return { durum: yeni, ozet };
   const onceArinma = yeni.arinma[plaka] ?? 0;
@@ -83,6 +99,13 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
   }
 
   const sinif = dusmanlar[savas.dusman.anahtar].sinif;
+  if (sinif === 'bolge_bossu' || sinif === 'mini_boss') {
+    const esya = bossGanimeti(yeni, dusmanlar[savas.dusman.anahtar].bolge, sinif === 'bolge_bossu' ? 'efsanevi' : 'nadir', rng);
+    if (esya) {
+      yeni = { ...yeni, esyalar: [...(yeni.esyalar ?? []), esya] };
+      ozet.esya = esya;
+    }
+  }
   if (sinif === 'bolge_bossu') {
     const b = bossYenildi(yeni, dusmanlar[savas.dusman.anahtar].bolge);
     yeni = b.durum;
