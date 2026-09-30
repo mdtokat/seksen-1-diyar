@@ -31,7 +31,7 @@ import {
 import { dusmanOlustur, savasBaslat, oyuncuEylemi, savasSonucunuUygula } from '../src/oyun/savas.js';
 import { kesifSonucunuUygula, bossGanimeti } from '../src/oyun/kesif.js';
 import { yemekFiyati, yemekAdedi, HEYBE_YUVA } from '../src/oyun/envanter.js';
-import { ilHaritasiUret, etkilesimTuru, ulasilabilir, GENISLIK } from '../src/oyun/gezinti.js';
+import { ilHaritasiUret, etkilesimTuru, ulasilabilir } from '../src/oyun/gezinti.js';
 import { rastgeleUreteci } from '../src/oyun/rastgele.js';
 
 const sabit = (x) => () => x;
@@ -291,7 +291,7 @@ describe('il haritasında dükkân ve kervansaray', () => {
       if (h.dukkan) expect(etkilesimTuru(h, h.dukkan.x, h.dukkan.y)).toBe('dukkan');
       if (h.kervansaray) expect(etkilesimTuru(h, h.kervansaray.x, h.kervansaray.y)).toBe('kervansaray');
       const u = ulasilabilir(h, h.dogus);
-      for (const k of h.kapilar) expect(u.has(k.y * GENISLIK + k.x), il.ad).toBe(true);
+      for (const k of h.kapilar) expect(u.has(k.y * h.genislik + k.x), il.ad).toBe(true);
     }
   });
 });

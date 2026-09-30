@@ -39,7 +39,7 @@ import { dusmanOlustur, savasBaslat, oyuncuEylemi } from '../src/oyun/savas.js';
 import { kesifSonucunuUygula } from '../src/oyun/kesif.js';
 import { gerekenXp } from '../src/oyun/karakter.js';
 import { goc, yukle, kaydet, durumGecerliMi, KAYIT_ANAHTARI, KAYIT_SURUMU } from '../src/oyun/kayit.js';
-import { ilHaritasiUret, etkilesimTuru, ulasilabilir, yurunurMu, GENISLIK } from '../src/oyun/gezinti.js';
+import { ilHaritasiUret, etkilesimTuru, ulasilabilir, yurunurMu } from '../src/oyun/gezinti.js';
 
 const sabit = (x) => () => x;
 const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
@@ -129,7 +129,7 @@ describe('görev verenler il haritasında', () => {
       const h = ilHaritasiUret(il.plaka);
       const ulasilan = ulasilabilir(h, h.dogus);
       const yanindanUlasilir = (p) => [[0, -1], [1, 0], [0, 1], [-1, 0]].some(([dx, dy]) =>
-        yurunurMu(h, p.x + dx, p.y + dy) && ulasilan.has((p.y + dy) * GENISLIK + p.x + dx));
+        yurunurMu(h, p.x + dx, p.y + dy) && ulasilan.has((p.y + dy) * h.genislik + p.x + dx));
       expect(etkilesimTuru(h, h.muhtar.x, h.muhtar.y), il.ad).toBe('muhtar');
       expect(yanindanUlasilir(h.muhtar), il.ad).toBe(true);
       const ahi = bolgeHaritasi.get(il.bolge).ahiIlleri.includes(il.plaka);
@@ -139,7 +139,7 @@ describe('görev verenler il haritasında', () => {
         expect(yanindanUlasilir(h.ahiBaba), il.ad).toBe(true);
       }
       // Bütün çıkışlar hâlâ meydandan ulaşılabilir
-      for (const k of h.kapilar) expect(ulasilan.has(k.y * GENISLIK + k.x), `${il.ad} → ${k.plaka}`).toBe(true);
+      for (const k of h.kapilar) expect(ulasilan.has(k.y * h.genislik + k.x), `${il.ad} → ${k.plaka}`).toBe(true);
     }
   });
 });

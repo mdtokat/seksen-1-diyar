@@ -10,9 +10,10 @@ import { gorevler as gorevVerisi } from '../veri/gorevler.js';
 import { basarimlar as basarimVerisi } from '../veri/basarimlar.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { STATLAR } from './karakter.js';
+import { KISAYOL_YUVA, kisayolGecerliMi, varsayilanKisayollar } from './kisayollar.js';
 
 export const KAYIT_ANAHTARI = 'seksen-bir-diyar/kayit';
-export const KAYIT_SURUMU = 5;
+export const KAYIT_SURUMU = 6;
 
 function varsayilanDepo() {
   try {
@@ -72,6 +73,12 @@ function dorttenBese(veri) {
   };
 }
 
+// Sürüm 5 → 6: savaş kısayol yuvaları eklendi (Saldır, ilk yetenekler, ilk yemek).
+function bestenAltiya(veri) {
+  const d = veri.durum;
+  return { surum: 6, durum: { kisayollar: varsayilanKisayollar(d), ...d } };
+}
+
 // Eski sürümdeki bir kaydı adım adım güncel şemaya taşır. Tanınmayan sürüm → null.
 export function goc(veri) {
   if (!veri || typeof veri !== 'object' || !veri.durum) return null;
@@ -80,6 +87,7 @@ export function goc(veri) {
   if (v.surum === 2) v = ikidenUce(v);
   if (v.surum === 3) v = ucdenDorde(v);
   if (v.surum === 4) v = dorttenBese(v);
+  if (v.surum === 5) v = bestenAltiya(v);
   return v.surum === KAYIT_SURUMU ? v : null;
 }
 
@@ -117,6 +125,8 @@ export function durumGecerliMi(d) {
   const i = d.istatistik;
   if (!i || !sayiMi(i.zafer) || !sayiMi(i.bayilma) || !i.bolgeBayilma || typeof i.bolgeBayilma !== 'object') return false;
   if (!Object.entries(i.bolgeBayilma).every(([b, n]) => bolgeAnahtarlari.has(b) && sayiMi(n))) return false;
+  if (!Array.isArray(d.kisayollar) || d.kisayollar.length !== KISAYOL_YUVA
+      || !d.kisayollar.every((k) => kisayolGecerliMi(k, o.sinif))) return false;
   return true;
 }
 

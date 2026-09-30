@@ -17,6 +17,8 @@ import { gerekenXp } from '../oyun/karakter.js';
 import { sofraGucCarpani, SOFRA } from '../oyun/ilerleme.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { yemekAdedi, yemekGucu } from '../oyun/envanter.js';
+import { kisayolAta, kisayolEylemi, bosKisayollar } from '../oyun/kisayollar.js';
+import { yuvaDugmeleri, secimListesi, koddanIcerik } from './kisayolYuvalari.js';
 import { kacis, sablon, degerCubugu, bildirimGoster, parilti } from './bilesenler.js';
 import { sesCal } from './ses.js';
 import { sinifCizimi } from './cizimler/karakterler.js';
@@ -135,7 +137,7 @@ function vurusGoster(figur) {
   setTimeout(() => v.remove(), 450);
 }
 
-// Ekranı `kap` içine kurar. Savaş bitince sonuç depoya yazılır.
+// Ekranı `kap` içine kurar. Savaş bitince sonuç depoya yazılır. Temizlik fonksiyonu döndürür.
 // secenekler: { dusman, rng, sonucuUygula, bitince, karakterGoster }
 // sonucuUygula(durum, savas) → { durum, ozet }: varsayılanı savasSonucunuUygula;
 // keşif savaşında arınma ve ganimeti de ekleyen sürüm verilir.
@@ -146,7 +148,9 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
     gucCarpani: sofraGucCarpani(baslangic),
   });
   const sofraKalan = baslangic.sofra?.kalan ?? 0;
-  let panel = 'ana'; // 'ana' | 'yetenek' | 'yemek' | 'son'
+  let panel = 'ana'; // 'ana' | 'yetenek' | 'yemek' | 'kisayol' | 'son'
+  let duzenle = false; // kısayol yuvaları düzenleniyor mu
+  let secilenYuva = null; // 'kisayol' panelinde içeriği seçilen yuva
   let ozet = null;
   let sonDurum = null;
   let oynatiliyor = false;
@@ -166,6 +170,7 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
         <div class="bilgi-plakasi bilgi-plakasi-oyuncu" aria-label="${kacis(baslangic.oyuncu.ad)}"></div>
       </section>
       <ol class="savas-gunlugu" aria-live="polite"></ol>
+      <div class="kisayol-cubugu" role="toolbar" aria-label="${metinler.kisayol.baslik}"></div>
       <nav class="eylem-paneli"></nav>
     </div>`;
 
@@ -181,6 +186,7 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
   const plakaOyuncu = ekran.querySelector('.bilgi-plakasi-oyuncu');
   const gunluk = ekran.querySelector('.savas-gunlugu');
   const eylemPaneli = ekran.querySelector('.eylem-paneli');
+  const kisayolCubugu = ekran.querySelector('.kisayol-cubugu');
   const azHareket = hareketAzMi();
 
   function plakalariCiz() {
@@ -393,9 +399,56 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
       </section>`;
   }
 
+  // Kısayol yuvası şu an kullanılabilir mi? Yalnızca sıra oyuncudayken.
+  const siraSende = () => !oynatiliyor && !savas.sonuc && panel !== 'son';
+  const kisayollar = () => depo.al().kisayollar ?? bosKisayollar();
+  function yuvaKullanilir(icerik) {
+    if (!icerik || !siraSende()) return false;
+    return eylemKontrol(savas, kisayolEylemi(icerik)).olur;
+  }
+
+  function kisayolCubugunuCiz() {
+    const K = metinler.kisayol;
+    kisayolCubugu.hidden = panel === 'son';
+    kisayolCubugu.classList.toggle('sira-sende', siraSende());
+    kisayolCubugu.classList.toggle('duzenleniyor', duzenle);
+    kisayolCubugu.innerHTML = `
+      <span class="kisayol-durum" aria-hidden="true">${siraSende() ? K.siraSende : K.bekle}</span>
+      <div class="kisayol-yuvalari">
+        ${yuvaDugmeleri(kisayollar(), {
+          sinif: savas.oyuncu.sinif,
+          heybe: savas.heybe,
+          kullanilir: (icerik) => duzenle || !icerik || yuvaKullanilir(icerik),
+          secili: panel === 'kisayol' ? secilenYuva : null,
+        })}
+      </div>
+      <button class="simge-buton kisayol-duzenle" data-eylem="kisayol-duzenle" aria-pressed="${duzenle}"
+              aria-label="${duzenle ? K.duzenleBitti : K.duzenle}" title="${duzenle ? K.duzenleBitti : K.duzenle}">✎</button>`;
+  }
+
+  function kisayolPaneli() {
+    return `${secimListesi(savas.oyuncu, savas.heybe, kisayollar(), secilenYuva)}
+      <button class="buton geri-buton" data-eylem="geri">← ${M.geri}</button>`;
+  }
+
   function panelCiz() {
-    eylemPaneli.innerHTML = { ana: anaPanel, yetenek: yetenekPaneli, yemek: yemekPaneli, son: sonucPaneli }[panel]();
+    eylemPaneli.innerHTML = { ana: anaPanel, yetenek: yetenekPaneli, yemek: yemekPaneli, kisayol: kisayolPaneli, son: sonucPaneli }[panel]();
     eylemPaneli.querySelector('button:not([disabled])')?.focus({ preventScroll: true });
+    kisayolCubugunuCiz();
+  }
+
+  // Yuvaya dokunulunca ya da 1–4 tuşuna basılınca: düzenlemede ya da boş yuvada
+  // içerik seçilir; dolu yuvanın eylemi sıra oyuncudaysa yapılır.
+  function yuvaSec(sira) {
+    if (oynatiliyor || panel === 'son') return;
+    const icerik = kisayollar()[sira];
+    if (duzenle || !icerik) {
+      secilenYuva = sira;
+      panel = 'kisayol';
+      return panelCiz();
+    }
+    if (yuvaKullanilir(icerik)) return eylemYap(kisayolEylemi(icerik));
+    titret(kisayolCubugu.querySelector(`[data-kisayol="${sira}"]`), 'sarsil', 420);
   }
 
   function savasBitti() {
@@ -431,6 +484,7 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
     oynatiliyor = true;
     eylemPaneli.classList.add('bekliyor');
     panel = 'ana';
+    duzenle = false;
     panelCiz();
     for (const olay of olaylar) await olayiOynat(olay);
     Object.assign(gosterilen, { dusmanCan: savas.dusman.can, oyuncuCan: savas.oyuncu.can, oyuncuNefes: savas.oyuncu.nefes });
@@ -444,6 +498,14 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
   ekran.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b || b.disabled || oynatiliyor) return;
+    if (b.dataset.kisayol !== undefined) return yuvaSec(Number(b.dataset.kisayol));
+    if (b.dataset.kisayolIcerik !== undefined) {
+      depo.ayarla(kisayolAta(depo.al(), secilenYuva, koddanIcerik(b.dataset.kisayolIcerik)));
+      panel = 'ana';
+      duzenle = false;
+      secilenYuva = null;
+      return panelCiz();
+    }
     if (b.dataset.yetenek) return eylemYap({ tur: 'yetenek', anahtar: b.dataset.yetenek });
     if (b.dataset.yemek) return eylemYap({ tur: 'yemek', anahtar: b.dataset.yemek });
     switch (b.dataset.eylem) {
@@ -451,13 +513,35 @@ export function savasEkrani(kap, depo, { dusman, rng, sonucuUygula = savasSonucu
       case 'kac': return eylemYap({ tur: 'kac' });
       case 'yetenek-ac': panel = 'yetenek'; return panelCiz();
       case 'yemek-ac': panel = 'yemek'; return panelCiz();
-      case 'geri': panel = 'ana'; return panelCiz();
+      case 'geri': panel = 'ana'; secilenYuva = null; return panelCiz();
+      case 'kisayol-duzenle':
+        duzenle = !duzenle;
+        if (!duzenle && panel === 'kisayol') panel = 'ana';
+        return panelCiz();
       case 'devam': return bitince?.();
       case 'karakter': return karakterGoster?.();
     }
   });
 
+  // Klavye: 1–4 kısayol yuvaları, Esc alt menüden çıkar.
+  function tusBasildi(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey || e.target.closest?.('input, textarea')) return;
+    const sira = ['1', '2', '3', '4'].indexOf(e.key);
+    if (sira >= 0) {
+      e.preventDefault();
+      if (!e.repeat) yuvaSec(sira);
+    } else if (e.key === 'Escape' && !oynatiliyor && ['yetenek', 'yemek', 'kisayol'].includes(panel)) {
+      e.preventDefault();
+      panel = 'ana';
+      duzenle = false;
+      secilenYuva = null;
+      panelCiz();
+    }
+  }
+  window.addEventListener('keydown', tusBasildi);
+
   plakalariCiz();
   gunlugeYaz(savas.gunluk[0]);
   panelCiz();
+  return () => window.removeEventListener('keydown', tusBasildi);
 }

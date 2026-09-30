@@ -2897,3 +2897,329 @@ h3 {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ── Klavye kısayolu ipuçları ─────────────────────────── */
+.gezinti-araclari .simge-buton {
+  position: relative;
+}
+
+.tus-ipucu {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  min-width: 1.05rem;
+  padding: 0 0.2rem;
+  font: 700 0.6rem/1.05rem var(--font-metin);
+  text-align: center;
+  color: var(--krem);
+  background: var(--lacivert);
+  border: 1px solid var(--altin);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+/* Dokunmatik cihazlarda klavye ipuçları gizlenir */
+@media (pointer: coarse) {
+  .tus-ipucu,
+  .klavye-dugmesi,
+  .kisayol-tusu {
+    display: none !important;
+  }
+}
+
+/* ── Gezintide can ve nefes göstergesi ────────────────── */
+.durum-gostergesi {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  z-index: 40;
+  width: min(11.5rem, 46vw);
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.4rem;
+  background: rgba(27, 42, 92, 0.72);
+  border: 2px solid var(--altin);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.durum-gostergesi .cubuk {
+  height: 1.15rem;
+  margin: 0;
+}
+
+.durum-gostergesi .cubuk + .cubuk {
+  margin-top: 0;
+}
+
+.durum-gostergesi .cubuk-metin {
+  font-size: 0.7rem;
+}
+
+.durum-gostergesi.can-az {
+  border-color: var(--mercan);
+  animation: can-az 1.2s ease-in-out infinite;
+}
+
+@keyframes can-az {
+  50% { box-shadow: 0 0 0 3px rgba(217, 72, 59, 0.55); }
+}
+
+.mini-cubuk.mini-nefes span {
+  background: var(--turkuaz);
+}
+
+/* ── Halk ve takipçi düşmanlar ────────────────────────── */
+.halk-figuru {
+  transition-duration: 0.5s;
+  width: calc(var(--karo, 36px) * 1.35);
+  height: calc(var(--karo, 36px) * 1.35);
+}
+
+.halk-figuru.sola .figur-ic {
+  transform: scaleX(-1);
+}
+
+.dusman-figuru.kovaliyor {
+  transition-duration: 0.19s;
+}
+
+.dusman-figuru.kovaliyor:not(.fark)::after {
+  content: '!';
+  position: absolute;
+  left: 50%;
+  top: -1.2rem;
+  transform: translateX(-50%);
+  width: 1.1rem;
+  height: 1.1rem;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--krem);
+  background: var(--mercan);
+  border: 2px solid var(--lacivert);
+  border-radius: 50%;
+}
+
+/* ── Savaş kısayol yuvaları ───────────────────────────── */
+.kisayol-cubugu {
+  width: calc(100% - 2 * var(--bosluk));
+  max-width: var(--en-fazla-genislik);
+  margin: 0.5rem auto 0;
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+  position: relative;
+}
+
+.kisayol-cubugu[hidden] {
+  display: none;
+}
+
+.kisayol-durum {
+  position: absolute;
+  top: -0.55rem;
+  left: 0.6rem;
+  z-index: 1;
+  padding: 0 0.4rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.1rem;
+  border-radius: 999px;
+  color: var(--krem);
+  background: var(--kilitli);
+}
+
+.kisayol-cubugu.sira-sende .kisayol-durum {
+  background: var(--turkuaz-koyu);
+}
+
+.kisayol-yuvalari {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+}
+
+.kisayol-yuvasi {
+  position: relative;
+  min-width: 0;
+  min-height: 3.6rem;
+  padding: 0.35rem 0.25rem 0.25rem;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 0.05rem;
+  font: inherit;
+  color: var(--murekkep);
+  background: var(--krem);
+  border: 2px solid var(--lacivert);
+  border-radius: 10px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.kisayol-cubugu.sira-sende .kisayol-yuvasi:not([aria-disabled]):not(.bos) {
+  border-color: var(--turkuaz-koyu);
+  box-shadow: 0 0 0 2px rgba(42, 167, 167, 0.35);
+}
+
+.kisayol-yuvasi[aria-disabled='true'] {
+  opacity: 0.5;
+}
+
+.kisayol-yuvasi.bos {
+  border-style: dashed;
+  color: #5a5348;
+}
+
+.kisayol-yuvasi.secili {
+  background: var(--altin);
+}
+
+.kisayol-yuvasi:focus-visible {
+  outline: 3px solid var(--altin);
+  outline-offset: 2px;
+}
+
+.kisayol-tusu {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font: 700 0.62rem var(--font-metin);
+  color: var(--lacivert);
+  opacity: 0.8;
+}
+
+.kisayol-ikon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.kisayol-ad {
+  max-width: 100%;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kisayol-alt {
+  font-size: 0.6rem;
+  color: #5a5348;
+  line-height: 1.1;
+}
+
+.kisayol-duzenle {
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.kisayol-cubugu.duzenleniyor .kisayol-duzenle {
+  background: var(--altin);
+}
+
+.kisayol-soru {
+  margin: 0 0 0.4rem;
+  font-weight: 700;
+  color: var(--lacivert);
+}
+
+.secenek.secili {
+  background: rgba(212, 165, 55, 0.25);
+}
+
+.kisayol-karti .kisayol-yuvalari {
+  margin-bottom: 0.6rem;
+}
+
+/* ── Klavye kısayolları penceresi ─────────────────────── */
+.klavye-penceresi {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  display: grid;
+  place-items: center;
+  padding: var(--bosluk);
+  background: rgba(17, 27, 61, 0.55);
+}
+
+.klavye-kutusu {
+  width: min(26rem, 100%);
+  max-height: 90dvh;
+  overflow-y: auto;
+  padding: 1rem 1.2rem;
+  background: var(--krem);
+  border: 2px solid var(--altin);
+  border-radius: var(--kose);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.klavye-kutusu h3 {
+  margin: 0.8rem 0 0.3rem;
+  font-size: 1rem;
+}
+
+.klavye-kutusu dl {
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.klavye-kutusu dl div {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.klavye-kutusu dd {
+  margin: 0;
+}
+
+.klavye-kutusu kbd {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  font: 700 0.8rem var(--font-metin);
+  color: var(--lacivert);
+  background: #fff;
+  border: 1px solid var(--lacivert);
+  border-bottom-width: 3px;
+  border-radius: 5px;
+}
+
+.klavye-kutusu .buton {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+/* ── İllerin büyüklüğü ve kalabalığı ──────────────────── */
+.cografya-rozetleri {
+  margin: 0.2rem 0 0.5rem;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.cografya-rozetleri li {
+  padding: 0.1rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 999px;
+  color: var(--lacivert);
+  background: rgba(212, 165, 55, 0.22);
+  border: 1px solid var(--altin);
+}
+
+.il-afisi em {
+  font-size: 0.75rem;
+  font-style: normal;
+  color: var(--krem);
+  white-space: nowrap;
+}

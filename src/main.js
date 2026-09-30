@@ -4,7 +4,7 @@ import { metinler } from './veri/metinler.js';
 import { yeniOyunDurumu, durumDeposu } from './oyun/durum.js';
 import { rastgeleUreteci, yeniTohum } from './oyun/rastgele.js';
 import { kesifSonucunuUygula } from './oyun/kesif.js';
-import { ilHaritasiUret, girisNoktasi, dusmanlariYerlestir, ozelDusmanlar } from './oyun/gezinti.js';
+import { ilHaritasiUret, girisNoktasi, dusmanlariYerlestir, ozelDusmanlar, halkiYerlestir } from './oyun/gezinti.js';
 import { arinmaYuzdesi, seyahatEt, yeniAcilanBosslar, finalDurumu } from './oyun/ilerleme.js';
 import { oyunDurumunuIsle, yeniBasarimlar } from './oyun/basarimlar.js';
 import { basarimlar } from './veri/basarimlar.js';
@@ -82,8 +82,12 @@ let depo = null;
 // İl içi gezinti durumu; savaşa, heybeye ya da karaktere girip çıkınca korunur.
 let gezinti = null;
 let ipucuGosterildi = false;
+// Açık ekranın adı; klavye kısayolları buna göre çalışır.
+let aktifEkran = null;
 
-function ekranGoster(kur) {
+function ekranGoster(kur, ad = null) {
+  aktifEkran = ad;
+  klavyePenceresiniKapat();
   temizle?.();
   temizle = kur(uygulama) ?? null;
   // Ekranlar arası yumuşak geçiş (hareket azaltılmışsa CSS kapatır)
@@ -193,6 +197,7 @@ function gezintiHazirla() {
       ...ozelDusmanlar(harita, durum),
     ],
     sonrakiId: 100,
+    halk: halkiYerlestir(harita, rng),
     dogusSayaclari: [],
     dokunulmaz: 0,
   };
@@ -211,6 +216,7 @@ function gezintiGoster({ ilGirisi = false } = {}) {
       ipucuGoster,
       ilGirisi,
       savasBaslat: savasGoster,
+      kisayollariGoster: klavyePenceresiniAc,
       ileGec: (plaka) => {
         depo.ayarla(seyahatEt(depo.al(), plaka));
         gezintiGoster({ ilGirisi: true });
@@ -223,12 +229,13 @@ function gezintiGoster({ ilGirisi = false } = {}) {
       heybeGoster: () => heybeGoster(gezintiGoster),
       karakterGoster: () => karakterGoster(gezintiGoster),
       baslikaDon: baslikGoster,
-      arastaGoster: () => ekranGoster((kap) => arastaEkrani(kap, depo, { geri: gezintiGoster })),
-      ahiGoster: () => ekranGoster((kap) => ahiEkrani(kap, depo, { geri: gezintiGoster })),
+      arastaGoster: () => ekranGoster((kap) => arastaEkrani(kap, depo, { geri: gezintiGoster }), 'arasta'),
+      ahiGoster: () => ekranGoster((kap) => ahiEkrani(kap, depo, { geri: gezintiGoster }), 'ahi'),
       kervansarayGoster,
-      gorevVerenGoster: (veren) => ekranGoster((kap) => gorevEkrani(kap, depo, { veren, geri: gezintiGoster })),
+      gorevVerenGoster: (veren) => ekranGoster((kap) => gorevEkrani(kap, depo, { veren, geri: gezintiGoster }), 'gorev'),
       gunlukGoster,
     }),
+    'gezinti',
   );
 }
 
@@ -248,11 +255,12 @@ function kervansarayGoster() {
         }));
       },
     }),
+    'kervansaray',
   );
 }
 
 function gunlukGoster() {
-  ekranGoster((kap) => gunlukEkrani(kap, depo, { geri: () => gezintiGoster(), bitisGoster: () => bitisGoster(gunlukGoster) }));
+  ekranGoster((kap) => gunlukEkrani(kap, depo, { geri: () => gezintiGoster(), bitisGoster: () => bitisGoster(gunlukGoster) }), 'gunluk');
 }
 
 // Zülmet yenilince bitiş sahnesi; ardından yolculuğa devam edilir.
@@ -268,6 +276,7 @@ function ilGoster() {
       karakterGoster: () => karakterGoster(ilGoster),
       haritaGoster,
     }),
+    'il',
   );
 }
 
@@ -278,15 +287,16 @@ function haritaGoster() {
       karakterGoster: () => karakterGoster(haritaGoster),
       ilGoster: gezintiGoster,
     }),
+    'harita',
   );
 }
 
 function karakterGoster(geri) {
-  ekranGoster((kap) => karakterEkrani(kap, depo, { geri }));
+  ekranGoster((kap) => karakterEkrani(kap, depo, { geri }), 'karakter');
 }
 
 function heybeGoster(geri) {
-  ekranGoster((kap) => envanterEkrani(kap, depo, { geri }));
+  ekranGoster((kap) => envanterEkrani(kap, depo, { geri }), 'heybe');
 }
 
 // Haritada temas edilen düşmanla savaş. Sonuca göre gezinti durumu güncellenir:
@@ -306,7 +316,9 @@ function savasGoster(kayit) {
       if (!kayit.sabit) g.dogusSayaclari.push(YENIDEN_DOGUS_ADIMI);
       g.dokunulmaz = 2;
     } else if (sonuc === 'kacis') {
-      g.dokunulmaz = 8;
+      // Kısa bir soluklanma: takipçiler az sonra yeniden peşine düşebilir
+      g.dokunulmaz = 4;
+      g.dusmanlar = g.dusmanlar.map((d) => (d.id === kayit.id ? { ...d, kovaliyor: false, birikim: 0 } : d));
     } else if (depo.al().konum !== g.plaka) {
       // Başka ildeki son kervansarayda kendine geldi: o ilin meydanından başlanır
       gezinti = null;
@@ -337,5 +349,80 @@ function savasGoster(kayit) {
     }),
   );
 }
+
+// ── Klavye kısayolları ──
+// Gezintide ve ondan açılan ekranlarda: M harita, B heybe, K karakter, G günlük,
+// L il bilgisi. Açık ekranın tuşuna yeniden basınca gezintiye dönülür; Esc geri
+// götürür; ? kısayol penceresini açar. Savaşın kendi tuşları (1–4) savasEkrani.js'tedir.
+const EKRAN_KISAYOLLARI = {
+  m: { ekran: 'harita', dugme: 'harita', ac: () => haritaGoster() },
+  b: { ekran: 'heybe', dugme: 'heybe', ac: () => heybeGoster(gezintiGoster) },
+  k: { ekran: 'karakter', dugme: 'karakter', ac: () => karakterGoster(gezintiGoster) },
+  g: { ekran: 'gunluk', dugme: 'gunluk', ac: () => gunlukGoster() },
+  l: { ekran: 'il', dugme: 'bilgi', ac: () => ilGoster() },
+};
+const GEZINTI_EKRANLARI = new Set(['gezinti', 'harita', 'heybe', 'karakter', 'gunluk', 'il', 'arasta', 'ahi', 'kervansaray', 'gorev']);
+let klavyePenceresi = null;
+
+function klavyePenceresiniKapat() {
+  klavyePenceresi?.remove();
+  klavyePenceresi = null;
+}
+
+function klavyePenceresiniAc() {
+  if (klavyePenceresi) return klavyePenceresiniKapat();
+  const K = metinler.klavye;
+  klavyePenceresi = document.createElement('div');
+  klavyePenceresi.className = 'klavye-penceresi';
+  klavyePenceresi.setAttribute('role', 'dialog');
+  klavyePenceresi.setAttribute('aria-modal', 'true');
+  klavyePenceresi.setAttribute('aria-label', K.baslik);
+  klavyePenceresi.innerHTML = `
+    <div class="klavye-kutusu">
+      <h2>${K.baslik}</h2>
+      ${K.gruplar.map((grup) => `
+        <h3>${grup.baslik}</h3>
+        <dl>${grup.satirlar.map(([tus, is]) => `<div><dt><kbd>${tus}</kbd></dt><dd>${is}</dd></div>`).join('')}</dl>`).join('')}
+      <button class="buton buton-ana" data-eylem="kapat">${K.kapat}</button>
+    </div>`;
+  klavyePenceresi.addEventListener('click', (e) => {
+    if (e.target === klavyePenceresi || e.target.closest('[data-eylem="kapat"]')) klavyePenceresiniKapat();
+  });
+  document.body.appendChild(klavyePenceresi);
+  klavyePenceresi.querySelector('button').focus();
+}
+
+window.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+  if (e.target.closest?.('input, textarea, select')) return;
+  if (klavyePenceresi) {
+    if (e.key === 'Escape' || e.key === '?') {
+      e.preventDefault();
+      klavyePenceresiniKapat();
+    }
+    return;
+  }
+  if (!depo || !GEZINTI_EKRANLARI.has(aktifEkran)) return;
+  if (e.key === '?') {
+    e.preventDefault();
+    return klavyePenceresiniAc();
+  }
+  if (e.key === 'Escape') {
+    if (aktifEkran === 'gezinti') return;
+    // Haritada açık il kartını haritanın kendisi kapatır
+    if (aktifEkran === 'harita' && uygulama.querySelector('.il-karti:not([hidden])')) return;
+    e.preventDefault();
+    const geri = uygulama.querySelector('.ust-cubuk [data-eylem="geri"], .ust-cubuk [data-eylem="gez"]');
+    return geri ? geri.click() : gezintiGoster();
+  }
+  const k = EKRAN_KISAYOLLARI[e.key.toLowerCase()];
+  if (!k) return;
+  e.preventDefault();
+  if (aktifEkran === k.ekran) return gezintiGoster();
+  // Gezintideyken düğmeye basılmış gibi davranılır (savaşa girilirken ya da il
+  // değişirken girdiyi yok sayan kontroller korunur)
+  if (aktifEkran === 'gezinti') return uygulama.querySelector(`.gezinti-ekrani [data-eylem="${k.dugme}"]`)?.click();
+  k.ac();
+});
 
 baslikGoster();

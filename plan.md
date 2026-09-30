@@ -223,7 +223,7 @@ Bu formüller ilk sürüm içindir. Faz 3'te dengelendi; hesaplar `src/oyun/kara
 - **Hasar:** `max(1, round(güç × yetenekÇarpanı × rnd(0.9–1.1) − savunma × 0.5))`
 - **Kritik şansı:** `min(30%, çeviklik × 0.8%)` (+ Kartal Gözü bonusu). Kritik vuruş ×1.5 hasar verir.
 - **Kaçınma şansı:** `min(20%, çeviklik × 0.5%)` — saldırılan taraf hamleden sıyrılır, hasar almaz.
-- **Kaçma şansı:** `max(0%, min(80%, 40% + (oyuncuÇev − düşmanÇev) × 2%))`. Bosslardan kaçılamaz.
+- **Kaçma şansı:** `max(0%, min(70%, 35% + (oyuncuÇev − düşmanÇev) × 2%) − takipçi cezası)`. Peşine takılan (takipçi) düşmanlarda ceza %15'tir. Bosslardan kaçılamaz.
 - **Düşman statları:** seviye ve tür çarpanıyla ölçeklenir:
   `can = (20 + sv × 12) × c.can`, `güç = (6 + sv × 2) × c.güç`, `savunma = (4 + sv × 1.5) × c.savunma`, `çeviklik = (4 + sv) × c.çeviklik` (hepsi yuvarlanır).
 - **XP ödülü:** `round((5 + sv × 10) × sınıfÇarpanı)`; sınıf çarpanı sıradan 1, mini boss 3, bölge bossu 8, final 15.
@@ -556,7 +556,9 @@ Kullanıcı kararları: kuşbakışı görünüm; düşmanlar haritada görünü
 **Faz 6 kararları:**
 - **Harita:** 25×31 karo; meydan 7×5 ve ortada. Doğa öbekleri bölgeye göre (`BOLGE_DOGASI`). Meydandan ulaşılamayan açık alanlar engelle doldurulur.
 - **Çıkışlar:** komşunun gerçek yönündeki kenar karosuna; iki çıkış arasında en az 4 karo. Kilitli bölgeye giden yol mor sihirli engelle kapalıdır; üzerine yürüyünce oyuncu geri çekilir ve nedeni söylenir.
-- **Düşmanlar:** arınmamış ilde 4, arınmış ilde 2. Oyuncu 4 karo yakındaysa peşine düşer (meydandayken ya da dokunulmazken düşmez). Yenilen düşmanın yerine 25 adım sonra, oyuncudan en az 7 karo uzakta yenisi belirir. Kaçış ve bayılmadan sonra 8 adım dokunulmazlık.
+- **Düşmanlar:** arınmamış ilde 4, arınmış ilde 2; büyük illerde karo sayısının kareköküyle artar (Konya ≈ 10). Oyuncu görüş uzaklığına girince peşine düşer ve hemen bir adım atılır (meydandayken ya da dokunulmazken düşmez), bırakma uzaklığını aşınca yuvasına döner. Bekçiler: görüş 4, bırakma 7, hız 0,55 karo/tık; takipçiler (düşman verisinde `takipci: true`, her bölgede en az bir tür): görüş 6, bırakma 13, hız 0,85 karo/tık. Oyuncu tık başına bir karo yürür. Yenilen düşmanın yerine 25 adım sonra, oyuncudan en az 7 karo uzakta yenisi belirir. Kaçıştan sonra 4, bayılmadan sonra 8 adım dokunulmazlık.
+- **İl boyutu:** karo sayısı ≈ 450 × (yüzölçümü / 800 km²)^0,6 (en az 525), en-boy oranı il sınırının kutusundan (0,7–1,4); kenarlar tektir ve büyük il hiçbir zaman küçük ilden küçük haritaya sahip olmaz. Evler ≈ bölge katkısı + √nüfus / 180, meydandaki halk √nüfus / 400 (1–10).
+- **Savaş kısayol yuvaları:** dört yuva (`durum.kisayollar`, kayıt sürümü 6), içerik: Saldır, Kaç, yetenek ya da yemek. Sıra oyuncudayken 1–4 tuşlarıyla kullanılır.
 - **Hız:** oyuncu karo başına 0,17 sn; düşmanlar 0,65 sn'de bir hamle.
 - **Kayıt:** oyuncunun il içindeki yeri ve düşmanlar kaydedilmez; oyun yüklenince il meydanından başlanır.
 - **Yön tuşları:** dokunmatik cihazlarda varsayılan açık; 🎮 düğmesiyle gizlenir (tercih cihazda saklanır).

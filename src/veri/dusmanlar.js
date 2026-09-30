@@ -1,6 +1,8 @@
 // Düşmanlar. Yalnızca veri — mantık kodu yok.
 // tur: 'hayvan' | 'cin' | 'ifrit' | 'hortlak' | 'dev' | 'boss'
 // sinif: 'siradan' (illerde karşılaşılır) | 'mini_boss' | 'bolge_bossu' | 'final'
+// takipci: true → oyuncuyu uzaktan fark eder, peşine takılır ve kolay kolay bırakmaz
+//   (gezinti.js → DAVRANIS). Savaşta bunlardan kaçmak da daha zordur (savas.js → kacmaSansi).
 // carpan: stat çarpanları. Örnek: can = (20 + sv × 12) × carpan.can (plan.md Bölüm 5).
 //   Boss ve mini boss çarpanları Faz 7'de simülasyonla dengelendi (plan.md Faz 7).
 // Yenilen düşmanlar ölmez; dağılır, kaçar ya da üzerindeki sihir bozulur.
@@ -39,6 +41,7 @@ export const dusmanlar = {
     ad: 'Aç Kurt',
     tur: 'hayvan',
     sinif: 'siradan',
+    takipci: true,
     bolge: 'marmara',
     ikon: '🐺',
     carpan: { can: 0.9, guc: 0.9, savunma: 0.8, ceviklik: 1.1 },
@@ -48,6 +51,7 @@ export const dusmanlar = {
     ad: 'Çakal Sürüsü',
     tur: 'hayvan',
     sinif: 'siradan',
+    takipci: true,
     bolge: 'marmara',
     ikon: '🦊',
     carpan: { can: 1.0, guc: 0.8, savunma: 0.7, ceviklik: 1.2 },
@@ -57,6 +61,7 @@ export const dusmanlar = {
     ad: 'Yol Kesen Cin',
     tur: 'cin',
     sinif: 'siradan',
+    takipci: true,
     bolge: 'marmara',
     ikon: '👤',
     carpan: { can: 0.9, guc: 1.1, savunma: 0.8, ceviklik: 1.0 },
@@ -106,6 +111,7 @@ export const dusmanlar = {
     ad: 'Kara Cin',
     tur: 'cin',
     sinif: 'siradan',
+    takipci: true,
     bolge: 'ege',
     ikon: '👤',
     carpan: { can: 0.9, guc: 1.2, savunma: 0.8, ceviklik: 1.1 },
@@ -146,6 +152,7 @@ export const dusmanlar = {
     ad: 'Anadolu Parsı',
     tur: 'hayvan',
     sinif: 'siradan',
+    takipci: true,
     bolge: 'akdeniz',
     ikon: '🐆',
     carpan: { can: 1.0, guc: 1.2, savunma: 0.9, ceviklik: 1.3 },
@@ -186,6 +193,7 @@ export const dusmanlar = {
     ad: 'Bozkır Kurdu',
     tur: 'hayvan',
     sinif: 'siradan',
+    takipci: true,
     bolge: 'ic_anadolu',
     ikon: '🐺',
     carpan: { can: 1.0, guc: 1.1, savunma: 0.9, ceviklik: 1.2 },
@@ -204,6 +212,7 @@ export const dusmanlar = {
     ad: 'Toz İfriti',
     tur: 'ifrit',
     sinif: 'siradan',
+    takipci: true,
     bolge: 'ic_anadolu',
     ikon: '🌪️',
     carpan: { can: 1.1, guc: 1.1, savunma: 1.0, ceviklik: 1.0 },
@@ -244,6 +253,7 @@ export const dusmanlar = {
     ad: 'Sis Cini',
     tur: 'cin',
     sinif: 'siradan',
+    takipci: true,
     bolge: 'karadeniz',
     ikon: '🌫️',
     carpan: { can: 0.9, guc: 1.1, savunma: 0.9, ceviklik: 1.3 },
@@ -293,6 +303,7 @@ export const dusmanlar = {
     ad: 'Kum İfriti',
     tur: 'ifrit',
     sinif: 'siradan',
+    takipci: true,
     bolge: 'guneydogu',
     ikon: '🌪️',
     carpan: { can: 1.1, guc: 1.2, savunma: 1.0, ceviklik: 1.0 },
@@ -333,6 +344,7 @@ export const dusmanlar = {
     ad: 'Karlı Dağ Kurdu',
     tur: 'hayvan',
     sinif: 'siradan',
+    takipci: true,
     bolge: 'dogu_anadolu',
     ikon: '🐺',
     carpan: { can: 1.1, guc: 1.2, savunma: 1.0, ceviklik: 1.2 },
@@ -351,6 +363,7 @@ export const dusmanlar = {
     ad: 'Zülmet\'in Muhafızı',
     tur: 'dev',
     sinif: 'siradan',
+    takipci: true,
     bolge: 'dogu_anadolu',
     ikon: '🛡️',
     carpan: { can: 1.3, guc: 1.2, savunma: 1.3, ceviklik: 0.9 },

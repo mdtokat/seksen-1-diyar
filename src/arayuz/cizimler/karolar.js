@@ -1,7 +1,7 @@
 // İl haritasının karo çizimi (kuşbakışı). Her karo 16×16 birimdir; harita bir kez
 // SVG metnine çevrilir, sonra yalnızca kamera kayar. Renk ve biçimler bölgeye göre
 // değişir (plan.md Faz 6). Kırmızı çizgiler: ibadethane çizilmez.
-import { GENISLIK, YUKSEKLIK, KARO } from '../../oyun/gezinti.js';
+import { KARO } from '../../oyun/gezinti.js';
 import { bolgeler, final } from '../../veri/bolgeler.js';
 
 export const KARO_BOYU = 16;
@@ -181,6 +181,7 @@ function kaleCizimi(x, y) {
 // Haritanın sabit katmanı (zemin, yol, su, meydan, doğa, yapılar) — SVG içeriği.
 export function haritaKatmani(harita) {
   const p = PALET[harita.bolge];
+  const { genislik: GENISLIK, yukseklik: YUKSEKLIK } = harita;
   const parcalar = [`<rect width="${GENISLIK * T}" height="${YUKSEKLIK * T}" fill="${p.zemin}"/>`];
   const ustler = []; // ağaç, kaya, ev gibi karonun üstüne taşan çizimler (y sırasıyla)
   for (let y = 0; y < YUKSEKLIK; y++) {
@@ -241,6 +242,7 @@ export function haritaKatmani(harita) {
 // Çıkış yolları: kapı taşları ve komşu ilin adı. Kilitli bölgeye giden yol sihirli bir
 // engelle kapalı çizilir. `acikMi(plaka)` → yol açık mı.
 export function kapiKatmani(harita, adlar, acikMi) {
+  const { genislik: GENISLIK, yukseklik: YUKSEKLIK } = harita;
   return harita.kapilar.map((k) => {
     const px = k.x * T;
     const py = k.y * T;

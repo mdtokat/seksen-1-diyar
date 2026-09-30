@@ -9,6 +9,8 @@ import { statlar } from '../oyun/karakter.js';
 import { yemekGucu, HEYBE_YUVA } from '../oyun/envanter.js';
 import { kacis, sablon, ilerlemeCubugu, degerCubugu } from './bilesenler.js';
 import { sinifCizimi } from './cizimler/karakterler.js';
+import { cografyaSatirlari, ozellikRozetleri } from './cografyaBilgisi.js';
+import { haritaBoyutu } from '../oyun/gezinti.js';
 
 const M = metinler.ilEkrani;
 const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
@@ -31,12 +33,15 @@ function icerik(durum) {
     <section class="kart il-kimlik" style="--bolge-rengi:${bolge.renk}">
       <h2 class="il-ekrani-ad">${kacis(il.ad)} <span class="plaka">${String(il.plaka).padStart(2, '0')}</span></h2>
       <p class="kart-bolge"><span class="bolge-noktasi" style="background:${bolge.renk}"></span>${kacis(bolge.ad)}</p>
+      ${ozellikRozetleri(il.plaka)}
       <dl class="kart-bilgi">
         <div><dt>${M.seviye}</dt><dd>${sablon(metinler.harita.seviyeDegeri, { en_az: il.seviye[0], en_cok: il.seviye[1] })}</dd></div>
         <div><dt>${M.yemek}</dt><dd><span aria-hidden="true">${yemek.ikon}</span> ${kacis(yemek.ad)}
           <small>${kacis(yemek.aciklama)} (${yemekEtkisi})</small></dd></div>
         <div><dt>${M.arinma}</dt><dd>${ilerlemeCubugu(yuzde, { etiket: M.arinma, renk: 'var(--arinmis)' })}</dd></div>
+        ${cografyaSatirlari(il.plaka)}
       </dl>
+      <p class="kart-not">${sablon(metinler.cografya.haritaNotu, haritaBoyutu(il.plaka))}</p>
       <p class="kart-not ${yuzde >= 100 ? 'arinmis-not' : 'bilgi-not'}">${yuzde >= 100 ? M.arinmis : M.arinmaIpucu}</p>
     </section>
 

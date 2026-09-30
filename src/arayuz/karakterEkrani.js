@@ -8,6 +8,21 @@ import { esyalar, YUVALAR } from '../veri/esyalar.js';
 import { kusan, kusanKontrol, cikar, kusaniliMi } from '../oyun/ekipman.js';
 import { esyaKarti } from './esyaKarti.js';
 import { hayirPuani, itibarKademesi } from '../oyun/itibar.js';
+import { kisayolAta, bosKisayollar } from '../oyun/kisayollar.js';
+import { yuvaDugmeleri, secimListesi, koddanIcerik } from './kisayolYuvalari.js';
+
+// Savaş kısayol yuvaları: bir yuvaya dokununca altında seçim listesi açılır.
+function kisayolBolumu(durum, secilenYuva) {
+  const K = metinler.kisayol;
+  const yuvalar = durum.kisayollar ?? bosKisayollar();
+  return `
+    <section class="kart kisayol-karti">
+      <h3>⌨️ ${K.baslik}</h3>
+      <p class="kart-not bilgi-not">${K.aciklama}</p>
+      <div class="kisayol-yuvalari">${yuvaDugmeleri(yuvalar, { sinif: durum.oyuncu.sinif, heybe: durum.heybe, secili: secilenYuva })}</div>
+      ${secilenYuva === null ? '' : secimListesi(durum.oyuncu, durum.heybe, yuvalar, secilenYuva)}
+    </section>`;
+}
 
 const E = metinler.ekipman;
 
@@ -42,7 +57,7 @@ function ekipmanBolumu(durum) {
 
 const M = metinler.karakter;
 
-function icerik(durum) {
+function icerik(durum, secilenYuva = null) {
   const o = durum.oyuncu;
   const sinif = siniflar[o.sinif];
   const s = statlar(o);
@@ -106,7 +121,8 @@ function icerik(durum) {
     <section class="kart">
       <h3>${M.yetenekler}</h3>
       <ul class="yetenek-listesi">${yetenekler}</ul>
-    </section>`;
+    </section>
+    ${kisayolBolumu(durum, secilenYuva)}`;
 }
 
 // Ekranı `kap` içine kurar. Temizlik fonksiyonu döndürür.
@@ -121,8 +137,9 @@ export function karakterEkrani(kap, depo, { geri } = {}) {
     </div>`;
 
   const alan = kap.querySelector('.sayfa-icerik');
+  let secilenYuva = null;
   const ciz = (durum) => {
-    alan.innerHTML = icerik(durum);
+    alan.innerHTML = icerik(durum, secilenYuva);
   };
 
   kap.querySelector('.karakter-ekrani').addEventListener('click', (e) => {
@@ -130,6 +147,19 @@ export function karakterEkrani(kap, depo, { geri } = {}) {
     if (!buton) return;
     if (buton.dataset.eylem === 'geri') {
       geri?.();
+    } else if (buton.dataset.kisayol !== undefined) {
+      const sira = Number(buton.dataset.kisayol);
+      secilenYuva = secilenYuva === sira ? null : sira;
+      ciz(depo.al());
+      alan.querySelector(secilenYuva === null ? `[data-kisayol="${sira}"]` : '[data-kisayol-icerik]')?.focus();
+    } else if (buton.dataset.kisayolIcerik !== undefined) {
+      const sira = secilenYuva;
+      secilenYuva = null;
+      const once = depo.al();
+      const sonra = kisayolAta(once, sira, koddanIcerik(buton.dataset.kisayolIcerik));
+      if (sonra === once) ciz(once);
+      else depo.ayarla(sonra);
+      alan.querySelector(`[data-kisayol="${sira}"]`)?.focus();
     } else if (buton.dataset.kusan) {
       depo.ayarla(kusan(depo.al(), buton.dataset.kusan));
     } else if (buton.dataset.cikar) {
