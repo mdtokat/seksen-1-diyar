@@ -5,10 +5,10 @@
 // açılışta aynı görünür. Harita GENISLIK × YUKSEKLIK karodan oluşur, karolar satır
 // satır tek bir dizide tutulur (sira = y × GENISLIK + x).
 import { iller } from '../veri/iller.js';
-import { bolgeler } from '../veri/bolgeler.js';
+import { bolgeler, final } from '../veri/bolgeler.js';
 import { karsilasmaUret } from './kesif.js';
 import { dusmanOlustur } from './savas.js';
-import { bossDurumu, miniBossVarMi } from './ilerleme.js';
+import { bossDurumu, miniBossVarMi, finalDurumu } from './ilerleme.js';
 import { rastgeleUreteci, tamSayi, sans } from './rastgele.js';
 
 export const GENISLIK = 25;
@@ -438,9 +438,9 @@ export function temasEdenDusman(harita, dusmanlar, oyuncu) {
 
 // ── Boss ve mini boss inleri (plan.md Faz 7) ─────────────
 
-// Bu ilin ininde bekleyen boss ya da mini boss (sabit düşman kaydı), yoksa boş dizi.
+// Bu ilin ininde bekleyen boss, mini boss ya da Zülmet (sabit düşman kaydı), yoksa boş dizi.
 // Bölge bossu, yenilene dek (mühürlü olsa da) bossun ilinde görünür; mini boss ise
-// ilin arınması eşiği geçince ortaya çıkar.
+// ilin arınması eşiği geçince ortaya çıkar. Zülmet, Ağrı'daki kalede bekler.
 export function ozelDusmanlar(harita, durum) {
   const il = ilHaritasi.get(harita.plaka);
   const bolge = bolgeler.find((b) => b.anahtar === il.bolge);
@@ -448,6 +448,10 @@ export function ozelDusmanlar(harita, durum) {
     id, dusman: dusmanOlustur(anahtar, seviye), x: harita.in.x, y: harita.in.y,
     evX: harita.in.x, evY: harita.in.y, sabit: true, tur, yon: -1,
   });
+  // Ağrı Dağı'ndaki kalede Zülmet bekler (kale açılana dek mühürlü)
+  if (final.il === harita.plaka && ['muhurlu', 'acik'].includes(finalDurumu(durum))) {
+    return [kayit('final', final.boss, final.dusmanSeviyesi, 'final')];
+  }
   if (bolge.bossIli === harita.plaka && bossDurumu(durum, bolge.anahtar) !== 'yenildi') {
     return [kayit('boss', bolge.boss, bolge.seviye[1], 'boss')];
   }

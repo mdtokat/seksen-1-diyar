@@ -36,7 +36,7 @@ export const siniflar = {
     ikon: '🏹',
     tarif: 'Osmanlı okçusu. Çevik ve isabetlidir, uzaktan vurur.',
     baslangic: { can: 90, nefes: 40, guc: 11, savunma: 6, ceviklik: 12 },
-    seviyeArtisi: { can: 9, nefes: 4, guc: 2, savunma: 1, ceviklik: 2 },
+    seviyeArtisi: { can: 11, nefes: 4, guc: 2, savunma: 1, ceviklik: 2 },
     yetenekler: [
       { anahtar: 'nisan_oku', ad: 'Nişan Oku', seviye: 1, nefes: 5, etki: 'hasar', carpan: 1.4, aciklama: 'Dikkatle nişan alınmış tek bir ok.' },
       { anahtar: 'cifte_ok', ad: 'Çifte Ok', seviye: 5, nefes: 9, etki: 'hasar', carpan: 1.8, aciklama: 'Yayından aynı anda iki ok birden fırlatır.' },

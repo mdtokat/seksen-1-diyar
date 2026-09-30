@@ -21,16 +21,16 @@ function kazanilmisSavas(durum, dusman = dusmanOlustur('cakal_surusu', 4)) {
 }
 
 describe('arınma', () => {
-  it('her zaferde %8–12 artar', () => {
+  it('her zaferde %12–18 artar', () => {
     const rng = rastgeleUreteci(11);
     const gorulen = new Set();
     for (let i = 0; i < 300; i++) {
       const r = arinmaArtir(yeniOyunDurumu(), KOCAELI, rng);
-      expect(r.artis).toBeGreaterThanOrEqual(8);
-      expect(r.artis).toBeLessThanOrEqual(12);
+      expect(r.artis).toBeGreaterThanOrEqual(12);
+      expect(r.artis).toBeLessThanOrEqual(18);
       gorulen.add(r.artis);
     }
-    expect([...gorulen].sort((a, b) => a - b)).toEqual([8, 9, 10, 11, 12]);
+    expect([...gorulen].sort((a, b) => a - b)).toEqual([12, 13, 14, 15, 16, 17, 18]);
   });
 
   it('%100\'de durur, il arınmış sayılır ve haritada yeşile döner', () => {
@@ -85,8 +85,8 @@ describe('keşif savaşı sonucu', () => {
     const { durum, ozet } = kesifSonucunuUygula(d, s, KOCAELI, sabit(0)); // her şans tutar
     expect(ozet.sonuc).toBe('zafer');
     expect(ozet.xp).toBe(45);
-    expect(ozet.arinmaArtisi).toBe(8);
-    expect(durum.arinma[KOCAELI]).toBe(8);
+    expect(ozet.arinmaArtisi).toBe(12);
+    expect(durum.arinma[KOCAELI]).toBe(12);
     expect(ozet.akce).toBe(Math.round(11 * 0.8));
     expect(durum.akce).toBe(ozet.akce);
     expect(ozet.yemek).toBe('pismaniye');

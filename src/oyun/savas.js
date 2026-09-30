@@ -116,6 +116,7 @@ export function savasBaslat(oyuncu, dusman, heybe = [], { gucCarpani = 1 } = {})
     etkiler: [], // { hedef: 'oyuncu', etki, deger, kalan }
     tur: 1,
     evre: false, // bölge bossu güçlenme evresine girdi mi
+    evreNo: 1, // Zülmet'in üç evreli savaşında bulunulan evre (1–3)
     gunluk: [{ tip: 'baslangic' }],
     sonuc: null, // null | 'zafer' | 'yenilgi' | 'kacis'
     xpOdulu: xpOdulu(dusman.anahtar, dusman.seviye),
@@ -224,22 +225,41 @@ function yemekYe(s, anahtar) {
   return { tip: 'yemek', kim: 'oyuncu', yemek: anahtar, yenilenen: tur, miktar };
 }
 
+// Zülmet'in bulunduğu evrenin verisi (1. evrede null).
+function finalEvresi(s) {
+  return s.evreNo > 1 ? dusmanlar[s.dusman.anahtar].evreler[s.evreNo - 2] : null;
+}
+
 // Düşmanın özel hamleleri: bosslar ve mini bosslar kendi listelerini, diğerleri
-// türlerinin hamlesini kullanır.
-export function ozelHamleler(dusman) {
-  return dusmanlar[dusman.anahtar]?.ozelHamleler ?? [OZEL_HAMLELER[dusman.tur]].filter(Boolean);
+// türlerinin hamlesini kullanır. Zülmet her evrede yeni hamleler kullanır.
+export function ozelHamleler(dusman, evreNo = 1) {
+  const veri = dusmanlar[dusman.anahtar];
+  if (evreNo > 1 && veri?.evreler) return veri.evreler[evreNo - 2].ozelHamleler;
+  return veri?.ozelHamleler ?? [OZEL_HAMLELER[dusman.tur]].filter(Boolean);
 }
 
 function ozelHamleSansi(s) {
+  const evre = finalEvresi(s);
+  if (evre) return evre.ozelHamleSansi;
   if (s.evre) return EVRE_OZEL_HAMLE_SANSI;
   return s.dusman.sinif === 'siradan' ? OZEL_HAMLE_SANSI : BOSS_OZEL_HAMLE_SANSI;
 }
 
-// Bölge bossu (ve Zülmet) canı yarının altına düşünce bir kez güçlenir.
+// Bölge bossu canı yarının altına düşünce bir kez güçlenir. Zülmet ise üç evreli
+// savaşır: canı her evre eşiğinin altına düşünce sıradaki evreye geçer.
 function evreKontrol(s) {
   const d = s.dusman;
-  const bossMu = d.sinif === 'bolge_bossu' || d.sinif === 'final';
-  if (!bossMu || s.evre || d.can <= 0 || d.can * 2 >= d.canEnCok) return null;
+  if (d.can <= 0) return null;
+  if (d.sinif === 'final') {
+    const evreler = dusmanlar[d.anahtar].evreler ?? [];
+    const hedef = 1 + evreler.filter((e) => d.can < d.canEnCok * e.can).length;
+    if (hedef <= s.evreNo) return null;
+    for (let n = s.evreNo; n < hedef; n++) d.guc = Math.round(d.guc * evreler[n - 1].guc);
+    s.evreNo = hedef;
+    s.evre = true;
+    return { tip: 'evre', kim: 'dusman', no: hedef };
+  }
+  if (d.sinif !== 'bolge_bossu' || s.evre || d.can * 2 >= d.canEnCok) return null;
   s.evre = true;
   d.guc = Math.round(d.guc * EVRE_GUC_CARPANI);
   return { tip: 'evre', kim: 'dusman' };
@@ -249,7 +269,7 @@ function evreKontrol(s) {
 function dusmanHamlesi(s, rng) {
   const o = s.oyuncu;
   const d = s.dusman;
-  const hamleler = ozelHamleler(d);
+  const hamleler = ozelHamleler(d, s.evreNo);
   const ozelMi = hamleler.length > 0 && sans(rng, ozelHamleSansi(s));
   const ozel = ozelMi ? sec(rng, hamleler) : null;
 

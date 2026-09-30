@@ -1,8 +1,9 @@
 // Görev günlüğü (plan.md Faz 9): itibar ve unvan, üstlenilen görevler, açık
-// bölgelerde bekleyen görevler ve bölge bölge tamamlananlar.
+// bölgelerde bekleyen görevler, bölge bölge tamamlananlar ve başarımlar (Faz 10).
 import { iller } from '../veri/iller.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { gorevler } from '../veri/gorevler.js';
+import { basarimlar } from '../veri/basarimlar.js';
 import { metinler } from '../veri/metinler.js';
 import { gorevDurumu } from '../oyun/gorevler.js';
 import { hayirPuani, itibarKademesi, sonrakiKademe } from '../oyun/itibar.js';
@@ -39,6 +40,25 @@ function itibarBolumu(durum) {
       <p class="kart-not bilgi-not">${sonraki ? sablon(I.sonraki, { unvan: kacis(sonraki.ad), kalan: sonraki.esik - puan }) : I.enYuksek}</p>
       ${ayricaliklar(kademe)}
       <p class="kart-not">${I.kazanma}</p>
+    </section>`;
+}
+
+function basarimBolumu(durum) {
+  const B = metinler.basarim;
+  const kazanilan = durum.basarimlar ?? [];
+  const liste = Object.entries(basarimlar).map(([a, b]) => {
+    const var_ = kazanilan.includes(a);
+    return `
+      <li class="basarim${var_ ? ' kazanildi' : ''}">
+        <span class="basarim-ikon" aria-hidden="true">${var_ ? b.ikon : '🔒'}</span>
+        <div><strong>${kacis(b.ad)}</strong>${var_ ? '' : ` <span class="gorev-rozeti">${B.kilitli}</span>`}<small>${kacis(b.aciklama)}</small></div>
+      </li>`;
+  }).join('');
+  return `
+    <section class="kart">
+      <h3>🏅 ${B.baslik} <span class="rozet">${sablon(B.sayac, { kazanilan: kazanilan.length, toplam: Object.keys(basarimlar).length })}</span></h3>
+      <ul class="basarim-listesi">${liste}</ul>
+      ${durum.zulmetYenildi ? `<button class="buton buton-genis" data-eylem="bitis">🏰 ${metinler.bitis.yenidenIzle}</button>` : ''}
     </section>`;
 }
 
@@ -83,11 +103,13 @@ function icerik(durum) {
     <section class="kart">
       <h3>✓ ${M.tamam}</h3>
       <ul class="bolge-sayaclari">${tamamSayilari}</ul>
-    </section>`;
+    </section>
+    ${basarimBolumu(durum)}`;
 }
 
 // Ekranı `kap` içine kurar. Temizlik fonksiyonu döndürür.
-export function gunlukEkrani(kap, depo, { geri } = {}) {
+// secenekler: { geri, bitisGoster }
+export function gunlukEkrani(kap, depo, { geri, bitisGoster } = {}) {
   kap.innerHTML = `
     <div class="sayfa-ekrani gunluk-ekrani">
       <header class="ust-cubuk">
@@ -102,6 +124,7 @@ export function gunlukEkrani(kap, depo, { geri } = {}) {
   };
   kap.querySelector('.gunluk-ekrani').addEventListener('click', (e) => {
     if (e.target.closest('[data-eylem="geri"]')) geri?.();
+    if (e.target.closest('[data-eylem="bitis"]')) bitisGoster?.();
   });
   const cik = depo.abone(ciz);
   ciz(depo.al());

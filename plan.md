@@ -84,6 +84,7 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 │  │  ├─ gezinti.js          # il içi karo harita, yürüme, haritadaki düşmanlar
 │  │  ├─ gorevler.js         # görev alma, ilerleme, teslim ve ödül
 │  │  ├─ itibar.js           # Hayır puanı, unvan, arasta indirimi, köylülerin hediyesi
+│  │  ├─ basarimlar.js       # başarımlar ve yemek defteri
 │  │  ├─ ilerleme.js         # bölge kilitleri, boss koşulları
 │  │  └─ kayit.js            # kaydet / yükle / şema göçü
 │  ├─ veri/                  # SADECE VERİ — mantık yok
@@ -95,6 +96,7 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 │  │  ├─ esyalar.js
 │  │  ├─ gorevler.js
 │  │  ├─ itibar.js
+│  │  ├─ basarimlar.js
 │  │  └─ metinler.js         # arayüz metinleri tek yerde
 │  ├─ arayuz/
 │  │  ├─ harita.js
@@ -104,7 +106,9 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 │  │  ├─ karakterEkrani.js
 │  │  ├─ envanterEkrani.js
 │  │  ├─ gorevEkrani.js      # muhtar ve Ahi Baba ile konuşma
-│  │  ├─ gunlukEkrani.js     # görev günlüğü ve itibar
+│  │  ├─ gunlukEkrani.js     # görev günlüğü, itibar ve başarımlar
+│  │  ├─ bitisEkrani.js      # bitiş sahnesi ve 81 ilin özeti
+│  │  ├─ ses.js              # Web Audio ile sentezlenen ses efektleri
 │  │  └─ bilesenler.js       # buton, çubuk, modal vb.
 │  └─ stil/
 │     └─ ana.css
@@ -213,7 +217,7 @@ Arınma Işığı, cin ve ifrit türü düşmanlara ekstra hasar verir.
 ### Başlangıç formülleri
 Bu formüller ilk sürüm içindir. Faz 3'te dengelendi; hesaplar `src/oyun/karakter.js` ve `src/oyun/savas.js` içindedir.
 
-- **Gereken XP:** `round(40 × sv^1.6)` — bir seviyeden sonrakine geçmek için. Seviye atlayınca XP sıfırlanır, artan kısım aktarılır.
+- **Gereken XP:** `round(30 × sv^1.35)` — bir seviyeden sonrakine geçmek için (Faz 10 dengelemesi; ilk sürümde `round(40 × sv^1.6)`). Seviye atlayınca XP sıfırlanır, artan kısım aktarılır.
 - **Seviye atlama:** sınıfın otomatik stat artışı + 3 stat puanı gelir, can ve nefes tamamen dolar.
 - **Stat puanı değeri:** 1 puan = +5 can, +3 nefes, +1 güç, +1 savunma ya da +1 çeviklik.
 - **Hasar:** `max(1, round(güç × yetenekÇarpanı × rnd(0.9–1.1) − savunma × 0.5))`
@@ -399,7 +403,7 @@ Bir bölge bossu yenildiğinde, o bölgenin yemeklerinden oluşan bir sofra kuru
 | 7 | Bosslar ve bölge ilerlemesi | ✅ |
 | 8 | Arasta, Ahi esnafı, ekipman ve kervansaray | ✅ |
 | 9 | Görevler ve itibar | ✅ |
-| 10 | Final, ses, animasyon ve cila | ⬜ |
+| 10 | Final, ses, animasyon ve cila | ✅ |
 
 Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 
@@ -490,7 +494,7 @@ Durum işaretleri: ⬜ başlanmadı · 🟨 devam ediyor · ✅ tamamlandı
 **Hedef:** Oyunun temel döngüsünün baştan sona oynanabilmesi.
 
 - [x] `ilEkrani.js`: bulunulan ilin ekranı. İl adı, meşhur yemek, arınma yüzdesi ve "Keşfe Çık" butonu. (Faz 6'da "Keşfe Çık" yerini ilde gezintiye bıraktı; ekran il bilgisi olarak kaldı.)
-- [x] `kesif.js`: keşfe çıkınca ilin düşman havuzundan ve seviye aralığından bir düşman üret. Kazanınca arınma artsın (%8–12 arası). %100 olunca il arınmış sayılsın ve haritada yeşile dönsün.
+- [x] `kesif.js`: keşfe çıkınca ilin düşman havuzundan ve seviye aralığından bir düşman üret. Kazanınca arınma artsın (%8–12 arası; Faz 10 dengelemesinde %12–18 oldu). %100 olunca il arınmış sayılsın ve haritada yeşile dönsün.
 - [x] Ganimet: XP, akçe ve belirli bir şansla o ilin yöresel yemeği düşsün.
 - [x] `envanter.js`: heybe (20 yuva, aynı yemekler üst üste biner, en fazla 10'a kadar). Yemek kullanımı savaş içinde ve dışında çalışsın.
 - [x] `envanterEkrani.js`: yemekler ikon, ad, açıklama ve etkiyle listelensin.
@@ -648,14 +652,27 @@ Kullanıcı kararları: kuşbakışı görünüm; düşmanlar haritada görünü
 ### Faz 10 — Final, Ses, Animasyon ve Cila
 **Hedef:** Oyunu tamamlamak ve parlatmak.
 
-- [ ] **Final:** Van Gölü Canavarı yenilip seviye 48'e ulaşınca Ağrı'daki kale açılsın. Zülmet ile üç evreli final savaşı yapılsın. Ardından hikâyeyi kapatan bir bitiş sahnesi ve 81 ilin özeti gelsin.
-- [ ] Oyun sonrası: oyuncu kalan illeri arındırmaya devam edebilsin.
-- [ ] **Başarımlar:** örneğin "İlk İl Arındı", "Bir Bölge Tamam", "81 Diyar", "Sofra Ustası" (tüm yemekleri toplamak), "Yiğit" (hiç bayılmadan bir bossu yenmek).
-- [ ] **Ses:** Web Audio API ile sentezlenmiş sade efektler (vuruş, kritik, seviye atlama, yemek). Ses açma/kapama ayarı olsun. Müzik eklenecekse telifsiz ve geleneksel çalgı tınılı olsun.
-- [ ] **Animasyonlar:** seviye atlama parıltısı, harita geçişleri (hasar sayıları ve sarsılma Faz 5'te yapıldı).
-- [ ] Erişilebilirlik: butonlar yeterince büyük, renkler yeterince kontrastlı, sadece renkle anlam taşınmıyor.
-- [ ] Genel dengeleme turu. Bir bölgenin ortalama 30–60 dakikada bitmesi hedeflenir.
-- [ ] README'yi güncelle: ekran görüntüleri, oyun rehberi ve yayın linki.
+- [x] **Final:** Van Gölü Canavarı yenilip seviye 48'e ulaşınca Ağrı'daki kale açılsın. Zülmet ile üç evreli final savaşı yapılsın. Ardından hikâyeyi kapatan bir bitiş sahnesi ve 81 ilin özeti gelsin.
+- [x] Oyun sonrası: oyuncu kalan illeri arındırmaya devam edebilsin.
+- [x] **Başarımlar:** örneğin "İlk İl Arındı", "Bir Bölge Tamam", "81 Diyar", "Sofra Ustası" (tüm yemekleri toplamak), "Yiğit" (hiç bayılmadan bir bossu yenmek).
+- [x] **Ses:** Web Audio API ile sentezlenmiş sade efektler (vuruş, kritik, seviye atlama, yemek). Ses açma/kapama ayarı olsun. Müzik eklenecekse telifsiz ve geleneksel çalgı tınılı olsun.
+- [x] **Animasyonlar:** seviye atlama parıltısı, harita geçişleri (hasar sayıları ve sarsılma Faz 5'te yapıldı).
+- [x] Erişilebilirlik: butonlar yeterince büyük, renkler yeterince kontrastlı, sadece renkle anlam taşınmıyor.
+- [x] Genel dengeleme turu. Bir bölgenin ortalama 30–60 dakikada bitmesi hedeflenir.
+- [x] README'yi güncelle: ekran görüntüleri, oyun rehberi ve yayın linki.
+
+**Faz 10 kararları:**
+- **Kale:** Ağrı haritasının ininde (meydandan en uzak açık karo) Zülmet'in kalesi çizilir; Zülmet (Sv 50) kapının önünde bekler. Doğu Anadolu açılınca görünür, Van Gölü Canavarı yenilip oyuncu Sv 48 olana dek mühürlüdür (yaklaşınca eksik koşullar söylenir; mühür çözülünce bildirim gelir).
+- **Üç evre:** Zülmet'in canı %66'nın altına düşünce "gölge evresine", %33'ün altına düşünce "son direnişe" geçer. Her geçişte gücü ×1,15 olur, yeni özel hamleler kullanır (özel hamle şansı %30 → %35 → %45); sahne kararır. Tek vuruşta iki eşik geçilirse doğrudan 3. evreye geçilir. Kaçılamaz.
+- **Final dengesi (simülasyonla):** çarpanlar can 5,0, güç 1,1, savunma 1,25. Sv 48, stat puanları dağıtılmış, Doğu Anadolu nadir ekipmanı ve bölge yemekleriyle: Akıncı %94, Kemankeş %69, Alperen %100 zafer; 10–18 tur. Efsanevi silahla Kemankeş %75.
+- **Zafer ve sonrası:** Zülmet yenilince +25 Hayır, can ve nefes dolar, bitiş sahnesi (hikâye, yolculuğun özeti, bölge bölge 81 ilin arınması) gelir. Ardından oyun sürer; bitiş sahnesi görev günlüğünden yeniden izlenebilir.
+- **Başarımlar (10):** İlk Zafer, İlk İl Arındı, Bir Bölge Tamam, Yiğit, Efsanenin Sahibi, Halkın Yiğidi, Hizmet Ehli (28 görev), Sofra Ustası, Zulmete Son, 81 Diyar. Her durum değişikliğinde denetlenir, kazanılınca bildirim ve ses gelir; görev günlüğünde listelenir. **Yiğit:** bayılmalar bölge bölge sayılır; bölge bossu yenildiği anda o bölgede hiç bayılınmamışsa kazanılır. **Sofra Ustası:** heybeye en az bir kez giren yemekler "yemek defterine" yazılır.
+- **Ses:** dosya yok, Web Audio ile sentez: vuruş, düşman vuruşu, kritik, sıyrılma, yetenek, yemek, seviye atlama, zafer, yenilgi, evre, başarım. Ezgili sesler Hicaz makamının ilk seslerinden, mızrap vuruşunu andıran tellerle. Gezintideki 🔊 düğmesiyle açılıp kapanır (tercih cihazda saklanır). Müzik eklenmedi.
+- **Animasyonlar:** ekranlar arası yumuşak geçiş; yeni ile girince bölge ve il adı afişi; seviye atlayınca ekranı saran altın kıvılcımlar. Hareket azaltma açıkken kıvılcım ve geçişler kapanır, afiş yalnızca belirip kaybolur.
+- **Erişilebilirlik:** küçük metin ve rozet renkleri ölçüldü; turkuaz ve mercan metinler için koyu tonlar kullanıldı (beyaz ya da krem üstünde ≥ 4,5:1). Etkileşimli öğeler en az 44 px. Görev durumu, başarım, arınma ve mühür renge ek olarak yazı ya da simgeyle de gösterilir.
+- **Genel dengeleme (oyunu baştan sona oynayan simülasyonla):** XP eğrisi `round(30 × sv^1.35)` (önce `round(40 × sv^1.6)`; Sv 20'de bir seviye ~24 savaş sürüyordu, şimdi ~8), zafer başına arınma %12–18 (önce %8–12), Kemankeş'in seviye başı can artışı 11 (önce 9). Tahmini süre (savaş başına ~15 sn yürüme, tur başına ~3 sn; görevler, alışveriş hariç): Marmara ~39, Ege ~37, Akdeniz ~46, İç Anadolu ~56, Karadeniz ~65, Güneydoğu ~47, Doğu Anadolu ~52 dakika (ortalama ~49). Bosslar genellikle ilk denemede yenilir.
+- **Kayıt:** şema sürüm 5 (`zulmetYenildi`, `basarimlar`, `toplananYemekler`, `istatistik`); eski kayıtlar zincirleme taşınır, yemek defteri heybeyle başlar.
+- **Kırmızı çizgiler:** tüm veri ve metinler (görevler, başarımlar, bitiş hikâyesi dahil) yasaklı kelime testinden geçiyor ve elle gözden geçirildi.
 
 **Kabul kriterleri:** Oyun baştan sona bitirilebiliyor. Kırmızı çizgiler (Bölüm 2) son bir kez tüm metin ve verilerde kontrol edildi.
 

@@ -117,6 +117,59 @@ export const metinler = {
     bolgeSayaci: '{tamam}/{toplam}',
   },
 
+  // Final: Ağrı Dağı'ndaki kale ve Zülmet (plan.md Faz 10).
+  final: {
+    rozet: 'Zülmet',
+    muhurlu: 'Kalenin kapısı Zülmet\'in sihriyle mühürlü. Mührü çözmek için Van Gölü Canavarı yenilmeli ({boss}) ve seviyen en az {gerekenSeviye} olmalı (şimdi {seviye}).',
+    bossDurumu: { evet: 'yenildi ✓', hayir: 'henüz yenilmedi' },
+    acildi: 'Ağrı Dağı\'ndaki kalenin mührü çözüldü! Zülmet seni kalesinde bekliyor.',
+    kartBasligi: 'Zülmet\'in kalesi',
+    durum: { muhurlu: 'Mühürlü', acik: 'Mührü çözüldü', yenildi: 'Zülmet yenildi ✓' },
+    // Üç evreli savaşın evre geçişleri (günlük satırları)
+    evreler: {
+      2: '{dusman} kara pelerinini açtı; gölgeler etrafında dönmeye başladı!',
+      3: '{dusman} üzerindeki sihir çatırdıyor; son gücüyle saldırıyor!',
+    },
+    evreSahne: { 2: 'Gölge evresi', 3: 'Son direniş' },
+    yenildi: 'Zülmet\'in sihri bozuldu!',
+  },
+
+  // Oyunun bitiş sahnesi ve 81 ilin özeti.
+  bitis: {
+    baslik: 'Zulmet Dağıldı',
+    hikaye: [
+      'Zülmet\'in asası yere düştüğünde Ağrı Dağı\'nın zirvesindeki kara bulutlar dağıldı. Yasak sihir çözüldü; cinler ve ifritler geldikleri karanlığa çekildi, azmış mahlûklar ormanlara ve dağlara döndü.',
+      'Kalenin kapısından çıkan {ad}, ovaya indiğinde köylüleri yolların kenarına dizilmiş buldu. Kimi ekmek uzattı, kimi su; çocuklar atının peşinden koştu. Zülmet yenilmişti ama asıl zafer, mazlumun yüzüne dönen tebessümdü.',
+      'Kervanlar yeniden yola koyuldu, arastalarda terazi doğru tartmaya, çeşmeler serin serin akmaya başladı. Ahi Babalar çıraklarına {ad}\'ın hikâyesini anlattı: yiğitlik, adaletle; güç, merhametle bir olunca kötülük yenilir.',
+    ],
+    ozet: 'Yolculuğun özeti',
+    seviye: 'Seviye',
+    zafer: 'Zafer',
+    bayilma: 'Bayılma',
+    arinan: 'Arınan il',
+    gorev: 'Görev',
+    yemek: 'Toplanan yemek',
+    basarim: 'Başarım',
+    hayir: 'Hayır puanı',
+    iller: '81 il',
+    ilSatiri: '{il}: %{yuzde}',
+    devamNotu: 'Zülmet yenildi ama sihrinin kalıntıları bazı illerde hâlâ dolaşıyor. Dilediğin kadar yolculuğa devam edip kalan illeri arındırabilirsin.',
+    devam: 'Yolculuğa devam et',
+    yenidenIzle: 'Bitiş sahnesini yeniden izle',
+  },
+
+  basarim: {
+    baslik: 'Başarımlar',
+    kazanildi: '🏅 Başarım: {basarim}',
+    sayac: '{kazanilan}/{toplam}',
+    kilitli: 'Kilitli',
+  },
+
+  ses: {
+    ac: 'Sesi aç',
+    kapat: 'Sesi kapat',
+  },
+
   nadirlik: { siradan: 'Sıradan', nadir: 'Nadir', efsanevi: 'Efsanevi' },
   yuvaAdlari: { silah: 'Silah', zirh: 'Zırh', aksesuar: 'Kuşak' },
 
@@ -239,7 +292,8 @@ export const metinler = {
     saga: 'Sağa yürü',
     arinma: 'Arınma %{yuzde}',
     cesme: 'Çeşmenin serin suyuyla yüzünü yıkadın.',
-    gunluk: 'Görev günlüğü',
+    gunluk: 'Görev günlüğü ve başarımlar',
+    girisAfisi: '{il}',
     fark: '{dusman} seni fark etti!',
     alanEtiketi: '{il} il haritası',
   },
@@ -253,7 +307,7 @@ export const metinler = {
     seviye: 'Düşman seviyesi',
     yemek: 'Meşhur yemeği',
     arinma: 'Arınma',
-    arinmaIpucu: 'Her zafer ili %8–12 arındırır. %100 olunca il arınmış sayılır.',
+    arinmaIpucu: 'Her zafer ili %12–18 arındırır. %100 olunca il arınmış sayılır.',
     arinmis: '✓ Bu il Zülmet\'in sihrinden arındı. Keşfe çıkıp tecrübe kazanmaya devam edebilirsin.',
     canAz: 'Canın azaldı. Keşfe çıkmadan önce heybenden bir şeyler yiyebilirsin.',
     akce: '{akce} akçe',

@@ -9,6 +9,7 @@ export const HAYIR = {
   ilArindi: 5,
   miniBoss: 5,
   bolgeBossu: 10,
+  final: 25,
 };
 
 // Unvan kademeleri, eşiğe göre artan sırada.

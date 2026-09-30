@@ -2,7 +2,7 @@
 // SVG metnine çevrilir, sonra yalnızca kamera kayar. Renk ve biçimler bölgeye göre
 // değişir (plan.md Faz 6). Kırmızı çizgiler: ibadethane çizilmez.
 import { GENISLIK, YUKSEKLIK, KARO } from '../../oyun/gezinti.js';
-import { bolgeler } from '../../veri/bolgeler.js';
+import { bolgeler, final } from '../../veri/bolgeler.js';
 
 export const KARO_BOYU = 16;
 const T = KARO_BOYU;
@@ -159,6 +159,25 @@ function inCizimi(p, x, y) {
     <ellipse cx="${cx}" cy="${cy + 2}" rx="17" ry="11" fill="none" stroke="#6a4c93" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>${taslar}`;
 }
 
+// Zülmet'in Ağrı Dağı'ndaki kalesi (Faz 10): karanlık taş surlar, iki kule, mor
+// sancaklar ve kemerli kapı. Zülmet kapının önünde bekler.
+function kaleCizimi(x, y) {
+  const cx = x + T / 2;
+  const tas = '#5d5870';
+  const koyu = '#3a3550';
+  const burc = (bx) => `<rect x="${bx}" y="${y - 30}" width="12" height="40" fill="${tas}" ${CIZGI}/>
+    <path d="M${bx} ${y - 30} v-4 h3 v4 h3 v-4 h3 v4 h3 v-4" fill="none" stroke="#1b2a5c" stroke-width=".8"/>
+    <rect x="${bx + 4}" y="${y - 20}" width="4" height="6" rx="2" fill="#1b1330"/>
+    <path d="M${bx + 6} ${y - 34} v-12 l9 3 l-9 3" fill="#6a4c93" stroke="#1b2a5c" stroke-width=".6"/>`;
+  return `<ellipse cx="${cx}" cy="${y + T + 2}" rx="34" ry="7" fill="#1b2a5c" opacity=".18"/>
+    <rect x="${cx - 26}" y="${y - 18}" width="52" height="30" fill="${tas}" ${CIZGI}/>
+    <path d="M${cx - 26} ${y - 18} v-4 h4 v4 h4 v-4 h4 v4 h4 v-4 h4 v4 h4 v-4 h4 v4 h4 v-4 h4 v4 h4 v-4 h4 v4 h4 v-4 h4 v4" fill="none" stroke="#1b2a5c" stroke-width=".8"/>
+    <path d="M${cx - 26} ${y - 6} h52 M${cx - 26} ${y + 4} h52" stroke="${koyu}" stroke-width=".6" opacity=".7"/>
+    ${burc(cx - 36)}${burc(cx + 24)}
+    <path d="M${cx - 8} ${y + 12} v-12 q8 -10 16 0 v12 z" fill="#1b1330" ${CIZGI}/>
+    <path d="M${cx - 6} ${y + 1} q6 -8 12 0" fill="none" stroke="#b36ae0" stroke-width="1" opacity=".8"/>`;
+}
+
 // Haritanın sabit katmanı (zemin, yol, su, meydan, doğa, yapılar) — SVG içeriği.
 export function haritaKatmani(harita) {
   const p = PALET[harita.bolge];
@@ -211,7 +230,9 @@ export function haritaKatmani(harita) {
   const m = harita.meydan;
   parcalar.push(`<rect x="${m.x1 * T}" y="${m.y1 * T}" width="${(m.x2 - m.x1 + 1) * T}" height="${(m.y2 - m.y1 + 1) * T}" fill="none" stroke="#2aa7a7" stroke-width="1.5" stroke-dasharray="4 2"/>`);
   const bolge = bolgeler.find((b) => b.anahtar === harita.bolge);
-  if (harita.in && (bolge.bossIli === harita.plaka || bolge.miniBossIlleri.includes(harita.plaka))) {
+  if (harita.in && harita.plaka === final.il) {
+    ustler.push(kaleCizimi(harita.in.x * T, (harita.in.y - 1) * T));
+  } else if (harita.in && (bolge.bossIli === harita.plaka || bolge.miniBossIlleri.includes(harita.plaka))) {
     parcalar.push(inCizimi(p, harita.in.x * T, harita.in.y * T));
   }
   return parcalar.join('') + ustler.join('');

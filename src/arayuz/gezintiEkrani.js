@@ -8,7 +8,8 @@
 import { iller } from '../veri/iller.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { metinler } from '../veri/metinler.js';
-import { arinmaYuzdesi, seyahatKontrol, bolgeAcikMi, bossDurumu, bossKosullari } from '../oyun/ilerleme.js';
+import { arinmaYuzdesi, seyahatKontrol, bolgeAcikMi, bossDurumu, bossKosullari, finalDurumu, finalKosullari } from '../oyun/ilerleme.js';
+import { sesAcikMi, sesAyarla } from './ses.js';
 import {
   GENISLIK,
   YUKSEKLIK,
@@ -71,7 +72,8 @@ function yonTuslariniKaydet(acik) {
 
 // secenekler: { g, rng, savasBaslat(dusmanKaydi), ileGec(plaka), ilBilgisi, haritaGoster,
 //               heybeGoster, karakterGoster, baslikaDon, ipucuGoster,
-//               arastaGoster, ahiGoster, kervansarayGoster, gorevVerenGoster(veren), gunlukGoster }
+//               arastaGoster, ahiGoster, kervansarayGoster, gorevVerenGoster(veren), gunlukGoster,
+//               ilGirisi (başka ilden yeni gelindiyse true: il adı afişi gösterilir) }
 export function gezintiEkrani(kap, depo, secenekler) {
   const { g, rng } = secenekler;
   const harita = g.harita;
@@ -107,6 +109,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
           <button class="simge-buton" data-eylem="gunluk" aria-label="${M.gunluk}" title="${M.gunluk}">📜</button>
           <button class="simge-buton" data-eylem="bilgi" aria-label="${M.ilBilgisi}" title="${M.ilBilgisi}">ℹ️</button>
           <button class="simge-buton" data-eylem="yon-tuslari" aria-label="${M.yonTuslari}" title="${M.yonTuslari}" aria-pressed="false">🎮</button>
+          <button class="simge-buton" data-eylem="ses"></button>
         </div>
         <div class="yon-tuslari" hidden>
           <button class="yon-tusu yon-yukari" data-yon="yukari" aria-label="${M.yukari}">▲</button>
@@ -115,6 +118,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
           <button class="yon-tusu yon-asagi" data-yon="asagi" aria-label="${M.asagi}">▼</button>
         </div>
         <p class="gezinti-ipucu" hidden>${M.ipucu}</p>
+        ${secenekler.ilGirisi ? `<p class="il-afisi" aria-hidden="true"><span>${kacis(bolge.ad)}</span><strong>${kacis(il.ad)}</strong></p>` : ''}
       </div>
     </div>`;
 
@@ -189,11 +193,11 @@ export function gezintiEkrani(kap, depo, secenekler) {
     el.dataset.id = d.id;
     const B = metinler.boss;
     const rozet = d.sabit
-      ? `${d.tur === 'boss' ? B.rozet : B.miniRozet} · ${sablon(metinler.savas.seviye, { seviye: d.dusman.seviye })}`
+      ? `${{ boss: B.rozet, mini: B.miniRozet, final: metinler.final.rozet }[d.tur]} · ${sablon(metinler.savas.seviye, { seviye: d.dusman.seviye })}`
       : sablon(metinler.savas.seviye, { seviye: d.dusman.seviye });
     el.innerHTML = `<div class="figur-ic">${dusmanCizimi(d.dusman.anahtar)}</div>
       <span class="figur-rozeti">${rozet}</span>
-      ${d.tur === 'boss' ? `<span class="muhur" aria-hidden="true"></span>` : ''}`;
+      ${d.tur === 'boss' || d.tur === 'final' ? `<span class="muhur" aria-hidden="true"></span>` : ''}`;
     el.title = d.dusman.ad;
     figurKatmani.appendChild(el);
     dusmanFigurleri.set(d.id, el);
@@ -211,7 +215,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     for (const d of g.dusmanlar) {
       const el = dusmanFigurleri.get(d.id) ?? dusmanFiguruOlustur(d);
       el.classList.toggle('saga', d.yon === 1);
-      if (d.tur === 'boss') el.classList.toggle('muhurlu', bossMuhurluMu());
+      if (d.tur === 'boss' || d.tur === 'final') el.classList.toggle('muhurlu', muhurluMu(d));
       figurKonumla(el, d.x, d.y);
     }
   }
@@ -293,8 +297,10 @@ export function gezintiEkrani(kap, depo, secenekler) {
     setTimeout(() => secenekler.ileGec?.(kapi.plaka), 260);
   }
 
-  function bossMuhurluMu() {
-    return bossDurumu(depo.al(), il.bolge) === 'muhurlu';
+  // Bölge bossu ya da Zülmet'in kalesi mühürlü mü?
+  function muhurluMu(d) {
+    if (d.tur === 'final') return finalDurumu(depo.al()) === 'muhurlu';
+    return d.tur === 'boss' && bossDurumu(depo.al(), il.bolge) === 'muhurlu';
   }
 
   // Mühürlü bossa yaklaşınca koşullar bir kez söylenir; uzaklaşınca yeniden söylenebilir.
@@ -303,16 +309,22 @@ export function gezintiEkrani(kap, depo, secenekler) {
     if (muhurUyarildi) return;
     muhurUyarildi = true;
     kuyruk = [];
-    const k = bossKosullari(depo.al(), il.bolge);
-    bildirimGoster(ekran, sablon(metinler.boss.muhurlu, { boss: d.dusman.ad, bolge: bolge.ad, ...k }), { tur: 'uyari', sure: 5000 });
+    let metin;
+    if (d.tur === 'final') {
+      const k = finalKosullari(depo.al());
+      metin = sablon(metinler.final.muhurlu, { ...k, boss: metinler.final.bossDurumu[k.onkosulBossu ? 'evet' : 'hayir'] });
+    } else {
+      metin = sablon(metinler.boss.muhurlu, { boss: d.dusman.ad, bolge: bolge.ad, ...bossKosullari(depo.al(), il.bolge) });
+    }
+    bildirimGoster(ekran, metin, { tur: 'uyari', sure: 5000 });
   }
 
   function temasKontrol() {
     if (mesgul || g.dokunulmaz > 0) return;
     const d = temasEdenDusman(harita, g.dusmanlar, g.oyuncu);
-    if (!d || d.tur !== 'boss') muhurUyarildi = false;
+    if (!d || !muhurluMu(d)) muhurUyarildi = false;
     if (!d) return;
-    if (d.tur === 'boss' && bossMuhurluMu()) return muhurUyarisi(d);
+    if (muhurluMu(d)) return muhurUyarisi(d);
     mesgul = true;
     kuyruk = [];
     tutulanYon = null;
@@ -466,6 +478,14 @@ export function gezintiEkrani(kap, depo, secenekler) {
   };
   window.addEventListener('blur', odakKaybi);
 
+  function sesDugmesiniCiz() {
+    const b = ekran.querySelector('[data-eylem="ses"]');
+    const acik = sesAcikMi();
+    b.textContent = acik ? '🔊' : '🔇';
+    b.setAttribute('aria-label', acik ? metinler.ses.kapat : metinler.ses.ac);
+    b.title = b.getAttribute('aria-label');
+  }
+
   function yonTuslariniAyarla(acik) {
     yonTuslari.hidden = !acik;
     yonDugmesi.setAttribute('aria-pressed', String(acik));
@@ -481,6 +501,9 @@ export function gezintiEkrani(kap, depo, secenekler) {
       case 'heybe': return secenekler.heybeGoster?.();
       case 'gunluk': return secenekler.gunlukGoster?.();
       case 'karakter': return secenekler.karakterGoster?.();
+      case 'ses':
+        sesAyarla(!sesAcikMi());
+        return sesDugmesiniCiz();
       case 'yon-tuslari': {
         const acik = yonTuslari.hidden;
         yonTuslariniAyarla(acik);
@@ -491,6 +514,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
 
   // ── Başlat ──
   yonTuslariniAyarla(yonTuslariAcikMi());
+  sesDugmesiniCiz();
   if (secenekler.ipucuGoster) ipucu.hidden = false;
   kapilariCiz();
   const aboneliktenCik = depo.abone(ustCubuguCiz);

@@ -14,11 +14,11 @@ import { yeniOyunDurumu } from '../src/oyun/durum.js';
 import { siniflar } from '../src/veri/siniflar.js';
 
 describe('XP eğrisi', () => {
-  it('round(40 × sv^1.6) formülünü uygular', () => {
-    expect(gerekenXp(1)).toBe(40);
-    expect(gerekenXp(2)).toBe(121);
-    expect(gerekenXp(5)).toBe(525);
-    expect(gerekenXp(10)).toBe(1592);
+  it('round(30 × sv^1.35) formülünü uygular (Faz 10 dengelemesi)', () => {
+    expect(gerekenXp(1)).toBe(30);
+    expect(gerekenXp(2)).toBe(76);
+    expect(gerekenXp(5)).toBe(263);
+    expect(gerekenXp(10)).toBe(672);
     for (let sv = 1; sv < 60; sv++) expect(gerekenXp(sv + 1)).toBeGreaterThan(gerekenXp(sv));
   });
 });
@@ -58,7 +58,7 @@ describe('yeni karakter', () => {
 describe('seviye atlama', () => {
   it('yeterli XP ile seviye atlanır, fazlası aktarılır', () => {
     const o = yeniKarakter('A', 'akinci');
-    const r = xpEkle(o, 50);
+    const r = xpEkle(o, 40);
     expect(r.oyuncu.seviye).toBe(2);
     expect(r.oyuncu.xp).toBe(10);
     expect(r.seviyeler).toEqual([2]);
@@ -66,14 +66,14 @@ describe('seviye atlama', () => {
   });
 
   it('yetersiz XP ile seviye atlanmaz', () => {
-    const r = xpEkle(yeniKarakter('A', 'akinci'), 39);
+    const r = xpEkle(yeniKarakter('A', 'akinci'), 29);
     expect(r.oyuncu.seviye).toBe(1);
-    expect(r.oyuncu.xp).toBe(39);
+    expect(r.oyuncu.xp).toBe(29);
     expect(r.seviyeler).toEqual([]);
   });
 
   it('büyük XP ile art arda birden çok seviye atlanır', () => {
-    const r = xpEkle(yeniKarakter('A', 'akinci'), 40 + 121 + 232);
+    const r = xpEkle(yeniKarakter('A', 'akinci'), gerekenXp(1) + gerekenXp(2) + gerekenXp(3));
     expect(r.oyuncu.seviye).toBe(4);
     expect(r.oyuncu.xp).toBe(0);
     expect(r.seviyeler).toEqual([2, 3, 4]);
@@ -82,7 +82,7 @@ describe('seviye atlama', () => {
 
   it('otomatik stat artışı gelir, can ve nefes dolar', () => {
     const o = { ...yeniKarakter('A', 'kemankes'), can: 10, nefes: 0 };
-    const r = xpEkle(o, 40);
+    const r = xpEkle(o, gerekenXp(1));
     const artis = siniflar.kemankes.seviyeArtisi;
     const bas = siniflar.kemankes.baslangic;
     const s = statlar(r.oyuncu);

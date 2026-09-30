@@ -15,7 +15,8 @@ import {
   teslimEdilecekler,
 } from '../oyun/gorevler.js';
 import { kademeSirasi, hayirPuani, itibarKademesi, hediyeKontrol, hediyeAl } from '../oyun/itibar.js';
-import { kacis, sablon, bildirimGoster } from './bilesenler.js';
+import { kacis, sablon, bildirimGoster, parilti } from './bilesenler.js';
+import { sesCal } from './ses.js';
 import { gorevKarti } from './gorevKarti.js';
 
 const M = metinler.gorev;
@@ -133,7 +134,9 @@ export function gorevEkrani(kap, depo, { veren, geri } = {}) {
       depo.ayarla(r.durum);
       alan.querySelector('.tesekkur-karti')?.focus();
       bildirimGoster(ekran, sablon(M.tamamlandi, { gorev: gorevler[b.dataset.teslim].ad, ...r.odul }), { tur: 'kutlama', sure: 4000 });
+      sesCal(r.seviyeler.length ? 'seviye' : 'zafer');
       if (r.seviyeler.length) {
+        parilti(ekran);
         bildirimGoster(ekran, sablon(metinler.savas.sonuc.seviyeAtladin, { seviye: r.seviyeler.at(-1) }), { tur: 'kutlama', sure: 3500 });
       }
       for (const y of r.yeniYetenekler) {
@@ -143,6 +146,7 @@ export function gorevEkrani(kap, depo, { veren, geri } = {}) {
       const r = hediyeAl(once);
       if (!r.adet) return;
       depo.ayarla(r.durum);
+      sesCal('yemek');
       bildirimGoster(ekran, sablon(M.hediye.aldin, { adet: r.adet, yemek: yemekler[r.yemek].ad }), { tur: 'kutlama' });
     }
   });

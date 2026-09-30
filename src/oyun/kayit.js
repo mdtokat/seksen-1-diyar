@@ -7,10 +7,12 @@ import { siniflar } from '../veri/siniflar.js';
 import { yemekler } from '../veri/yemekler.js';
 import { esyalar } from '../veri/esyalar.js';
 import { gorevler as gorevVerisi } from '../veri/gorevler.js';
+import { basarimlar as basarimVerisi } from '../veri/basarimlar.js';
+import { bolgeler } from '../veri/bolgeler.js';
 import { STATLAR } from './karakter.js';
 
 export const KAYIT_ANAHTARI = 'seksen-bir-diyar/kayit';
-export const KAYIT_SURUMU = 4;
+export const KAYIT_SURUMU = 5;
 
 function varsayilanDepo() {
   try {
@@ -54,6 +56,22 @@ function ucdenDorde(veri) {
   };
 }
 
+// Sürüm 4 → 5 (Faz 10): final, başarımlar, yemek defteri ve istatistikler eklendi.
+// Yemek defteri heybedeki yemeklerle başlar.
+function dorttenBese(veri) {
+  const d = veri.durum;
+  return {
+    surum: 5,
+    durum: {
+      zulmetYenildi: false,
+      basarimlar: [],
+      toplananYemekler: [...new Set((d.heybe ?? []).map((y) => y?.anahtar))].filter((a) => yemekler[a]),
+      istatistik: { zafer: 0, bayilma: 0, bolgeBayilma: {} },
+      ...d,
+    },
+  };
+}
+
 // Eski sürümdeki bir kaydı adım adım güncel şemaya taşır. Tanınmayan sürüm → null.
 export function goc(veri) {
   if (!veri || typeof veri !== 'object' || !veri.durum) return null;
@@ -61,10 +79,12 @@ export function goc(veri) {
   if (v.surum === 1) v = birdenIkiye(v);
   if (v.surum === 2) v = ikidenUce(v);
   if (v.surum === 3) v = ucdenDorde(v);
+  if (v.surum === 4) v = dorttenBese(v);
   return v.surum === KAYIT_SURUMU ? v : null;
 }
 
 const GOREV_KAYIT_DURUMLARI = new Set(['aktif', 'tamam']);
+const bolgeAnahtarlari = new Set(bolgeler.map((b) => b.anahtar));
 
 const plakalar = new Set(iller.map((il) => il.plaka));
 const sayiMi = (x) => typeof x === 'number' && Number.isFinite(x);
@@ -91,6 +111,12 @@ export function durumGecerliMi(d) {
       && (k.durum !== 'aktif' || sayiMi(k.sayac)))) return false;
   if (!sayiMi(d.hayir) || d.hayir < 0) return false;
   if (!Array.isArray(d.hediyeAlinan) || !d.hediyeAlinan.every((p) => plakalar.has(p))) return false;
+  if (typeof d.zulmetYenildi !== 'boolean') return false;
+  if (!Array.isArray(d.basarimlar) || !d.basarimlar.every((a) => basarimVerisi[a])) return false;
+  if (!Array.isArray(d.toplananYemekler) || !d.toplananYemekler.every((a) => yemekler[a])) return false;
+  const i = d.istatistik;
+  if (!i || !sayiMi(i.zafer) || !sayiMi(i.bayilma) || !i.bolgeBayilma || typeof i.bolgeBayilma !== 'object') return false;
+  if (!Object.entries(i.bolgeBayilma).every(([b, n]) => bolgeAnahtarlari.has(b) && sayiMi(n))) return false;
   return true;
 }
 
