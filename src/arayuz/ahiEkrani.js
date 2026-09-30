@@ -3,7 +3,9 @@
 import { iller } from '../veri/iller.js';
 import { esyalar } from '../veri/esyalar.js';
 import { metinler } from '../veri/metinler.js';
-import { ahiMallari, esyaAl, esyaAlKontrol, esyaSat, esyaSatKontrol, satisFiyati } from '../oyun/ticaret.js';
+import {
+  ahiMallari, esyaAl, esyaAlKontrol, esyaSat, esyaSatKontrol, satisFiyati, pazarDonemi, pazarYenilenmesineKalan,
+} from '../oyun/ticaret.js';
 import { sinifaUygunMu } from '../oyun/ekipman.js';
 import { kacis, sablon, bildirimGoster } from './bilesenler.js';
 import { esyaKarti } from './esyaKarti.js';
@@ -12,7 +14,7 @@ const M = metinler.ahi;
 
 function alSekmesi(durum) {
   const o = durum.oyuncu;
-  const mallar = ahiMallari(durum.konum)
+  const mallar = ahiMallari(durum.konum, pazarDonemi(durum))
     .sort((a, b) => Number(!sinifaUygunMu(a, o.sinif)) - Number(!sinifaUygunMu(b, o.sinif)) || esyalar[a].fiyat - esyalar[b].fiyat);
   return mallar.map((a) => {
     const k = esyaAlKontrol(durum, a);
@@ -55,6 +57,7 @@ export function ahiEkrani(kap, depo, { geri } = {}) {
         <section class="kart">
           <p class="dukkan-selami"><strong>${M.usta}:</strong> “${kacis(selam)}”</p>
           <p class="kese"></p>
+          <p class="kart-not bilgi-not yenilenme"></p>
         </section>
         <div class="sekmeler" role="tablist">
           <button class="sekme" role="tab" data-sekme="al">${M.sekmeAl}</button>
@@ -66,9 +69,11 @@ export function ahiEkrani(kap, depo, { geri } = {}) {
   const ekran = kap.querySelector('.ahi-ekrani');
   const kese = ekran.querySelector('.kese');
   const alan = ekran.querySelector('.sekme-icerik');
+  const yenilenme = ekran.querySelector('.yenilenme');
 
   const ciz = (durum) => {
     kese.textContent = `🪙 ${sablon(M.akce, { akce: durum.akce })}`;
+    yenilenme.textContent = sablon(M.yenilenme, { kalan: pazarYenilenmesineKalan(durum) });
     for (const b of ekran.querySelectorAll('.sekme')) b.setAttribute('aria-selected', String(b.dataset.sekme === sekme));
     alan.innerHTML = sekme === 'al' ? `<ul class="esya-listesi">${alSekmesi(durum)}</ul>` : satSekmesi(durum);
   };

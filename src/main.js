@@ -25,6 +25,8 @@ import { savasEkrani } from './arayuz/savasEkrani.js';
 import { gezintiEkrani, YENIDEN_DOGUS_ADIMI } from './arayuz/gezintiEkrani.js';
 import { arastaEkrani } from './arayuz/arastaEkrani.js';
 import { ahiEkrani } from './arayuz/ahiEkrani.js';
+import { tuccarEkrani } from './arayuz/tuccarEkrani.js';
+import { tuccarYerlestir } from './oyun/tuccar.js';
 import { kervansarayEkrani } from './arayuz/kervansarayEkrani.js';
 import { hizliYolculuk } from './oyun/kervansaray.js';
 import { gorevEkrani } from './arayuz/gorevEkrani.js';
@@ -188,20 +190,21 @@ function gezintiHazirla() {
   const harita = ilHaritasiUret(durum.konum);
   const oyuncu = gezinti ? girisNoktasi(harita, gezinti.plaka) : { ...harita.dogus };
   const inDekiler = ozelDusmanlar(harita, durum);
+  const siradanlar = dusmanlariYerlestir(harita, arinmaYuzdesi(durum, durum.konum), rng, { oyuncu, bosslar: true, dolu: inDekiler });
   gezinti = {
     plaka: durum.konum,
     harita,
     oyuncu,
     yon: 1,
-    dusmanlar: [
-      ...dusmanlariYerlestir(harita, arinmaYuzdesi(durum, durum.konum), rng, { oyuncu, bosslar: true, dolu: inDekiler }),
-      ...inDekiler,
-    ],
+    dusmanlar: [...siradanlar, ...inDekiler],
     sonrakiId: 100,
     halk: halkiYerlestir(harita, rng),
     dogusSayaclari: [],
     dokunulmaz: 0,
     surprizAdimi: 0, // son sürpriz baskından bu yana atılan adım
+    // Yolda bekleyen seyyar tüccar (tuccar.js) ve son gelişinden ya da gidişinden bu yana atılan adım
+    tuccar: tuccarYerlestir(harita, rng, { oyuncu, dolu: [...siradanlar, ...inDekiler] }),
+    tuccarAdimi: 0,
   };
   return gezinti;
 }
@@ -233,6 +236,7 @@ function gezintiGoster({ ilGirisi = false } = {}) {
       baslikaDon: baslikGoster,
       arastaGoster: () => ekranGoster((kap) => arastaEkrani(kap, depo, { geri: gezintiGoster }), 'arasta'),
       ahiGoster: () => ekranGoster((kap) => ahiEkrani(kap, depo, { geri: gezintiGoster }), 'ahi'),
+      tuccarGoster: (tuccar) => ekranGoster((kap) => tuccarEkrani(kap, depo, { tuccar, geri: gezintiGoster }), 'tuccar'),
       kervansarayGoster,
       gorevVerenGoster: (veren) => ekranGoster((kap) => gorevEkrani(kap, depo, { veren, geri: gezintiGoster }), 'gorev'),
       gunlukGoster,
@@ -363,7 +367,7 @@ const EKRAN_KISAYOLLARI = {
   g: { ekran: 'gunluk', dugme: 'gunluk', ac: () => gunlukGoster() },
   l: { ekran: 'il', dugme: 'bilgi', ac: () => ilGoster() },
 };
-const GEZINTI_EKRANLARI = new Set(['gezinti', 'harita', 'heybe', 'karakter', 'gunluk', 'il', 'arasta', 'ahi', 'kervansaray', 'gorev']);
+const GEZINTI_EKRANLARI = new Set(['gezinti', 'harita', 'heybe', 'karakter', 'gunluk', 'il', 'arasta', 'ahi', 'tuccar', 'kervansaray', 'gorev']);
 let klavyePenceresi = null;
 
 function klavyePenceresiniKapat() {

@@ -217,6 +217,7 @@ export const metinler = {
       'Yolcu yolunda gerek, ama boş heybeyle değil. Buyur, otur bir soluklan.',
       'Ustam derdi ki: "Kazancın bereketi alın terindedir." Hoş geldin.',
     ],
+    yenilenme: 'Tezgâh yenilenmesine {kalan} zafer kaldı.',
     sekmeAl: 'Satın al',
     sekmeSat: 'Sat',
     al: 'Al',
@@ -234,13 +235,43 @@ export const metinler = {
     },
   },
 
+  // Yollarda dolaşan, güçlü ekipman satan seyyar tüccar
+  tuccar: {
+    baslik: 'Seyyar Tüccar',
+    geri: 'Yola dön',
+    usta: 'Seyyar Tüccar',
+    etiket: 'Seyyar tüccar',
+    gorundu: '🛍️ Yol kenarında bir seyyar tüccar var! Uzak diyarların mallarını getirmiş.',
+    gitti: 'Seyyar tüccar heybesini toplayıp yoluna devam etti.',
+    // Esnaf ahlakını yansıtan selamlar; tüccarın tohumuna göre biri seçilir.
+    selamlar: [
+      'Hayırlı yolculuklar yiğidim! Heybem uzak diyarların ustalarından toplandı.',
+      'Yol uzun, yük ağır. Malım sağlamdır; yalnız yol masrafını fiyata kattım.',
+      'Bu malları kervanla, dağ dağ taşıdım. Nerede bir yiğit görsem tezgâh açarım.',
+      'Ahi ustalarının işi her yerde bilinir. Ben yalnızca taşıdım; eline sağlık, gönlüne rahatlık versin.',
+      'Yolda kalan dosta sofra, yiğide silah gerekir. Buyur, bir göz at.',
+      'Bir yerde uzun durmam evlat. Beğendiysen şimdi al; kervan yürüyecek.',
+    ],
+    not: 'Yol masrafı yüzünden fiyatlar Ahi esnafından %50 fazladır.',
+    fiyat: '{fiyat} akçe',
+    akce: 'Kesende {akce} akçe var.',
+    al: 'Al',
+    aldin: '{esya} artık senin. Hayırlı olsun!',
+    senin: 'Sende var',
+    bos: 'Tüccarın tezgâhında sana uygun mal kalmadı.',
+    neden: {
+      zaten_var: 'Bu eşya zaten sende.',
+      akce_yetersiz: 'Akçen yetmiyor.',
+    },
+  },
+
   ekipman: {
     baslik: 'Ekipman',
     bos: 'Boş',
     kusan: 'Kuşan',
     cikar: 'Çıkar',
     canta: 'Çanta',
-    cantaBos: 'Çantanda eşya yok. Ahi esnafından alabilir ya da bosslardan kazanabilirsin.',
+    cantaBos: 'Çantanda eşya yok. Ahi esnafından ya da yollardaki seyyar tüccardan alabilir, bosslardan da kazanabilirsin.',
     kusanildi: '{esya} kuşanıldı.',
     kusanili: 'Kuşanılı',
     seviye: 'Sv {seviye}',

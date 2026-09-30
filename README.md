@@ -46,7 +46,8 @@ Yolculuk İstanbul'da başlar. Başlangıçta yalnızca Marmara açıktır.
 
 ### Seviye ve ekipman
 - Her seviyede statların kendiliğinden artar ve **3 stat puanı** dağıtırsın (👤 karakter ekranı). Yeni yetenekler 5, 12, 20 ve 32. seviyelerde açılır.
-- **Ahi esnafı** bölgenin sıradan ve nadir silah, zırh ve kuşaklarını satar; eşyalarını yarı fiyatına geri alır. **Efsanevi** eşyaları yalnızca bosslar düşürür.
+- **Ahi esnafı** bölgenin sıradan ve nadir silah, zırh ve kuşaklarından altısını sergiler; eşyalarını yarı fiyatına geri alır. Tezgâh her 4 zaferde başka mallarla dolar ve aynı bölgedeki her dükkânın tezgâhı ayrıdır; her sınıf için silah ve bir zırh ya da kuşak her zaman bulunur. **Efsanevi** eşyaları bosslar düşürür.
+- **Seyyar tüccar** yollarda dolaşır: ile girerken haritada bekliyor olabilir ya da yürürken yakınlarda belirir (🛍️). Sınıfına uygun **güçlü** mallar satar — bölgenin efsanevi eşyaları ve bir sonraki bölgenin eşyaları — ama yol masrafı yüzünden %50 pahalıdır; bir süre sonra yoluna devam eder.
 
 ### Yemekler
 Her ilin meşhur yemeği ya **canı** (ana yemekler) ya da **nefesi** (tatlılar, içecekler, meyveler, bal) yeniler. Doğuya gidildikçe yemekler güçlenir. Heybe 20 yuvadır; aynı yemekten bir yuvada 10 tane durur.
