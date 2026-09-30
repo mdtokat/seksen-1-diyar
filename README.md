@@ -31,11 +31,16 @@ Yolculuk İstanbul'da başlar. Başlangıçta yalnızca Marmara açıktır.
 - Gitmek istediğin yere **dokun** ya da ekrandaki **yön tuşlarını** (🎮) kullan. Masaüstünde **ok tuşları** ve **WASD** çalışır.
 - İl meydanı güvenlidir; düşmanlar giremez. Meydanda **çeşme**, **arasta** (yemek tezgâhı), **tabela** (il bilgisi) ve **muhtar** bulunur. Bazı illerde **Ahi esnafı**, **Ahi Baba** ve **kervansaray** da vardır.
 - Haritanın kenarındaki yollar komşu illere çıkar. Kilitli bölgeye giden yol mor bir sihirli engelle kapalıdır.
-- Sağdaki düğmeler: 🗺️ Türkiye haritası · 🎒 heybe · 📜 görev günlüğü ve başarımlar · ℹ️ il bilgisi · 🎮 yön tuşları · 🔊 ses.
+- Sağdaki düğmeler: 🗺️ Türkiye haritası · 🎒 heybe · 📜 görev günlüğü ve başarımlar · ℹ️ il bilgisi · ⌨️ klavye kısayolları · 🎮 yön tuşları · 🔊 ses.
+- Sol üstteki gösterge **can** ve **nefesini** savaş dışında da gösterir; can azalınca kırmızı yanıp söner.
+- **Klavye kısayolları:** `M` harita · `B` heybe (çanta) · `K` karakter · `G` görev günlüğü · `L` il bilgisi · `?` kısayol listesi. Açık ekranın tuşuna yeniden basınca gezintiye dönülür; `Esc` geri götürür.
+- **İller gerçek boyutlarıyla orantılıdır:** il haritasının büyüklüğü yüzölçümüyle, en-boy oranı ilin şekliyle belirlenir. Konya en geniş, Yalova en küçük haritadır. Evler ve meydanda dolaşan halk nüfusla artar; İstanbul en kalabalık ildir. İl bilgisinde ve Türkiye haritasındaki il kartında yüzölçümü, nüfus ve sıralamaları görünür.
 
 ### Savaş
-- Düşmanlar haritada dolaşır; yaklaşınca peşine düşer, temas edince sıra tabanlı savaş başlar.
+- Düşmanlar haritada dolaşır; yaklaşınca peşine düşer, temas edince sıra tabanlı savaş başlar. Büyük illerde daha çok düşman olur.
+- **Takipçi düşmanlar** (👣 rozetli: kurtlar, çakallar, yol kesen cinler…) seni uzaktan fark eder, neredeyse senin kadar hızlı koşar ve kolay kolay peşini bırakmaz. Kurtulmak için meydana sığın, başka ile geç ya da savaş. Savaşta bunlardan kaçmak da daha zordur.
 - Her turda **Saldır**, **Yetenek** (nefes harcar), **Yemek** ya da **Kaç** seçilir. Bosslardan kaçılamaz.
+- **Kısayol yuvaları:** savaş ekranındaki dört yuva, sıra sendeyken `1` `2` `3` `4` tuşlarıyla ya da dokunarak kullanılır. Yuvalara yetenek, yemek, Saldır ya da Kaç konur (✎ düğmesi ya da karakter ekranındaki *Savaş Kısayolları*). Yeni açılan yetenekler boş yuvalara kendiliğinden yerleşir.
 - Zafer XP, akçe ve bazen ilin yöresel yemeğini getirir; ayrıca ili **%12–18 arındırır**. %100 olan il yeşile döner.
 - Bayılırsan en son dinlendiğin kervansarayda (hiç dinlenmediysen bulunduğun ilin meydanında) kendine gelirsin ve akçenin %10'unu kaybedersin.
 

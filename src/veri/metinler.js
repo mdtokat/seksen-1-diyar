@@ -296,6 +296,57 @@ export const metinler = {
     girisAfisi: '{il}',
     fark: '{dusman} seni fark etti!',
     alanEtiketi: '{il} il haritası',
+    kisayollar: 'Klavye kısayolları',
+    takip: '👣 {dusman} peşine takıldı! Kolay kolay bırakmaz; meydana sığın ya da savaş.',
+    takipciRozeti: 'İz sürer: peşine takılır',
+  },
+
+  // Savaş kısayol yuvaları (1–4 tuşları)
+  kisayol: {
+    baslik: 'Savaş Kısayolları',
+    aciklama: 'Savaşta sıra sendeyken 1–4 tuşlarıyla ya da yuvaya dokunarak kullanılır. Bir yuvaya dokunup içine yetenek, yemek, Saldır ya da Kaç koyabilirsin.',
+    bos: 'Boş',
+    yuvaEtiketi: '{tus}. yuva: {ad}',
+    sec: '{tus}. yuvaya ne konsun?',
+    bosalt: 'Yuvayı boşalt',
+    baskaYuvada: '{tus}. yuvada (buraya taşınır)',
+    duzenle: 'Yuvaları düzenle',
+    duzenleBitti: 'Düzenlemeyi bitir',
+    siraSende: 'Sıra sende · 1–4',
+    bekle: 'Bekle…',
+    kullanilamaz: 'Bu yuva şu an kullanılamaz.',
+  },
+
+  // Klavye kısayolları penceresi
+  klavye: {
+    baslik: '⌨️ Klavye Kısayolları',
+    kapat: 'Kapat',
+    gruplar: [
+      { baslik: 'Gezinti', satirlar: [['W A S D / Oklar', 'Yürü'], ['M', 'Türkiye haritası'], ['B', 'Heybe (çanta)'], ['K', 'Karakter'], ['G', 'Görev günlüğü'], ['L', 'İl bilgisi'], ['?', 'Bu pencere']] },
+      { baslik: 'Açık ekranlarda', satirlar: [['Esc', 'Geri dön'], ['Aynı tuş', 'Ekranı kapatıp gezintiye dön']] },
+      { baslik: 'Savaş', satirlar: [['1 2 3 4', 'Kısayol yuvasını kullan (sıra sendeyken)'], ['Esc', 'Alt menüden çık'], ['Enter', 'Seçili düğme']] },
+    ],
+  },
+
+  // İllerin gerçek büyüklüğü ve kalabalığı
+  cografya: {
+    yuzolcumu: 'Yüzölçümü',
+    nufus: 'Nüfus',
+    yogunluk: 'Yoğunluk',
+    alanDegeri: '{deger} km² · 81 il içinde {sira}.',
+    nufusDegeri: '{deger} kişi · 81 il içinde {sira}.',
+    yogunlukDegeri: '{deger} kişi/km²',
+    haritaNotu: 'İl haritası gerçek yüzölçümüyle orantılıdır ({genislik} × {yukseklik} karo); evler ve meydandaki halk nüfusla artar.',
+    ozellikler: {
+      en_genis: '🏞️ Türkiye\'nin yüzölçümü en büyük ili',
+      ilk_bes_genis: '🏞️ Yüzölçümünde ilk beş',
+      en_kucuk: '📐 Türkiye\'nin yüzölçümü en küçük ili',
+      en_kalabalik: '🏙️ Türkiye\'nin en kalabalık ili',
+      ilk_bes_kalabalik: '🏙️ Nüfusta ilk beş',
+      en_az_nufus: '🌾 Türkiye\'nin nüfusu en az ili',
+      en_yogun: '👥 Nüfus yoğunluğu en yüksek il',
+      en_seyrek: '🏔️ Nüfus yoğunluğu en düşük il',
+    },
   },
 
   ilEkrani: {

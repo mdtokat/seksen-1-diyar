@@ -52,11 +52,14 @@ describe('formüller', () => {
     expect(kritikSansi(10, 0.25)).toBeCloseTo(0.33);
   });
 
-  it('kaçma şansı: min(%80, %40 + çeviklik farkı × %2), en az %0', () => {
-    expect(kacmaSansi(10, 10)).toBeCloseTo(0.4);
-    expect(kacmaSansi(12, 7)).toBeCloseTo(0.5);
-    expect(kacmaSansi(40, 10)).toBe(0.8);
+  it('kaçma şansı: min(%70, %35 + çeviklik farkı × %2), en az %0; takipçiden %15 daha zor', () => {
+    expect(kacmaSansi(10, 10)).toBeCloseTo(0.35);
+    expect(kacmaSansi(12, 7)).toBeCloseTo(0.45);
+    expect(kacmaSansi(40, 10)).toBe(0.7);
     expect(kacmaSansi(10, 40)).toBe(0);
+    expect(kacmaSansi(10, 10, { takipci: true })).toBeCloseTo(0.2);
+    expect(kacmaSansi(40, 10, { takipci: true })).toBeCloseTo(0.55);
+    expect(kacmaSansi(10, 25, { takipci: true })).toBe(0);
   });
 
   it('kaçınma şansı çeviklikle artar, %20 ile sınırlı', () => {

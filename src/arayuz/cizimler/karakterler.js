@@ -76,3 +76,24 @@ export const SINIF_CIZIMLERI = Object.keys(cizimler);
 export function sinifCizimi(sinif, secenekler = {}) {
   return svgSar(cizimler[sinif](), { sinif: 'cizim cizim-oyuncu', ...secenekler });
 }
+
+// Meydanda dolaşan halk (köylüler): sade kıyafetler, başlarında kasket, yazma ya da
+// keçe börk. `tur`: 0 … 5 (gezinti.js → HALK_TURLERI).
+const HALK = [
+  { kaftan: '#6b7f99', kaftanKoyu: '#4a5a70', kusak: '#d4a537', bas: 'kasket', basRenk: '#5b4a3a' },
+  { kaftan: '#b0564a', kaftanKoyu: '#7e3a31', kusak: '#f7efdc', bas: 'yazma', basRenk: '#f0c75e' },
+  { kaftan: '#5f8a4a', kaftanKoyu: '#43663a', kusak: '#9e6b3a', bas: 'bork', basRenk: '#9a7b5a' },
+  { kaftan: '#8a6a9e', kaftanKoyu: '#5e4870', kusak: '#e8e1d2', bas: 'yazma', basRenk: '#ffffff' },
+  { kaftan: '#c98f3a', kaftanKoyu: '#94662a', kusak: '#1b2a5c', bas: 'kasket', basRenk: '#3a3a44' },
+  { kaftan: '#3f8f8f', kaftanKoyu: '#2a6a6a', kusak: '#d9483b', bas: 'bork', basRenk: '#6e5b45' },
+];
+
+export function halkCizimi(tur) {
+  const h = HALK[tur % HALK.length];
+  const bas = {
+    kasket: `<path d="M47 30 Q50 18 62 19 Q73 20 73 30 Z" fill="${h.basRenk}"/><path d="M68 29 L80 30 L73 32 Z" fill="${h.basRenk}"/>`,
+    yazma: `<path d="M46 36 Q44 18 60 18 Q76 18 74 36 Q70 26 60 25 Q50 26 46 36 Z" fill="${h.basRenk}"/><path d="M46 36 Q44 46 50 50 L52 38 Z" fill="${h.basRenk}"/>`,
+    bork: `<path d="M49 27 L51 12 Q60 9 69 12 L71 27 Z" fill="${h.basRenk}"/>`,
+  }[h.bas];
+  return svgSar(`${golge(24)}${govde(h)}${bas}`, { sinif: 'cizim cizim-halk' });
+}

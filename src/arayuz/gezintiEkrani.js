@@ -4,15 +4,14 @@
 //
 // Gezinti durumu (g) ekranlar arasında korunur (savaşa girip çıkınca kaldığı yerden
 // sürer) ve bu ekran tarafından güncellenir:
-//   { plaka, harita, oyuncu: {x, y}, yon, dusmanlar, sonrakiId, dogusSayaclari, dokunulmaz }
+//   { plaka, harita, oyuncu: {x, y}, yon, dusmanlar, halk, sonrakiId, dogusSayaclari, dokunulmaz }
 import { iller } from '../veri/iller.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { metinler } from '../veri/metinler.js';
 import { arinmaYuzdesi, seyahatKontrol, bolgeAcikMi, bossDurumu, bossKosullari, finalDurumu, finalKosullari } from '../oyun/ilerleme.js';
 import { sesAcikMi, sesAyarla } from './ses.js';
+import { statlar } from '../oyun/karakter.js';
 import {
-  GENISLIK,
-  YUKSEKLIK,
   yurunurMu,
   yolBul,
   kapiBul,
@@ -22,13 +21,17 @@ import {
   dusmanDogur,
   dusmanSayisi,
   siradanDusmanSayisi,
+  yeniKovalayanlar,
+  halkiYerlestir,
+  halkiYurut,
 } from '../oyun/gezinti.js';
-import { sablon, kacis, bildirimGoster } from './bilesenler.js';
+import { sablon, kacis, bildirimGoster, degerCubugu } from './bilesenler.js';
 import { karakterDugmesiniCiz } from './karakterDugmesi.js';
 import { haritaKatmani, kapiKatmani, KARO_BOYU } from './cizimler/karolar.js';
-import { sinifCizimi } from './cizimler/karakterler.js';
+import { sinifCizimi, halkCizimi } from './cizimler/karakterler.js';
 import { dusmanCizimi } from './cizimler/dusmanlar.js';
 import { verenIsareti } from '../oyun/gorevler.js';
+import { afisOzelligi } from './cografyaBilgisi.js';
 
 const M = metinler.gezinti;
 const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
@@ -36,7 +39,8 @@ const bolgeHaritasi = new Map(bolgeler.map((b) => [b.anahtar, b]));
 const IL_ADLARI = Object.fromEntries(iller.map((il) => [il.plaka, kacis(il.ad)]));
 
 const ADIM_MS = 170; // oyuncunun bir karo yürüme süresi
-const DUSMAN_MS = 650; // düşmanların hamle aralığı
+const DUSMAN_MS = ADIM_MS; // düşman tıkı: hızları gezinti.js → DAVRANIS'ta tık başına verilir
+const TAKIP_UYARI_ARALIGI = 4000; // "peşine takıldı" bildirimleri arasındaki en az süre (ms)
 export const YENIDEN_DOGUS_ADIMI = 25; // yenilen düşmanın yerine yenisi kaç adım sonra gelir
 const YONLER = {
   yukari: { dx: 0, dy: -1 },
@@ -74,9 +78,15 @@ function yonTuslariniKaydet(acik) {
 //               heybeGoster, karakterGoster, baslikaDon, ipucuGoster,
 //               arastaGoster, ahiGoster, kervansarayGoster, gorevVerenGoster(veren), gunlukGoster,
 //               ilGirisi (başka ilden yeni gelindiyse true: il adı afişi gösterilir) }
+// Araç düğmelerinin klavye kısayolları (main.js → EKRAN_KISAYOLLARI ile aynı).
+const KISAYOL = { harita: 'M', heybe: 'B', gunluk: 'G', bilgi: 'L', karakter: 'K' };
+const kisayolluEtiket = (metin, eylem) => `${metin} (${KISAYOL[eylem]})`;
+
 export function gezintiEkrani(kap, depo, secenekler) {
   const { g, rng } = secenekler;
   const harita = g.harita;
+  const { genislik: GENISLIK, yukseklik: YUKSEKLIK } = harita;
+  g.halk ??= halkiYerlestir(harita, rng);
   const il = ilHaritasi.get(g.plaka);
   const bolge = bolgeHaritasi.get(il.bolge);
 
@@ -84,7 +94,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     <div class="gezinti-ekrani">
       <header class="ust-cubuk">
         <button class="simge-buton" data-eylem="baslik" aria-label="${M.baslikEkrani}" title="${M.baslikEkrani}">←</button>
-        <button class="gezinti-il" data-eylem="bilgi" aria-label="${M.ilBilgisi}">
+        <button class="gezinti-il" data-eylem="bilgi" aria-label="${M.ilBilgisi}" aria-keyshortcuts="L">
           <strong>📍 ${kacis(il.ad)}</strong>
           <span class="gezinti-il-alt">
             <span class="bolge-noktasi" style="background:${bolge.renk}"></span>
@@ -92,7 +102,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
             <span class="gezinti-arinma"></span>
           </span>
         </button>
-        <button class="karakter-dugmesi" data-eylem="karakter" hidden></button>
+        <button class="karakter-dugmesi" data-eylem="karakter" aria-keyshortcuts="K" hidden></button>
       </header>
       <div class="gezinti-alani" role="application" aria-label="${kacis(sablon(M.alanEtiketi, { il: il.ad }))}">
         <div class="dunya">
@@ -103,11 +113,12 @@ export function gezintiEkrani(kap, depo, secenekler) {
           <div class="hedef-isareti" hidden></div>
           <div class="figur-katmani"></div>
         </div>
+        <div class="durum-gostergesi" aria-live="off"></div>
         <div class="gezinti-araclari">
-          <button class="simge-buton" data-eylem="harita" aria-label="${M.harita}" title="${M.harita}">🗺️</button>
-          <button class="simge-buton" data-eylem="heybe" aria-label="${M.heybe}" title="${M.heybe}">🎒</button>
-          <button class="simge-buton" data-eylem="gunluk" aria-label="${M.gunluk}" title="${M.gunluk}">📜</button>
-          <button class="simge-buton" data-eylem="bilgi" aria-label="${M.ilBilgisi}" title="${M.ilBilgisi}">ℹ️</button>
+          ${[['harita', '🗺️', M.harita], ['heybe', '🎒', M.heybe], ['gunluk', '📜', M.gunluk], ['bilgi', 'ℹ️', M.ilBilgisi]]
+            .map(([eylem, ikon, ad]) => `<button class="simge-buton" data-eylem="${eylem}" aria-label="${ad}"
+              title="${kisayolluEtiket(ad, eylem)}" aria-keyshortcuts="${KISAYOL[eylem]}">${ikon}<kbd class="tus-ipucu" aria-hidden="true">${KISAYOL[eylem]}</kbd></button>`).join('')}
+          <button class="simge-buton klavye-dugmesi" data-eylem="kisayollar" aria-label="${M.kisayollar}" title="${M.kisayollar} (?)" aria-keyshortcuts="?">⌨️</button>
           <button class="simge-buton" data-eylem="yon-tuslari" aria-label="${M.yonTuslari}" title="${M.yonTuslari}" aria-pressed="false">🎮</button>
           <button class="simge-buton" data-eylem="ses"></button>
         </div>
@@ -118,7 +129,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
           <button class="yon-tusu yon-asagi" data-yon="asagi" aria-label="${M.asagi}">▼</button>
         </div>
         <p class="gezinti-ipucu" hidden>${M.ipucu}</p>
-        ${secenekler.ilGirisi ? `<p class="il-afisi" aria-hidden="true"><span>${kacis(bolge.ad)}</span><strong>${kacis(il.ad)}</strong></p>` : ''}
+        ${secenekler.ilGirisi ? `<p class="il-afisi" aria-hidden="true"><span>${kacis(bolge.ad)}</span><strong>${kacis(il.ad)}</strong>${afisOzelligi(il.plaka) ? `<em>${afisOzelligi(il.plaka)}</em>` : ''}</p>` : ''}
       </div>
     </div>`;
 
@@ -133,6 +144,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
   const yonDugmesi = ekran.querySelector('[data-eylem="yon-tuslari"]');
   const karakterDugmesi = ekran.querySelector('.karakter-dugmesi');
   const arinmaEtiketi = ekran.querySelector('.gezinti-arinma');
+  const durumGostergesi = ekran.querySelector('.durum-gostergesi');
   const ipucu = ekran.querySelector('.gezinti-ipucu');
 
   let T = 36; // bir karonun piksel boyu (ekrana göre)
@@ -149,6 +161,8 @@ export function gezintiEkrani(kap, depo, secenekler) {
   oyuncuFiguru.innerHTML = `<div class="figur-ic">${sinifCizimi(depo.al().oyuncu.sinif)}</div>`;
   figurKatmani.appendChild(oyuncuFiguru);
   const dusmanFigurleri = new Map();
+  const halkFigurleri = new Map();
+  let sonTakipUyarisi = -Infinity;
 
   // Görev verenlerin başındaki işaretler (Faz 9): ! yeni görev, ? teslim, 🎁 hediye
   const ISARET_SIMGESI = { yeni: '!', hazir: '?', hediye: '🎁' };
@@ -194,11 +208,11 @@ export function gezintiEkrani(kap, depo, secenekler) {
     const B = metinler.boss;
     const rozet = d.sabit
       ? `${{ boss: B.rozet, mini: B.miniRozet, final: metinler.final.rozet }[d.tur]} · ${sablon(metinler.savas.seviye, { seviye: d.dusman.seviye })}`
-      : sablon(metinler.savas.seviye, { seviye: d.dusman.seviye });
+      : sablon(metinler.savas.seviye, { seviye: d.dusman.seviye }) + (d.dusman.takipci ? ` <span title="${M.takipciRozeti}">👣</span>` : '');
     el.innerHTML = `<div class="figur-ic">${dusmanCizimi(d.dusman.anahtar)}</div>
       <span class="figur-rozeti">${rozet}</span>
       ${d.tur === 'boss' || d.tur === 'final' ? `<span class="muhur" aria-hidden="true"></span>` : ''}`;
-    el.title = d.dusman.ad;
+    el.title = d.dusman.takipci ? `${d.dusman.ad} · ${M.takipciRozeti}` : d.dusman.ad;
     figurKatmani.appendChild(el);
     dusmanFigurleri.set(d.id, el);
     return el;
@@ -215,8 +229,24 @@ export function gezintiEkrani(kap, depo, secenekler) {
     for (const d of g.dusmanlar) {
       const el = dusmanFigurleri.get(d.id) ?? dusmanFiguruOlustur(d);
       el.classList.toggle('saga', d.yon === 1);
+      el.classList.toggle('kovaliyor', Boolean(d.kovaliyor));
       if (d.tur === 'boss' || d.tur === 'final') el.classList.toggle('muhurlu', muhurluMu(d));
       figurKonumla(el, d.x, d.y);
+    }
+  }
+
+  function halkiCiz() {
+    for (const h of g.halk) {
+      let el = halkFigurleri.get(h.id);
+      if (!el) {
+        el = document.createElement('div');
+        el.className = 'harita-figuru halk-figuru';
+        el.innerHTML = `<div class="figur-ic">${halkCizimi(h.tur)}</div>`;
+        figurKatmani.appendChild(el);
+        halkFigurleri.set(h.id, el);
+      }
+      el.classList.toggle('sola', h.yon === -1);
+      figurKonumla(el, h.x, h.y);
     }
   }
 
@@ -247,6 +277,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     dunya.classList.add('anlik');
     oyuncuyuCiz();
     dusmanlariCiz();
+    halkiCiz();
     isaretleriKonumla();
     kamera();
     void dunya.getBoundingClientRect();
@@ -258,8 +289,18 @@ export function gezintiEkrani(kap, depo, secenekler) {
     kapiKatmaniG.innerHTML = kapiKatmani(harita, IL_ADLARI, (plaka) => bolgeAcikMi(durum, ilHaritasi.get(plaka).bolge));
   }
 
+  // Savaş dışında da görünen can ve nefes göstergesi
+  function durumGostergesiniCiz(o) {
+    const s = statlar(o);
+    durumGostergesi.innerHTML = `
+      ${degerCubugu(o.can, s.can, { etiket: metinler.statAdlari.can, renk: 'var(--mercan)', sinif: 'gosterge-cubugu' })}
+      ${degerCubugu(o.nefes, s.nefes, { etiket: metinler.statAdlari.nefes, renk: 'var(--turkuaz)', sinif: 'gosterge-cubugu' })}`;
+    durumGostergesi.classList.toggle('can-az', o.can < s.can * 0.3);
+  }
+
   function ustCubuguCiz(durum) {
     arinmaEtiketi.textContent = sablon(M.arinma, { yuzde: arinmaYuzdesi(durum, g.plaka) });
+    durumGostergesiniCiz(durum.oyuncu);
     karakterDugmesiniCiz(karakterDugmesi, durum.oyuncu);
     isaretleriCiz(durum);
   }
@@ -339,7 +380,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     g.dogusSayaclari = g.dogusSayaclari.map((s) => s - 1);
     const hazir = g.dogusSayaclari.filter((s) => s <= 0).length;
     g.dogusSayaclari = g.dogusSayaclari.filter((s) => s > 0);
-    const enCok = dusmanSayisi(arinmaYuzdesi(depo.al(), g.plaka));
+    const enCok = dusmanSayisi(arinmaYuzdesi(depo.al(), g.plaka), harita);
     for (let i = 0; i < hazir && siradanDusmanSayisi(g.dusmanlar) < enCok; i++) {
       const d = dusmanDogur(harita, g.plaka, rng, { dolu: g.dusmanlar, oyuncu: g.oyuncu, enAzUzaklik: 7, id: g.sonrakiId++ });
       if (d) g.dusmanlar.push(d);
@@ -400,8 +441,17 @@ export function gezintiEkrani(kap, depo, secenekler) {
 
   function dusmanTuru() {
     if (mesgul) return;
+    const onceki = g.dusmanlar;
     g.dusmanlar = dusmanlariYurut(harita, g.dusmanlar, g.oyuncu, rng, { dokunulmaz: g.dokunulmaz > 0 });
+    // Takipçi bir düşman peşine takılınca oyuncu uyarılır
+    const takipci = yeniKovalayanlar(onceki, g.dusmanlar).find((d) => d.dusman.takipci);
+    if (takipci && performance.now() - sonTakipUyarisi > TAKIP_UYARI_ARALIGI) {
+      sonTakipUyarisi = performance.now();
+      bildirimGoster(ekran, sablon(M.takip, { dusman: takipci.dusman.ad }), { tur: 'uyari', sure: 2200 });
+    }
+    g.halk = halkiYurut(harita, g.halk, g.oyuncu, g.dusmanlar, rng);
     dusmanlariCiz();
+    halkiCiz();
     temasKontrol();
   }
 
@@ -501,6 +551,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
       case 'heybe': return secenekler.heybeGoster?.();
       case 'gunluk': return secenekler.gunlukGoster?.();
       case 'karakter': return secenekler.karakterGoster?.();
+      case 'kisayollar': return secenekler.kisayollariGoster?.();
       case 'ses':
         sesAyarla(!sesAcikMi());
         return sesDugmesiniCiz();

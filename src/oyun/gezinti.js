@@ -2,17 +2,32 @@
 // Saf oyun mantığı — DOM'a dokunmaz.
 //
 // Her ilin haritası plakasından türetilen sabit bir tohumla üretilir; aynı il her
-// açılışta aynı görünür. Harita GENISLIK × YUKSEKLIK karodan oluşur, karolar satır
-// satır tek bir dizide tutulur (sira = y × GENISLIK + x).
+// açılışta aynı görünür. Harita genislik × yukseklik karodan oluşur, karolar satır
+// satır tek bir dizide tutulur (sira = y × genislik + x).
+//
+// Haritanın büyüklüğü ilin gerçek yüzölçümüyle, en-boy oranı ilin sınırlarının
+// kapladığı kutuyla orantılıdır: Konya en geniş, Yalova en küçük haritadır. Evlerin
+// ve meydanda dolaşan halkın sayısı nüfusla artar: İstanbul en kalabalık ildir.
 import { iller } from '../veri/iller.js';
 import { bolgeler, final } from '../veri/bolgeler.js';
+import { ilSinirlari } from '../veri/ilSinirlari.js';
 import { karsilasmaUret } from './kesif.js';
 import { dusmanOlustur } from './savas.js';
 import { bossDurumu, miniBossVarMi, finalDurumu } from './ilerleme.js';
 import { rastgeleUreteci, tamSayi, sans } from './rastgele.js';
 
-export const GENISLIK = 25;
-export const YUKSEKLIK = 31;
+// Harita boyutu: karo sayısı = TEMEL_KARO × (yüzölçümü / TEMEL_ALAN)^ALAN_USSU.
+// Gerçek oranla (Konya/Yalova ≈ 51 kat) oynanabilir kalmayacağı için alan bir
+// üsle sıkıştırılır; sıralama ve farklar korunur (Konya ≈ 9 kat Yalova).
+const TEMEL_KARO = 450;
+const TEMEL_ALAN = 800; // km²
+const ALAN_USSU = 0.6;
+const EN_AZ_KENAR = 21;
+const EN_AZ_KARO = 525;
+const EN_OR = 0.7; // genişlik / yükseklik sınırları
+const EN_COK_OR = 1.4;
+// Eski sabit harita (25 × 31); düşman sayısı buna göre ölçeklenir.
+const OLCU_KARO = 775;
 
 export const KARO = {
   CIM: 0,
@@ -49,14 +64,23 @@ const BOLGE_DOGASI = {
 };
 
 const KAPI_ARALIGI = 4; // iki çıkış arasındaki en az karo
-const KOVALAMA_MENZILI = 4;
 const DOLASMA_YARICAPI = 3;
+
+// Düşmanların davranışı (her tıkta bir kez yürütülür; oyuncu her tıkta bir karo yürür).
+// gorus: oyuncuyu fark ettiği uzaklık · birakma: peşini bıraktığı uzaklık ·
+// hiz: kovalarken tık başına karo. Takipçiler (kurtlar, çakallar, yol kesen cinler…)
+// oyuncuyu uzaktan fark eder, neredeyse onun kadar hızlı koşar ve kolay kolay bırakmaz.
+export const DAVRANIS = {
+  bekci: { gorus: 4, birakma: 7, hiz: 0.55 },
+  takipci: { gorus: 6, birakma: 13, hiz: 0.85 },
+};
+const DOLASMA_HIZI = 0.25;
 
 const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
 const KOS39 = Math.cos((39 * Math.PI) / 180);
 
 export const mesafe = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-const icinde = (x, y) => x >= 0 && y >= 0 && x < GENISLIK && y < YUKSEKLIK;
+const icinde = (h, x, y) => x >= 0 && y >= 0 && x < h.genislik && y < h.yukseklik;
 const YONLER = [
   { dx: 0, dy: -1 },
   { dx: 1, dy: 0 },
@@ -65,7 +89,72 @@ const YONLER = [
 ];
 
 export function karo(harita, x, y) {
-  return icinde(x, y) ? harita.karolar[y * GENISLIK + x] : KARO.AGAC;
+  return icinde(harita, x, y) ? harita.karolar[y * harita.genislik + x] : KARO.AGAC;
+}
+
+// Karonun dizideki sırası.
+export const sira = (harita, x, y) => y * harita.genislik + x;
+
+// İl sınırının (ilSinirlari.js) kapladığı kutunun genişlik / yükseklik oranı.
+// Yollar yalnızca M (mutlak başlangıç), l (göreli çizgi) ve z komutlarından oluşur.
+function sinirOrani(plaka) {
+  const d = ilSinirlari[plaka];
+  if (!d) return 1;
+  const kutu = { x1: Infinity, x2: -Infinity, y1: Infinity, y2: -Infinity };
+  for (const parca of d.split('M').filter(Boolean)) {
+    const sayilar = parca.match(/-?\d*\.?\d+/g).map(Number);
+    let x = 0;
+    let y = 0;
+    for (let i = 0; i + 1 < sayilar.length; i += 2) {
+      if (i === 0) { x = sayilar[0]; y = sayilar[1]; } else { x += sayilar[i]; y += sayilar[i + 1]; }
+      kutu.x1 = Math.min(kutu.x1, x); kutu.x2 = Math.max(kutu.x2, x);
+      kutu.y1 = Math.min(kutu.y1, y); kutu.y2 = Math.max(kutu.y2, y);
+    }
+  }
+  const g = kutu.x2 - kutu.x1;
+  const y = kutu.y2 - kutu.y1;
+  return g > 0 && y > 0 ? g / y : 1;
+}
+
+const tek = (n) => (n % 2 === 0 ? n + 1 : n); // meydanın tam ortada durması için kenarlar tektir
+
+// Bir il için aday boyutlar, hataya göre sıralı. Kenarlar tek sayıdır; karo sayısı
+// hedefe yakın, en-boy oranı ilin şekline yakın olan çiftler öndedir.
+function adayBoyutlar(il) {
+  const hedef = Math.max(EN_AZ_KARO, TEMEL_KARO * (il.yuzolcumu / TEMEL_ALAN) ** ALAN_USSU);
+  const oran = Math.min(EN_COK_OR, Math.max(EN_OR, sinirOrani(il.plaka)));
+  const orta = Math.sqrt(hedef * oran);
+  const adaylar = [];
+  for (let G = tek(Math.floor(orta) - 8); G <= orta + 8; G += 2) {
+    if (G < EN_AZ_KENAR) continue;
+    const y0 = tek(Math.floor(hedef / G)) - 2;
+    for (const Y of [y0, y0 + 2, y0 + 4]) {
+      if (Y < EN_AZ_KENAR) continue;
+      const hata = Math.abs(G * Y - hedef) / hedef + 0.02 * Math.abs(Math.log(G / Y / oran));
+      adaylar.push({ genislik: G, yukseklik: Y, hata });
+    }
+  }
+  return adaylar.sort((x, y) => x.hata - y.hata);
+}
+
+// Tüm illerin boyutları bir kez hesaplanır: iller küçükten büyüğe dolaşılır ve her il,
+// kendinden küçük illerin haritasından küçük olmayan en iyi adayı alır.
+let BOYUTLAR = null;
+function boyutlariHesapla() {
+  BOYUTLAR = new Map();
+  let onceki = 0;
+  for (const il of [...iller].sort((a, b) => a.yuzolcumu - b.yuzolcumu)) {
+    const adaylar = adayBoyutlar(il);
+    const secilen = adaylar.find((c) => c.genislik * c.yukseklik >= onceki) ?? adaylar[0];
+    BOYUTLAR.set(il.plaka, { genislik: secilen.genislik, yukseklik: secilen.yukseklik });
+    onceki = secilen.genislik * secilen.yukseklik;
+  }
+}
+
+// İlin harita boyutu: { genislik, yukseklik } (karo).
+export function haritaBoyutu(plaka) {
+  if (!BOYUTLAR) boyutlariHesapla();
+  return { ...BOYUTLAR.get(plaka) };
 }
 
 export function yurunurMu(harita, x, y) {
@@ -77,18 +166,18 @@ export function dusmanYurunurMu(harita, x, y) {
 }
 
 // Harita kenarındaki karolar saat yönünde (köşeler hariç), çıkışların yerleşeceği yerler.
-function cevreKarolari() {
+function cevreKarolari(G, Y) {
   const c = [];
-  for (let x = 1; x < GENISLIK - 1; x++) c.push({ x, y: 0, ix: x, iy: 1 });
-  for (let y = 1; y < YUKSEKLIK - 1; y++) c.push({ x: GENISLIK - 1, y, ix: GENISLIK - 2, iy: y });
-  for (let x = GENISLIK - 2; x > 0; x--) c.push({ x, y: YUKSEKLIK - 1, ix: x, iy: YUKSEKLIK - 2 });
-  for (let y = YUKSEKLIK - 2; y > 0; y--) c.push({ x: 0, y, ix: 1, iy: y });
+  for (let x = 1; x < G - 1; x++) c.push({ x, y: 0, ix: x, iy: 1 });
+  for (let y = 1; y < Y - 1; y++) c.push({ x: G - 1, y, ix: G - 2, iy: y });
+  for (let x = G - 2; x > 0; x--) c.push({ x, y: Y - 1, ix: x, iy: Y - 2 });
+  for (let y = Y - 2; y > 0; y--) c.push({ x: 0, y, ix: 1, iy: y });
   return c;
 }
-const CEVRE = cevreKarolari();
 
 // Komşu illerin çıkışlarını, komşunun gerçek yönüne bakan kenar karolarına yerleştirir.
-function kapilariYerlestir(il, merkez) {
+function kapilariYerlestir(il, merkez, GENISLIK, YUKSEKLIK) {
+  const CEVRE = cevreKarolari(GENISLIK, YUKSEKLIK);
   const istenen = il.komsular.map((plaka) => {
     const k = ilHaritasi.get(plaka);
     const dx = (k.lon - il.lon) * KOS39;
@@ -130,11 +219,12 @@ export function ilHaritasiUret(plaka) {
   if (!il) throw new Error(`Bilinmeyen il: ${plaka}`);
   const doga = BOLGE_DOGASI[il.bolge];
   const rng = rastgeleUreteci((plaka * 2654435761) >>> 0);
-  const G = GENISLIK;
-  const Y = YUKSEKLIK;
+  const { genislik: G, yukseklik: Y } = haritaBoyutu(plaka);
+  const boyut = { genislik: G, yukseklik: Y };
+  const olcek = (G * Y) / OLCU_KARO; // doğa öbekleri harita alanıyla çoğalır
   const k = new Array(G * Y).fill(KARO.CIM);
   const koy = (x, y, tur) => {
-    if (icinde(x, y)) k[y * G + x] = tur;
+    if (icinde(boyut, x, y)) k[y * G + x] = tur;
   };
   const al = (x, y) => k[y * G + x];
 
@@ -151,10 +241,11 @@ export function ilHaritasiUret(plaka) {
       }
     }
   };
-  obek(KARO.YABANI, doga.yabani, 1, 3);
-  obek(KARO.SU, doga.su, 2, 3);
-  obek(KARO.AGAC, doga.agac, 1, 2);
-  obek(KARO.KAYA, doga.kaya, 0, 1);
+  const kac = (n) => Math.round(n * olcek);
+  obek(KARO.YABANI, kac(doga.yabani), 1, 3);
+  obek(KARO.SU, kac(doga.su), 2, 3);
+  obek(KARO.AGAC, kac(doga.agac), 1, 2);
+  obek(KARO.KAYA, kac(doga.kaya), 0, 1);
 
   // 2. Kenar
   for (let x = 0; x < G; x++) {
@@ -177,7 +268,7 @@ export function ilHaritasiUret(plaka) {
   }
 
   // 4. Çıkışlar ve meydana uzanan yollar
-  const kapilar = kapilariYerlestir(il, merkez);
+  const kapilar = kapilariYerlestir(il, merkez, G, Y);
   for (const kapi of kapilar) {
     koy(kapi.x, kapi.y, KARO.KAPI);
     let p = { x: kapi.ix, y: kapi.iy };
@@ -195,11 +286,13 @@ export function ilHaritasiUret(plaka) {
     }
   }
 
-  // 5. Evler: meydanın çevresinde, çimenlik karolarda
+  // 5. Evler: meydanın çevresinde, çimenlik karolarda. Kalabalık illerde mahalle büyür.
+  const evSayisi = evSayisiHesapla(il, doga);
+  const mahalle = 5 + Math.floor(evSayisi / 6);
   let ev = 0;
-  for (let deneme = 0; deneme < 200 && ev < doga.ev; deneme++) {
-    const x = tamSayi(rng, meydan.x1 - 5, meydan.x2 + 5);
-    const y = tamSayi(rng, meydan.y1 - 5, meydan.y2 + 5);
+  for (let deneme = 0; deneme < 60 * evSayisi && ev < evSayisi; deneme++) {
+    const x = tamSayi(rng, meydan.x1 - mahalle, meydan.x2 + mahalle);
+    const y = tamSayi(rng, meydan.y1 - mahalle, meydan.y2 + mahalle);
     if (x < 2 || y < 2 || x > G - 3 || y > Y - 3) continue;
     if (al(x, y) !== KARO.CIM) continue;
     if (x >= meydan.x1 - 1 && x <= meydan.x2 + 1 && y >= meydan.y1 - 1 && y <= meydan.y2 + 1) continue;
@@ -227,7 +320,7 @@ export function ilHaritasiUret(plaka) {
   const dogus = { x: merkez.x, y: merkez.y + 1 };
 
   // 7. Bağlantı: meydandan yürünerek ulaşılamayan açık alanlar engelle doldurulur
-  const harita = { plaka, bolge: il.bolge, karolar: k, kapilar, meydan, dogus, tezgah, cesme, tabela, dukkan, kervansaray, muhtar, ahiBaba };
+  const harita = { plaka, bolge: il.bolge, genislik: G, yukseklik: Y, karolar: k, kapilar, meydan, dogus, tezgah, cesme, tabela, dukkan, kervansaray, muhtar, ahiBaba };
   const ulasilan = ulasilabilir(harita, dogus, yurunurMu);
   for (let y = 0; y < Y; y++) {
     for (let x = 0; x < G; x++) {
@@ -241,14 +334,19 @@ export function ilHaritasiUret(plaka) {
   return harita;
 }
 
+// Evlerin sayısı nüfusla artar (Bayburt ≈ 5, İstanbul ≈ 25); bölgenin mimarisi de katkı yapar.
+function evSayisiHesapla(il, doga) {
+  return Math.round(doga.ev * 0.5 + Math.sqrt(il.nufus) / 180);
+}
+
 function enUzakKaro(harita) {
-  const uzaklik = new Map([[harita.dogus.y * GENISLIK + harita.dogus.x, 0]]);
+  const uzaklik = new Map([[sira(harita, harita.dogus.x, harita.dogus.y), 0]]);
   const kuyruk = [harita.dogus];
   let enIyi = harita.dogus;
   let enIyiUzaklik = -1;
   while (kuyruk.length) {
     const p = kuyruk.shift();
-    const u = uzaklik.get(p.y * GENISLIK + p.x);
+    const u = uzaklik.get(sira(harita, p.x, p.y));
     const t = karo(harita, p.x, p.y);
     const uygun = (t === KARO.CIM || t === KARO.YABANI) && !harita.kapilar.some((k) => mesafe(k, p) < 4);
     if (uygun && u > enIyiUzaklik) {
@@ -258,8 +356,8 @@ function enUzakKaro(harita) {
     for (const { dx, dy } of YONLER) {
       const x = p.x + dx;
       const y = p.y + dy;
-      const s = y * GENISLIK + x;
-      if (icinde(x, y) && !uzaklik.has(s) && yurunurMu(harita, x, y)) {
+      const s = sira(harita, x, y);
+      if (icinde(harita, x, y) && !uzaklik.has(s) && yurunurMu(harita, x, y)) {
         uzaklik.set(s, u + 1);
         kuyruk.push({ x, y });
       }
@@ -270,15 +368,15 @@ function enUzakKaro(harita) {
 
 // Bir noktadan yürünerek ulaşılabilen karoların sıra numaraları.
 export function ulasilabilir(harita, bas, yurur = yurunurMu) {
-  const gorulen = new Set([bas.y * GENISLIK + bas.x]);
+  const gorulen = new Set([sira(harita, bas.x, bas.y)]);
   const kuyruk = [bas];
   while (kuyruk.length) {
     const p = kuyruk.shift();
     for (const { dx, dy } of YONLER) {
       const x = p.x + dx;
       const y = p.y + dy;
-      const s = y * GENISLIK + x;
-      if (icinde(x, y) && !gorulen.has(s) && yurur(harita, x, y)) {
+      const s = sira(harita, x, y);
+      if (icinde(harita, x, y) && !gorulen.has(s) && yurur(harita, x, y)) {
         gorulen.add(s);
         kuyruk.push({ x, y });
       }
@@ -316,18 +414,19 @@ export function etkilesimTuru(harita, x, y) {
 // komşu en yakın yürünür karoya gidilir. Ulaşılamazsa null.
 // `engeller`: geçilemeyecek ek noktalar (ör. düşmanlar).
 export function yolBul(harita, bas, hedef, { yurur = yurunurMu, engeller = [] } = {}) {
-  const engel = new Set(engeller.map((p) => p.y * GENISLIK + p.x));
-  const gecer = (x, y) => yurur(harita, x, y) && !engel.has(y * GENISLIK + x);
+  const G = harita.genislik;
+  const engel = new Set(engeller.map((p) => p.y * G + p.x));
+  const gecer = (x, y) => yurur(harita, x, y) && !engel.has(y * G + x);
   const hedefler = new Set();
-  if (gecer(hedef.x, hedef.y)) hedefler.add(hedef.y * GENISLIK + hedef.x);
+  if (gecer(hedef.x, hedef.y)) hedefler.add(hedef.y * G + hedef.x);
   else {
     for (const { dx, dy } of YONLER) {
       const x = hedef.x + dx;
       const y = hedef.y + dy;
-      if (icinde(x, y) && gecer(x, y)) hedefler.add(y * GENISLIK + x);
+      if (icinde(harita, x, y) && gecer(x, y)) hedefler.add(y * G + x);
     }
   }
-  const basSira = bas.y * GENISLIK + bas.x;
+  const basSira = bas.y * G + bas.x;
   if (hedefler.has(basSira)) return [];
   const onceki = new Map([[basSira, -1]]);
   const kuyruk = [bas];
@@ -336,12 +435,12 @@ export function yolBul(harita, bas, hedef, { yurur = yurunurMu, engeller = [] } 
     for (const { dx, dy } of YONLER) {
       const x = p.x + dx;
       const y = p.y + dy;
-      const s = y * GENISLIK + x;
-      if (!icinde(x, y) || onceki.has(s) || !gecer(x, y)) continue;
-      onceki.set(s, p.y * GENISLIK + p.x);
+      const s = y * G + x;
+      if (!icinde(harita, x, y) || onceki.has(s) || !gecer(x, y)) continue;
+      onceki.set(s, p.y * G + p.x);
       if (hedefler.has(s)) {
         const yol = [];
-        for (let c = s; c !== basSira; c = onceki.get(c)) yol.push({ x: c % GENISLIK, y: Math.floor(c / GENISLIK) });
+        for (let c = s; c !== basSira; c = onceki.get(c)) yol.push({ x: c % G, y: Math.floor(c / G) });
         return yol.reverse();
       }
       kuyruk.push({ x, y });
@@ -358,16 +457,20 @@ export function girisNoktasi(harita, oncekiPlaka) {
 
 // ── Haritadaki düşmanlar ─────────────────────────────────
 
-export function dusmanSayisi(arinma) {
-  return arinma >= 100 ? 2 : 4;
+// İldeki sıradan düşman sayısı: arınmamış ilde 4, arınmış ilde 2; büyük illerin
+// geniş haritalarında karo sayısının kareköküyle artar (Konya'da ≈ 10).
+export function dusmanSayisi(arinma, harita = null) {
+  const temel = arinma >= 100 ? 2 : 4;
+  if (!harita) return temel;
+  return Math.max(temel, Math.round(temel * Math.sqrt((harita.genislik * harita.yukseklik) / OLCU_KARO)));
 }
 
 // Yeni düşmanın belirebileceği karolar: meydandan ve çıkışlardan uzak açık alanlar.
 export function dogusNoktalari(harita) {
   const noktalar = [];
   const m = harita.meydan;
-  for (let y = 1; y < YUKSEKLIK - 1; y++) {
-    for (let x = 1; x < GENISLIK - 1; x++) {
+  for (let y = 1; y < harita.yukseklik - 1; y++) {
+    for (let x = 1; x < harita.genislik - 1; x++) {
       const t = karo(harita, x, y);
       if (t !== KARO.CIM && t !== KARO.YABANI) continue;
       const meydanaUzaklik = Math.max(m.x1 - x, x - m.x2, 0) + Math.max(m.y1 - y, y - m.y2, 0);
@@ -396,30 +499,52 @@ export function dusmanDogur(harita, plaka, rng, { dolu = [], oyuncu = null, enAz
 // İlin düşmanlarını yerleştirir (arınmış illerde daha az düşman olur).
 export function dusmanlariYerlestir(harita, arinma, rng, { oyuncu = null, ilkId = 1 } = {}) {
   const dusmanlar = [];
-  for (let i = 0; i < dusmanSayisi(arinma); i++) {
+  for (let i = 0; i < dusmanSayisi(arinma, harita); i++) {
     const d = dusmanDogur(harita, harita.plaka, rng, { dolu: dusmanlar, oyuncu, id: ilkId + i });
     if (d) dusmanlar.push(d);
   }
   return dusmanlar;
 }
 
-// Düşmanların bir hamlesi: oyuncu yakındaysa (ve dokunulmaz değilse) peşine düşer,
-// değilse yuvasının çevresinde gezinir. Meydana ve çıkışlara girmez, birbirinin ve
-// oyuncunun üstüne basmaz. Yeni dizi döndürür.
+export function davranisi(d) {
+  return d.dusman?.takipci ? DAVRANIS.takipci : DAVRANIS.bekci;
+}
+
+// Düşmanların bir tıkı. Oyuncu görüş uzaklığına girince düşman peşine düşer ve
+// hemen bir adım atılır; oyuncu bırakma uzaklığından öteye kaçana, meydana girene
+// ya da dokunulmaz olana dek kovalar. Kovalamayan düşman yuvasına döner ve çevresinde
+// gezinir. Hız, tık başına biriken adım payıyla uygulanır. Meydana ve çıkışlara
+// girmez, birbirinin ve oyuncunun üstüne basmaz. Yeni dizi döndürür.
 export function dusmanlariYurut(harita, dusmanlar, oyuncu, rng, { dokunulmaz = false } = {}) {
   const sonuc = dusmanlar.map((d) => ({ ...d }));
   const dolu = (x, y, ben) =>
     (x === oyuncu.x && y === oyuncu.y) || sonuc.some((d) => d !== ben && d.x === x && d.y === y);
+  const guvende = dokunulmaz || meydandaMi(harita, oyuncu);
   for (const d of sonuc) {
     if (d.sabit) continue; // boss ve mini bosslar ininden ayrılmaz
+    const dav = davranisi(d);
+    const uzaklik = mesafe(d, oyuncu);
+    if (guvende || uzaklik > dav.birakma) {
+      d.kovaliyor = false;
+    } else if (!d.kovaliyor && uzaklik <= dav.gorus) {
+      d.kovaliyor = true;
+      d.birikim = Math.max(d.birikim ?? 0, 1); // fark edince atılır
+    }
+    d.birikim = (d.birikim ?? 0) + (d.kovaliyor ? dav.hiz : DOLASMA_HIZI);
+    if (d.birikim < 1) continue;
+    d.birikim -= 1;
     let hedef = null;
-    if (!dokunulmaz && !meydandaMi(harita, oyuncu) && mesafe(d, oyuncu) <= KOVALAMA_MENZILI) {
+    const ev = { x: d.evX, y: d.evY };
+    if (d.kovaliyor) {
       const yol = yolBul(harita, d, oyuncu, { yurur: dusmanYurunurMu });
+      if (yol && yol.length) hedef = yol[0];
+    } else if (mesafe(d, ev) > DOLASMA_YARICAPI) {
+      const yol = yolBul(harita, d, ev, { yurur: dusmanYurunurMu });
       if (yol && yol.length) hedef = yol[0];
     } else if (sans(rng, 0.5)) {
       const yon = YONLER[Math.floor(rng() * 4)];
       const aday = { x: d.x + yon.dx, y: d.y + yon.dy };
-      if (Math.abs(aday.x - d.evX) + Math.abs(aday.y - d.evY) <= DOLASMA_YARICAPI) hedef = aday;
+      if (mesafe(aday, ev) <= DOLASMA_YARICAPI) hedef = aday;
     }
     if (hedef && dusmanYurunurMu(harita, hedef.x, hedef.y) && !dolu(hedef.x, hedef.y, d)) {
       d.yon = Math.sign(hedef.x - d.x) || d.yon || -1;
@@ -430,10 +555,78 @@ export function dusmanlariYurut(harita, dusmanlar, oyuncu, rng, { dokunulmaz = f
   return sonuc;
 }
 
+// Bu tıkta oyuncunun peşine yeni düşen düşmanlar (önceki ve sonraki diziler karşılaştırılır).
+export function yeniKovalayanlar(onceki, sonraki) {
+  const eski = new Map(onceki.map((d) => [d.id, d]));
+  return sonraki.filter((d) => d.kovaliyor && !eski.get(d.id)?.kovaliyor);
+}
+
 // Oyuncuya değen (aynı ya da bitişik karodaki) ilk düşman. Meydanda temas olmaz.
 export function temasEdenDusman(harita, dusmanlar, oyuncu) {
   if (meydandaMi(harita, oyuncu)) return null;
   return dusmanlar.find((d) => mesafe(d, oyuncu) <= 1) ?? null;
+}
+
+// ── Halk ─────────────────────────────────────────────────
+// Meydanda ve çevresindeki sokaklarda dolaşan köylüler: yalnızca görünüştür, savaşa
+// karışmazlar. Sayıları nüfusla artar (Bayburt'ta 1, İstanbul'da 10).
+
+const HALK_YURUR = new Set([KARO.CIM, KARO.YOL, KARO.MEYDAN]);
+const HALK_HIZI = 0.3;
+export const HALK_TURLERI = 6; // çizimdeki kıyafet çeşidi
+
+export function halkSayisi(plaka) {
+  const il = ilHaritasi.get(plaka);
+  return Math.max(1, Math.min(10, Math.round(Math.sqrt(il.nufus) / 400)));
+}
+
+// Halkın dolaşabileceği karo: meydan ya da meydana en çok `mahalle` karo uzaklıkta.
+function halkYurunurMu(harita, x, y) {
+  if (!HALK_YURUR.has(karo(harita, x, y))) return false;
+  const m = harita.meydan;
+  const uzaklik = Math.max(m.x1 - x, x - m.x2, 0) + Math.max(m.y1 - y, y - m.y2, 0);
+  return uzaklik <= 3;
+}
+
+export function halkiYerlestir(harita, rng, { ilkId = 1 } = {}) {
+  const adaylar = [];
+  const m = harita.meydan;
+  for (let y = m.y1 - 3; y <= m.y2 + 3; y++) {
+    for (let x = m.x1 - 3; x <= m.x2 + 3; x++) {
+      if (halkYurunurMu(harita, x, y) && !(x === harita.dogus.x && y === harita.dogus.y)) adaylar.push({ x, y });
+    }
+  }
+  const halk = [];
+  for (let i = 0; i < halkSayisi(harita.plaka) && adaylar.length; i++) {
+    const [n] = adaylar.splice(Math.floor(rng() * adaylar.length), 1);
+    halk.push({ id: ilkId + i, x: n.x, y: n.y, tur: tamSayi(rng, 0, HALK_TURLERI - 1), yon: sans(rng, 0.5) ? 1 : -1, birikim: rng() });
+  }
+  return halk;
+}
+
+// Halkın bir tıkı: ara sıra rastgele bir adım. Oyuncunun, düşmanların ve birbirlerinin
+// üstüne basmazlar. Yeni dizi döndürür.
+export function halkiYurut(harita, halk, oyuncu, dusmanlar, rng) {
+  const sonuc = halk.map((h) => ({ ...h }));
+  const dolu = (x, y, ben) =>
+    (x === oyuncu.x && y === oyuncu.y)
+    || dusmanlar.some((d) => mesafe(d, { x, y }) <= 1)
+    || sonuc.some((h) => h !== ben && h.x === x && h.y === y);
+  for (const h of sonuc) {
+    h.birikim += HALK_HIZI;
+    if (h.birikim < 1) continue;
+    h.birikim -= 1;
+    if (!sans(rng, 0.6)) continue;
+    const yon = YONLER[Math.floor(rng() * 4)];
+    const x = h.x + yon.dx;
+    const y = h.y + yon.dy;
+    if (halkYurunurMu(harita, x, y) && !dolu(x, y, h)) {
+      h.yon = yon.dx || h.yon;
+      h.x = x;
+      h.y = y;
+    }
+  }
+  return sonuc;
 }
 
 // ── Boss ve mini boss inleri (plan.md Faz 7) ─────────────

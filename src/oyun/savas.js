@@ -19,6 +19,7 @@ import { yemekAdedi, yemekCikar, yemekEtkisi } from './envanter.js';
 import { statlar, acikYetenekler, xpEkle, tamIyilestir } from './karakter.js';
 import { aralik, sans, sec } from './rastgele.js';
 import { sofraTuket } from './ilerleme.js';
+import { yeniYetenekleriYerlestir } from './kisayollar.js';
 
 // ── Formüller (plan.md Bölüm 5) ──────────────────────────
 
@@ -44,9 +45,12 @@ export function kacinmaSansi(ceviklik) {
   return Math.min(0.2, ceviklik * 0.005);
 }
 
-// min(%80, %40 + (oyuncuÇev − düşmanÇev) × %2), en az %0.
-export function kacmaSansi(oyuncuCev, dusmanCev) {
-  return Math.max(0, Math.min(0.8, 0.4 + (oyuncuCev - dusmanCev) * 0.02));
+// min(%70, %35 + (oyuncuÇev − düşmanÇev) × %2), en az %0. Peşine takılan
+// (takipçi) düşmanlardan kaçmak %15 daha zordur.
+export const TAKIPCI_KACMA_CEZASI = 0.15;
+export function kacmaSansi(oyuncuCev, dusmanCev, { takipci = false } = {}) {
+  const sans = Math.min(0.7, 0.35 + (oyuncuCev - dusmanCev) * 0.02) - (takipci ? TAKIPCI_KACMA_CEZASI : 0);
+  return Math.max(0, sans);
 }
 
 // Düşman statları seviye ve tür çarpanıyla ölçeklenir.
@@ -82,6 +86,7 @@ export function dusmanOlustur(anahtar, seviye) {
     ikon: veri.ikon,
     tur: veri.tur,
     sinif: veri.sinif,
+    takipci: Boolean(veri.takipci),
     seviye,
     canEnCok: s.can,
     can: s.can,
@@ -323,7 +328,7 @@ export function oyuncuEylemi(savas, eylem, rng) {
       olaylar.push(yemekYe(s, eylem.anahtar));
       break;
     case 'kac':
-      if (sans(rng, kacmaSansi(s.oyuncu.ceviklik, s.dusman.ceviklik))) {
+      if (sans(rng, kacmaSansi(s.oyuncu.ceviklik, s.dusman.ceviklik, { takipci: s.dusman.takipci }))) {
         s.sonuc = 'kacis';
         olaylar.push({ tip: 'kacis', basarili: true });
       } else {
@@ -384,6 +389,10 @@ export function savasSonucunuUygula(durum, savas) {
   if (savas.sonuc === 'zafer') {
     const r = xpEkle(yeni.oyuncu, savas.xpOdulu);
     yeni = { ...yeni, oyuncu: r.oyuncu };
+    // Yeni açılan yetenekler boş kısayol yuvalarına yerleşir
+    if (r.yeniYetenekler.length && yeni.kisayollar) {
+      yeni.kisayollar = yeniYetenekleriYerlestir(yeni.kisayollar, r.yeniYetenekler);
+    }
     Object.assign(ozet, { xp: savas.xpOdulu, seviyeler: r.seviyeler, yeniYetenekler: r.yeniYetenekler });
   } else if (savas.sonuc === 'yenilgi') {
     const r = bayilmaUygula(yeni);

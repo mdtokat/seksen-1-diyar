@@ -1,8 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
-  GENISLIK,
-  YUKSEKLIK,
   KARO,
+  haritaBoyutu,
+  halkSayisi,
+  halkiYerlestir,
+  halkiYurut,
+  yeniKovalayanlar,
+  DAVRANIS,
   ilHaritasiUret,
   ulasilabilir,
   yurunurMu,
@@ -37,15 +41,15 @@ describe('il haritası üretimi', () => {
   it('81 ilin tamamında: her komşuya bir çıkış, kenarda, tekrarsız ve meydandan erişilebilir', () => {
     for (const il of iller) {
       const h = ilHaritasiUret(il.plaka);
-      expect(h.karolar, il.ad).toHaveLength(GENISLIK * YUKSEKLIK);
+      expect(h.karolar, il.ad).toHaveLength(h.genislik * h.yukseklik);
       expect(h.kapilar.map((k) => k.plaka).sort(), il.ad).toEqual([...il.komsular].sort());
       expect(new Set(h.kapilar.map((k) => `${k.x},${k.y}`)).size, il.ad).toBe(h.kapilar.length);
       const ulasilan = ulasilabilir(h, h.dogus);
       for (const k of h.kapilar) {
-        const kenarda = k.x === 0 || k.y === 0 || k.x === GENISLIK - 1 || k.y === YUKSEKLIK - 1;
+        const kenarda = k.x === 0 || k.y === 0 || k.x === h.genislik - 1 || k.y === h.yukseklik - 1;
         expect(kenarda, `${il.ad} → ${k.plaka}`).toBe(true);
         expect(karo(h, k.x, k.y)).toBe(KARO.KAPI);
-        expect(ulasilan.has(k.y * GENISLIK + k.x), `${il.ad} → ${k.plaka}`).toBe(true);
+        expect(ulasilan.has(k.y * h.genislik + k.x), `${il.ad} → ${k.plaka}`).toBe(true);
       }
     }
   });
@@ -65,9 +69,9 @@ describe('il haritası üretimi', () => {
     for (const plaka of [ISTANBUL, 6, 61, 65, 63]) {
       const h = ilHaritasiUret(plaka);
       const ulasilan = ulasilabilir(h, h.dogus);
-      for (let y = 0; y < YUKSEKLIK; y++) {
-        for (let x = 0; x < GENISLIK; x++) {
-          if (yurunurMu(h, x, y)) expect(ulasilan.has(y * GENISLIK + x), `${plaka} ${x},${y}`).toBe(true);
+      for (let y = 0; y < h.yukseklik; y++) {
+        for (let x = 0; x < h.genislik; x++) {
+          if (yurunurMu(h, x, y)) expect(ulasilan.has(y * h.genislik + x), `${plaka} ${x},${y}`).toBe(true);
         }
       }
     }
@@ -77,7 +81,7 @@ describe('il haritası üretimi', () => {
     const h = ilHaritasiUret(ISTANBUL);
     const kocaeli = h.kapilar.find((k) => k.plaka === KOCAELI);
     const tekirdag = h.kapilar.find((k) => k.plaka === TEKIRDAG);
-    expect(kocaeli.x).toBe(GENISLIK - 1);
+    expect(kocaeli.x).toBe(h.genislik - 1);
     expect(tekirdag.x).toBe(0);
   });
 
@@ -90,7 +94,7 @@ describe('il haritası üretimi', () => {
         const dogu = (komsu.lon - il.lon) * Math.cos((39 * Math.PI) / 180);
         const guney = il.lat - komsu.lat;
         if (Math.abs(dogu) > 2 * Math.abs(guney)) {
-          expect(Math.sign(k.x - (GENISLIK - 1) / 2), `${il.ad} → ${komsu.ad}`).toBe(Math.sign(dogu));
+          expect(Math.sign(k.x - (h.genislik - 1) / 2), `${il.ad} → ${komsu.ad}`).toBe(Math.sign(dogu));
         }
       }
     }
@@ -141,12 +145,18 @@ describe('haritadaki düşmanlar', () => {
   const h = ilHaritasiUret(ISTANBUL);
   const il = ilHaritasi.get(ISTANBUL);
 
-  it('arınmamış ilde 4, arınmış ilde 2 düşman olur', () => {
+  it('arınmamış ilde en az 4, arınmış ilde en az 2 düşman olur; büyük illerde daha çok', () => {
     expect(dusmanSayisi(0)).toBe(4);
     expect(dusmanSayisi(99)).toBe(4);
     expect(dusmanSayisi(100)).toBe(2);
-    expect(dusmanlariYerlestir(h, 0, rastgeleUreteci(3))).toHaveLength(4);
-    expect(dusmanlariYerlestir(h, 100, rastgeleUreteci(3))).toHaveLength(2);
+    const yalova = ilHaritasiUret(77);
+    const konya = ilHaritasiUret(42);
+    expect(dusmanSayisi(0, yalova)).toBe(4);
+    expect(dusmanSayisi(100, yalova)).toBe(2);
+    expect(dusmanSayisi(0, konya)).toBeGreaterThan(dusmanSayisi(0, h));
+    expect(dusmanSayisi(0, h)).toBeGreaterThanOrEqual(4);
+    expect(dusmanlariYerlestir(h, 0, rastgeleUreteci(3))).toHaveLength(dusmanSayisi(0, h));
+    expect(dusmanlariYerlestir(h, 100, rastgeleUreteci(3))).toHaveLength(dusmanSayisi(100, h));
   });
 
   it('düşmanlar ilin havuzundan, meydandan ve çıkışlardan uzakta, açık alanda belirir', () => {
@@ -194,16 +204,66 @@ describe('haritadaki düşmanlar', () => {
     }
   });
 
-  it('yakındaki oyuncunun peşine düşer; dokunulmaz oyuncunun peşine düşmez', () => {
+  it('yakındaki oyuncunun peşine düşer (fark edince hemen atılır); dokunulmaz oyuncunun peşine düşmez', () => {
     const [d] = dusmanlariYerlestir(h, 0, rastgeleUreteci(2));
     const yol = yolBul(h, d, h.dogus);
     const oyuncu = yol[3]; // düşmana 4 adım uzakta, açık alanda
     expect(meydandaMi(h, oyuncu)).toBe(false);
     const once = mesafe(d, oyuncu);
     const [kovalayan] = dusmanlariYurut(h, [d], oyuncu, rastgeleUreteci(1));
+    expect(kovalayan.kovaliyor).toBe(true);
     expect(mesafe(kovalayan, oyuncu)).toBe(once - 1);
+    expect(yeniKovalayanlar([d], [kovalayan])).toEqual([kovalayan]);
+    expect(yeniKovalayanlar([kovalayan], [kovalayan])).toEqual([]);
     const [sakin] = dusmanlariYurut(h, [d], oyuncu, () => 0.99, { dokunulmaz: true });
-    expect(sakin).toMatchObject({ x: d.x, y: d.y });
+    expect(sakin).toMatchObject({ x: d.x, y: d.y, kovaliyor: false });
+  });
+
+  // Oyuncu düşmandan kaçmaya çalışır: her tıkta ondan uzaklaşan en iyi adımı atar.
+  function kacisDenemesi(takipci, tik = 60) {
+    const [d0] = dusmanlariYerlestir(h, 0, rastgeleUreteci(5));
+    let d = { ...d0, dusman: { ...d0.dusman, takipci } };
+    const yol = yolBul(h, d, h.dogus);
+    let oyuncu = yol[2];
+    let ds = [d];
+    let yakalandi = false;
+    for (let i = 0; i < tik; i++) {
+      const adaylar = [[0, 1], [1, 0], [0, -1], [-1, 0]]
+        .map(([dx, dy]) => ({ x: oyuncu.x + dx, y: oyuncu.y + dy }))
+        .filter((p) => dusmanYurunurMu(h, p.x, p.y) && !(p.x === ds[0].x && p.y === ds[0].y));
+      if (adaylar.length) oyuncu = adaylar.sort((a, b) => mesafe(b, ds[0]) - mesafe(a, ds[0]))[0];
+      ds = dusmanlariYurut(h, ds, oyuncu, rastgeleUreteci(i + 1));
+      if (temasEdenDusman(h, ds, oyuncu)) { yakalandi = true; break; }
+    }
+    return { yakalandi, kovaliyor: ds[0].kovaliyor, uzaklik: mesafe(ds[0], oyuncu) };
+  }
+
+  it('takipçi düşman bekçiden uzaktan fark eder, daha hızlı koşar ve peşini geç bırakır', () => {
+    expect(DAVRANIS.takipci.gorus).toBeGreaterThan(DAVRANIS.bekci.gorus);
+    expect(DAVRANIS.takipci.birakma).toBeGreaterThan(DAVRANIS.bekci.birakma);
+    expect(DAVRANIS.takipci.hiz).toBeGreaterThan(DAVRANIS.bekci.hiz);
+    expect(DAVRANIS.takipci.hiz).toBeLessThan(1); // oyuncu yine de bir tık hızlıdır
+    // 12 tık kaçan oyuncu: bekçi çoktan geride kalır, takipçi hâlâ peşindedir
+    const bekci = kacisDenemesi(false, 12);
+    const takipci = kacisDenemesi(true, 12);
+    expect(takipci.yakalandi || takipci.kovaliyor).toBe(true);
+    if (!takipci.yakalandi && !bekci.yakalandi) expect(takipci.uzaklik).toBeLessThan(bekci.uzaklik);
+  });
+
+  it('peşini bırakan düşman yuvasına döner', () => {
+    const [d] = dusmanlariYerlestir(h, 0, rastgeleUreteci(4));
+    // Yuvasından uzağa (düşmanın yürüyerek ulaşabildiği bir yere) taşınmış; oyuncu meydanda
+    const ulasilan = ulasilabilir(h, d, dusmanYurunurMu);
+    let uzak = null;
+    for (const s of ulasilan) {
+      const p = { x: s % h.genislik, y: Math.floor(s / h.genislik) };
+      if (mesafe(p, d) >= 8 && mesafe(p, d) <= 12) { uzak = p; break; }
+    }
+    expect(uzak).not.toBeNull();
+    let ds = [{ ...d, x: uzak.x, y: uzak.y, kovaliyor: false }];
+    const once = mesafe(ds[0], { x: d.evX, y: d.evY });
+    for (let i = 0; i < 40; i++) ds = dusmanlariYurut(h, ds, h.dogus, rastgeleUreteci(i));
+    expect(mesafe(ds[0], { x: d.evX, y: d.evY })).toBeLessThanOrEqual(Math.min(once, 3));
   });
 
   it('temas: bitişik düşman savaşı başlatır, meydanda temas olmaz', () => {
@@ -212,5 +272,95 @@ describe('haritadaki düşmanlar', () => {
     expect(temasEdenDusman(h, [d], { x: 5, y: 7 })).toBeNull();
     const kenar = { x: h.meydan.x1, y: h.meydan.y1 };
     expect(temasEdenDusman(h, [{ id: 2, x: kenar.x - 1, y: kenar.y }], kenar)).toBeNull();
+  });
+});
+
+describe('illerin gerçek boyutu ve nüfusu', () => {
+  const alan = (il) => { const b = haritaBoyutu(il.plaka); return b.genislik * b.yukseklik; };
+
+  it('harita alanı yüzölçümüyle birlikte büyür: Konya en büyük, Yalova en küçük harita', () => {
+    const sirali = [...iller].sort((a, b) => a.yuzolcumu - b.yuzolcumu);
+    for (let i = 1; i < sirali.length; i++) {
+      expect(alan(sirali[i]), `${sirali[i - 1].ad} < ${sirali[i].ad}`).toBeGreaterThanOrEqual(alan(sirali[i - 1]));
+    }
+    const konya = ilHaritasi.get(42);
+    const yalova = ilHaritasi.get(77);
+    for (const il of iller) {
+      if (il !== konya) expect(alan(konya)).toBeGreaterThan(alan(il));
+      if (il !== yalova) expect(alan(yalova)).toBeLessThan(alan(il));
+    }
+    expect(alan(konya) / alan(yalova)).toBeGreaterThan(8);
+  });
+
+  it('harita kenarları tek sayıdır, ilin şekline göre yatık ya da dik olur', () => {
+    for (const il of iller) {
+      const b = haritaBoyutu(il.plaka);
+      expect(b.genislik % 2, il.ad).toBe(1);
+      expect(b.yukseklik % 2, il.ad).toBe(1);
+      expect(b.genislik / b.yukseklik).toBeGreaterThan(0.5);
+      expect(b.genislik / b.yukseklik).toBeLessThan(2);
+    }
+    const ilk = ilHaritasiUret(42);
+    expect(ilk.genislik).toBe(haritaBoyutu(42).genislik);
+    // Ordu kıyı boyunca doğu-batı uzanır, Hatay kuzey-güney
+    const ordu = haritaBoyutu(52);
+    const hatay = haritaBoyutu(31);
+    expect(ordu.genislik).toBeGreaterThan(ordu.yukseklik);
+    expect(hatay.yukseklik).toBeGreaterThan(hatay.genislik);
+  });
+
+  it('İstanbul en kalabalık il: en çok ev ve en çok halk orada', () => {
+    const evler = (plaka) => ilHaritasiUret(plaka).karolar.filter((t) => t === KARO.EV).length;
+    const istanbulEv = evler(ISTANBUL);
+    for (const plaka of [6, 35, 16, 42, 69, 62, 75]) expect(istanbulEv, String(plaka)).toBeGreaterThan(evler(plaka));
+    for (const il of iller) {
+      if (il.plaka !== ISTANBUL) expect(halkSayisi(ISTANBUL)).toBeGreaterThanOrEqual(halkSayisi(il.plaka));
+      expect(halkSayisi(il.plaka)).toBeGreaterThanOrEqual(1);
+    }
+    expect(halkSayisi(ISTANBUL)).toBeGreaterThan(halkSayisi(69));
+  });
+
+  it('halk meydanın çevresinde dolaşır; oyuncunun ve düşmanların üstüne basmaz', () => {
+    const h = ilHaritasiUret(ISTANBUL);
+    const rng = rastgeleUreteci(7);
+    let halk = halkiYerlestir(h, rng);
+    expect(halk).toHaveLength(halkSayisi(ISTANBUL));
+    const oyuncu = { ...h.dogus };
+    const dusmanlar = dusmanlariYerlestir(h, 0, rng);
+    for (let i = 0; i < 200; i++) {
+      halk = halkiYurut(h, halk, oyuncu, dusmanlar, rng);
+      const yerler = new Set(halk.map((k) => `${k.x},${k.y}`));
+      expect(yerler.size).toBe(halk.length);
+      for (const k of halk) {
+        expect(k.x === oyuncu.x && k.y === oyuncu.y).toBe(false);
+        const m = h.meydan;
+        expect(Math.max(m.x1 - k.x, k.x - m.x2, 0) + Math.max(m.y1 - k.y, k.y - m.y2, 0)).toBeLessThanOrEqual(3);
+      }
+    }
+  });
+});
+
+describe('il coğrafyası', async () => {
+  const { ilCografyasi, ilOzellikleri } = await import('../src/oyun/cografya.js');
+
+  it('her ilin yüzölçümü ve nüfusu var; sıralar 1–81 arasında', () => {
+    for (const il of iller) {
+      expect(il.yuzolcumu, il.ad).toBeGreaterThan(0);
+      expect(il.nufus, il.ad).toBeGreaterThan(0);
+      const c = ilCografyasi(il.plaka);
+      for (const s of [c.alanSirasi, c.nufusSirasi, c.yogunlukSirasi]) {
+        expect(s).toBeGreaterThanOrEqual(1);
+        expect(s).toBeLessThanOrEqual(81);
+      }
+    }
+  });
+
+  it('Konya en geniş, Yalova en küçük, İstanbul en kalabalık, Bayburt en az nüfuslu il', () => {
+    expect(ilOzellikleri(42)).toContain('en_genis');
+    expect(ilOzellikleri(77)).toContain('en_kucuk');
+    expect(ilOzellikleri(ISTANBUL)).toContain('en_kalabalik');
+    expect(ilOzellikleri(69)).toContain('en_az_nufus');
+    expect(ilCografyasi(42).alanSirasi).toBe(1);
+    expect(ilCografyasi(ISTANBUL).nufusSirasi).toBe(1);
   });
 });

@@ -2,13 +2,14 @@
 import { bolgeler } from '../veri/bolgeler.js';
 import { yeniKarakter } from './karakter.js';
 import { BASLANGIC_HEYBESI } from './envanter.js';
+import { varsayilanKisayollar } from './kisayollar.js';
 
 // Yeni bir oyunun başlangıç durumu: yalnızca ilk bölge açık,
 // oyuncu o bölgenin giriş ilinde (İstanbul).
 // `ad` ve `sinif` verilirse karakter de oluşturulur.
 export function yeniOyunDurumu({ ad, sinif } = {}) {
   const ilkBolge = bolgeler.find((b) => b.sira === 1);
-  return {
+  const durum = {
     konum: ilkBolge.giris,
     acikBolgeler: [ilkBolge.anahtar],
     arinma: {}, // { plaka: 0–100 }
@@ -28,6 +29,8 @@ export function yeniOyunDurumu({ ad, sinif } = {}) {
     toplananYemekler: BASLANGIC_HEYBESI.map((y) => y.anahtar), // en az bir kez sahip olunan yemekler
     istatistik: { zafer: 0, bayilma: 0, bolgeBayilma: {} },
   };
+  // Savaş kısayol yuvaları (1–4 tuşları): kisayollar.js
+  return { ...durum, kisayollar: varsayilanKisayollar(durum) };
 }
 
 // Tek bir oyun durumunu tutan depo. Durum değişmez (immutable) kabul edilir:

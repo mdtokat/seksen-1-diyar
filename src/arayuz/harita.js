@@ -18,6 +18,7 @@ import { GOREV_VERENLER } from '../veri/gorevler.js';
 import { verenGorevleri, gorevDurumu } from '../oyun/gorevler.js';
 import { sablon, kacis, ilerlemeCubugu, bildirimGoster } from './bilesenler.js';
 import { karakterDugmesiniCiz } from './karakterDugmesi.js';
+import { cografyaSatirlari, ozellikRozetleri } from './cografyaBilgisi.js';
 
 const M = metinler.harita;
 const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
@@ -353,12 +354,14 @@ export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, ilGoster }
       <button class="simge-buton kart-kapat" data-eylem="kapat" aria-label="${M.kapat}">✕</button>
       <h2 class="kart-baslik">${kacis(il.ad)} <span class="plaka">${String(il.plaka).padStart(2, '0')}</span></h2>
       <p class="kart-bolge"><span class="bolge-noktasi" style="background:${bolge.renk}"></span>${kacis(bolge.ad)}</p>
+      ${ozellikRozetleri(plaka)}
       <dl class="kart-bilgi">
         <div><dt>${M.seviye}</dt><dd>${sablon(M.seviyeDegeri, { en_az: il.seviye[0], en_cok: il.seviye[1] })}</dd></div>
         <div><dt>${M.yemek}</dt><dd><span aria-hidden="true">${yemek.ikon}</span> ${kacis(yemek.ad)}<small>${kacis(yemek.aciklama)}</small></dd></div>
         <div><dt>${M.arinma}</dt><dd>${ilerlemeCubugu(yuzde, { etiket: M.arinma, renk: 'var(--arinmis)' })}</dd></div>
         ${bossSatiri(durum, il, bolge)}
         ${olanaklarSatiri(il, bolge)}
+        ${cografyaSatirlari(plaka)}
       </dl>
       <div class="kart-eylem">${eylem}</div>`;
   }
