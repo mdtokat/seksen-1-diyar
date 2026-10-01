@@ -9,9 +9,13 @@ import {
   dusmanlarVurur,
   dusmanlariToparla,
   atilmaYeri,
+  yoldasHamlesi,
+  YOLDAS_SAVAS_UZAKLIGI,
 } from '../src/oyun/catisma.js';
+import { yoldasBilgisi } from '../src/oyun/karakter.js';
+import { siniflar, YOLDAS_SEVIYESI } from '../src/veri/siniflar.js';
 import { KARO, gorusAcikMi, menzildeMi, dusmanlariYurut, mesafe } from '../src/oyun/gezinti.js';
-import { dusmanOlustur, eylemMenzili, TOPLU_HASAR_CARPANI } from '../src/oyun/savas.js';
+import { dusmanOlustur, eylemMenzili, savasci, TOPLU_HASAR_CARPANI } from '../src/oyun/savas.js';
 import { yeniOyunDurumu } from '../src/oyun/durum.js';
 import { yeniKarakter, xpEkle, gerekenXp } from '../src/oyun/karakter.js';
 import { rastgeleUreteci } from '../src/oyun/rastgele.js';
@@ -421,5 +425,84 @@ describe('uzmanlık dalı haritada', () => {
     const kazanc = (dal) => oyuncuVurur(az(dal), [zayif()], { tur: 'saldir' }, sabit(0.99), { hedef: zayif(), oyuncu: { x: 10, y: 11 } })
       .olaylar.find((o) => o.tip === 'pasif').miktar;
     expect(kazanc('dervis')).toBeGreaterThan(kazanc('gazi'));
+  });
+});
+
+describe('yoldaşlar', () => {
+  const ayi = (id, x, y, ek = {}) => kayit(id, x, y, { kovaliyor: true, ...ek }, dusmanOlustur('boz_ayi', 10));
+  const oyuncu = { x: 10, y: 10 };
+  const yh = (d, ds, ek = {}) => yoldasHamlesi(d, ds, oyuncu, sabit(0.99), ek);
+
+  it(`her sınıfın bir yoldaşı var; ${YOLDAS_SEVIYESI}. seviyede katılır`, () => {
+    for (const [a, s] of Object.entries(siniflar)) {
+      expect(['vurus', 'alan', 'sersem', 'sifa'], a).toContain(s.yoldas.eylem);
+      expect(s.yoldas.bekleme, a).toBeGreaterThan(0);
+      expect(yoldasBilgisi(durum(a, YOLDAS_SEVIYESI - 1).oyuncu), a).toBeNull();
+      expect(yoldasBilgisi(durum(a, YOLDAS_SEVIYESI).oyuncu), a).toBe(s.yoldas);
+    }
+    expect(yh(durum('kemankes', 5), [ayi(1, 12, 10)]).olaylar).toEqual([]);
+  });
+
+  it('Doğan yiğidin hedefine altı karo içinde dalar; vurulan kızar; sonra bekler', () => {
+    const d = durum('kemankes', 10);
+    const yakin = ayi(1, 11, 10);
+    const hedef = ayi(2, 15, 10, { kovaliyor: false });
+    const r = yh(d, [yakin, hedef], { hedefId: 2 });
+    expect(r.olaylar).toHaveLength(1);
+    expect(r.olaylar[0]).toMatchObject({ tip: 'yoldas', id: 2 });
+    expect(r.dusmanlar[1]).toMatchObject({ kizgin: true });
+    expect(r.dusmanlar[1].dusman.can).toBeLessThan(hedef.dusman.can);
+    expect(r.bekleme).toBe(siniflar.kemankes.yoldas.bekleme);
+    // Beklerken bir şey yapmaz, bekleme azalır
+    const b = yh(d, [yakin], { bekleme: 3 });
+    expect(b.olaylar).toEqual([]);
+    expect(b.bekleme).toBe(2);
+    // Hedef yoksa en yakın saldırgana; menzil dışındakine dokunmaz
+    expect(yh(d, [ayi(3, 17, 10)]).olaylar).toEqual([]);
+    expect(yh(d, [yakin]).olaylar[0].id).toBe(1);
+  });
+
+  it('kendi hâlinde dolaşan yaratığa, meydanda ya da dokunulmazken dokunmaz; yapacak iş yoksa hazır bekler', () => {
+    const d = durum('kemankes', 10);
+    const dolasan = kayit(1, 11, 10, {}, dusmanOlustur('boz_ayi', 10));
+    const r = yh(d, [dolasan]);
+    expect(r.olaylar).toEqual([]);
+    expect(r.bekleme).toBe(0);
+    expect(yh(d, [ayi(1, 11, 10)], { guvende: true }).olaylar).toEqual([]);
+    expect(yh(d, [ayi(1, 11, 10)], { vurulamaz: () => true }).olaylar).toEqual([]);
+  });
+
+  it('Kırat yanı başındaki bütün saldırganlara çifte atar', () => {
+    const r = yh(durum('akinci', 10), [ayi(1, 11, 10), ayi(2, 10, 9), ayi(3, 12, 10)]);
+    expect(r.olaylar.map((o) => o.id).sort()).toEqual([1, 2]);
+  });
+
+  it('Karabaş en yakın saldırganı ısırıp sersemletir', () => {
+    const r = yh(durum('baci', 10), [ayi(1, 11, 10), ayi(2, 10, 11)]);
+    expect(r.olaylar).toHaveLength(1);
+    expect(r.olaylar[0].sersem).toBe(3);
+    expect(r.dusmanlar.find((d) => d.id === r.olaylar[0].id).sersem).toBe(3);
+  });
+
+  it('düşürdüğü düşman dusenler ile döner ve haritadan kalkar', () => {
+    const zayif = ayi(1, 11, 10, { dusman: { ...dusmanOlustur('boz_ayi', 10), can: 1 } });
+    const r = yh(durum('baci', 10), [zayif]);
+    expect(r.dusenler.map((d) => d.id)).toEqual([1]);
+    expect(r.dusmanlar).toEqual([]);
+  });
+
+  it('Mürit yalnızca savaşta iyileştirir: önce can, can yerindeyse nefes', () => {
+    const d = durum('alperen', 10);
+    const enCok = savasci(d);
+    const yarali = { ...d, oyuncu: { ...d.oyuncu, can: 20 } };
+    const yakin = ayi(1, 12, 10);
+    const r = yh(yarali, [yakin]);
+    expect(r.olaylar[0]).toMatchObject({ etki: 'sifa', yenilenen: 'can', miktar: Math.round(enCok.canEnCok * 0.05) });
+    expect(r.durum.oyuncu.can).toBe(20 + r.olaylar[0].miktar);
+    const yorgun = { ...d, oyuncu: { ...d.oyuncu, nefes: 5 } };
+    expect(yh(yorgun, [yakin]).olaylar[0]).toMatchObject({ yenilenen: 'nefes' });
+    // Savaş yokken (yakında saldırgan yok) iyileştirmez
+    expect(yh(yarali, [ayi(1, 10 + YOLDAS_SAVAS_UZAKLIGI + 2, 10)]).olaylar).toEqual([]);
+    expect(yh(d, [yakin]).olaylar).toEqual([]);
   });
 });

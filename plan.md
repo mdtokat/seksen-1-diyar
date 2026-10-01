@@ -804,6 +804,22 @@ Ahi teşkilatının kadın kolu Bacıyân-ı Rûm'dan bir yiğit kadın. Ahi esn
 - **Çizim (`cizimler/karakterler.js → baci`):** erik rengi entari, turuncu kuşak, kuşakta taş kesesi, kaldırılmış elde dönen sapan (dönüş izi kesik çizgi). Ekipman: sapan ipi nadirde bölge renginde, efsanevide altın ve ışıltılı; taş efsanevide parlar. Yelek, kuşak ve efsanevi hale ortak ekipman katmanlarıyla gelir.
 - **Denge:** Aç Kurt (Sv 1), gezgin boss ("zorlu" bazen yenilir, "kesilemez" yenilmez) ve Zülmet (Sv 48, Doğu Anadolu nadir ekipmanı, %60+ zafer, 8–25 hamle) simülasyonlarına Bacı eklendi; hepsi geçer.
 
+### Ek — Yoldaşlar
+8. seviyede (`YOLDAS_SEVIYESI`) her sınıfa bir yoldaş katılır (`siniflar.js → yoldas`, `karakter.js → yoldasBilgisi`). Kayıt şeması değişmedi: yoldaş sınıftan ve seviyeden türetilir; bekleme ve haritadaki yeri gezinti durumunda tutulur.
+
+| Sınıf | Yoldaş | Eylem | Ayrıntı |
+|---|---|---|---|
+| Akıncı | Kırat (at) | `alan` | yiğidin 1 karo çevresindeki bütün saldırganlara gücün ×0,45'i; 12 tıkta bir |
+| Kemankeş | Tuğrul (doğan, uçar) | `vurus` | 6 karo içinde yiğidin hedefine (yoksa en yakın saldırgana) ×0,7; görüş istemez; 14 tıkta bir |
+| Alperen | Kemal (mürit) | `sifa` | 6 karo içinde saldırgan varken: can < %90 ise canın %5'i, değilse nefes < %70 ise nefesin %8'i; 18 tıkta bir |
+| Bacı | Karabaş (kangal) | `sersem` | 1 karo çevredeki en yakın saldırgana ×0,5 ve 3 tık sersem (bosslarda yarı); 12 tıkta bir |
+
+- **Mantık (`catisma.js → yoldasHamlesi`):** her düşman tıkında bir kez çağrılır. Bekleme doluysa, yiğit güvende değilse (meydan, dokunulmazlık) ve yapacak iş varsa yardım eder; yoksa hazır bekler. Yalnızca saldırgan düşmanlara ya da yiğidin hedefine dokunur; mühürlü boss vurulmaz. Vuruş `savas.js → yoldasVurusu`: yiğidin gücü × çarpan, kritik yok, düşman sıyrılabilir, bossun evresini tetikleyebilir. Vurulan düşman kızar; düşen düşman yiğidin zaferi sayılır.
+- **Tık:** `TIK_MS` = 170 ms (`catisma.js`; gezinti ve karakter ekranı kullanır).
+- **Görsel (`cizimler/yoldaslar.js`):** at, doğan ve kangal; mürit `karakterler.js → muritIcerigi` ile sınıf figürlerinin gövdesinden. Haritada yoldaş yiğidin bir önceki karosunda yürür (2 karodan uzak kalırsa yanına gelir); doğan yiğidin omzunun üstünde süzülür. Yardımda hamle animasyonu, vurulanda hasar sayısı, mürit yardımında yiğidin üstünde yeşil/turkuaz sayı.
+- **Arayüz:** karakter ekranında "Yoldaş" bölümü (kilitliyken soluk); Sv 8'e ulaşınca bildirim çıkar.
+- **Denge:** yoldaş yiğidin vuruş hızına göre yaklaşık %20–25 ek hasar getirir. Boss, gezgin boss ve kalabalık simülasyonları yoldaşsız ölçülür ve değişmedi.
+
 ---
 
 ## 10. Sonraki Fikirler (Kapsam Dışı)

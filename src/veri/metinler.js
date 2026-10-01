@@ -536,6 +536,17 @@ export const metinler = {
     },
     pasif: 'Sınıf özelliği',
     pasifEtkin: 'Şu an etkin',
+    yoldas: {
+      baslik: 'Yoldaş',
+      kilitli: 'Sv {seviye} olunca yoldaşın katılır.',
+      eylemler: {
+        vurus: '{menzil} karo içindeki hedefine dalar; gücünün %{oran} kadarıyla vurur.',
+        alan: 'Yanı başındaki bütün saldırganlara gücünün %{oran} kadarıyla çifte atar.',
+        sersem: 'Yanı başındaki en yakın saldırganı gücünün %{oran} kadarıyla ısırır ve sersemletir.',
+        sifa: 'Savaşta canının %{can} kadarını, can yerindeyse nefesinin %{nefes} kadarını yeniler.',
+      },
+      aralik: '{saniye} saniyede bir yardım eder.',
+    },
     dal: {
       baslik: 'Uzmanlık',
       ileride: 'Sv {seviye} olunca bu iki yoldan birini seçeceksin.',
@@ -612,6 +623,7 @@ export const metinler = {
       statPuaniKazandin: 'Dağıtılacak {puan} stat puanın var.',
       yeniYetenek: '✨ Yeni yetenek: {yetenek}',
       dalSecebilirsin: '🧭 Uzmanlık yolunu seçebilirsin! Karakter ekranına bak.',
+      yoldasKatildi: '🤝 {ad} ({tur}) yoldaşın oldu! Bundan böyle savaşta yanında.',
       arinma: 'İl %{artis} arındı (şimdi %{yuzde}).',
       arindi: '🌿 {il} Zülmet\'in sihrinden tamamen arındı!',
       akce: '+{akce} akçe kazandın.',

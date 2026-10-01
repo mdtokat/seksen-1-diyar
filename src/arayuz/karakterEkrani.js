@@ -1,9 +1,11 @@
 // Karakter ekranı: seviye, XP çubuğu, statlar, stat puanı dağıtma ve yetenekler.
-import { siniflar, STAT_PUANI_DEGERI, DAL_SEVIYESI } from '../veri/siniflar.js';
+import { siniflar, STAT_PUANI_DEGERI, DAL_SEVIYESI, YOLDAS_SEVIYESI } from '../veri/siniflar.js';
 import { metinler } from '../veri/metinler.js';
 import { statlar, gerekenXp, statPuaniDagit, STATLAR, dalSec, dalSecebilirMi, dalBilgisi } from '../oyun/karakter.js';
 import { kacis, sablon, degerCubugu } from './bilesenler.js';
 import { oyuncuCizimi } from './cizimler/karakterler.js';
+import { yoldasCizimi } from './cizimler/yoldaslar.js';
+import { TIK_MS } from '../oyun/catisma.js';
 import { esyaBilgisi } from '../oyun/rota.js';
 import { YUVALAR } from '../veri/esyalar.js';
 import { kusan, kusanKontrol, cikar, kusaniliMi } from '../oyun/ekipman.js';
@@ -101,6 +103,29 @@ function dalEtkileri(sinifAnahtari, dalAnahtari) {
     satirlar.push(sablon(D.ekHasar, { turler: turler[0].toLocaleUpperCase('tr') + turler.slice(1), oran: yuzde(dal.ekHasar.carpan - 1) }));
   }
   return satirlar;
+}
+
+// Yoldaş bölümü: çizimi, adı, ne yaptığı ve ne sıklıkla yardım ettiği; katılmadıysa kilitli.
+function yoldasBolumu(o) {
+  const Y = M.yoldas;
+  const y = siniflar[o.sinif].yoldas;
+  const katildi = o.seviye >= YOLDAS_SEVIYESI;
+  const yuzde = (oran) => Math.round(oran * 100);
+  const eylem = sablon(Y.eylemler[y.eylem], { menzil: y.menzil, oran: yuzde(y.carpan ?? 0), can: yuzde(y.can ?? 0), nefes: yuzde(y.nefes ?? 0) });
+  const saniye = ((y.bekleme * TIK_MS) / 1000).toFixed(1).replace('.', ',');
+  return `
+    <section class="kart yoldas-karti${katildi ? '' : ' kilitli'}">
+      <h3>🤝 ${Y.baslik}</h3>
+      <div class="yoldas-ozet">
+        <span class="yoldas-ikon">${yoldasCizimi(y.anahtar)}</span>
+        <div>
+          <strong>${kacis(y.ad)}</strong> <span class="yetenek-bedel">${kacis(y.tur)}</span>
+          <p>${kacis(y.tarif)}</p>
+        </div>
+      </div>
+      <ul class="dal-etkileri"><li>${kacis(eylem)}</li><li>${kacis(sablon(Y.aralik, { saniye }))}</li></ul>
+      ${katildi ? '' : `<p class="kart-not">🔒 ${sablon(Y.kilitli, { seviye: YOLDAS_SEVIYESI })}</p>`}
+    </section>`;
 }
 
 // Uzmanlık bölümü: seviyesi yetmeyene iki yol önizlenir; yetene seçim (onaylı) sunulur;
@@ -227,6 +252,7 @@ function icerik(durum, secilenYuva = null, onayDal = null) {
       </div>
       <p>${kacis(sinif.pasif.aciklama)}</p>
     </section>
+    ${yoldasBolumu(o)}
     ${dalBolumu(o, onayDal)}
     <section class="kart">
       <h3>${M.yetenekler}</h3>

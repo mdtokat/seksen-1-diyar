@@ -1034,6 +1034,48 @@ h3 {
   opacity: 0.6;
 }
 
+/* Yoldaş */
+.yoldas-figuru {
+  width: calc(var(--karo, 36px) * 1.15);
+  height: calc(var(--karo, 36px) * 1.15);
+  pointer-events: none;
+}
+
+.yoldas-figuru.sola .cizim {
+  transform: scaleX(-1);
+}
+
+.yoldas-figuru.yoldas-ucan .figur-ic {
+  animation: suzul 2.2s ease-in-out infinite;
+}
+
+.yoldas-ozet {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.yoldas-ozet p {
+  margin: 0.2rem 0 0;
+}
+
+.yoldas-ikon {
+  width: 4.2rem;
+  height: 4.2rem;
+  flex-shrink: 0;
+}
+
+.yoldas-ikon .cizim {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.yoldas-karti.kilitli .yoldas-ikon {
+  filter: grayscale(0.7);
+  opacity: 0.7;
+}
+
 /* Uzmanlık dalları */
 .dal-listesi {
   list-style: none;

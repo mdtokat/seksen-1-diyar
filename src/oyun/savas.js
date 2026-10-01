@@ -269,6 +269,18 @@ function vuruslar(o, hedef, rng, { kac = 1, ek, ...secenek }) {
   return { hedef: evre.hedef, olaylar };
 }
 
+// Yoldaşın bir düşmana vuruşu: gücü yiğidinkine `carpan` uygulanarak bulunur; kritik yoktur,
+// düşman sıyrılabilir. Sersemletir ve bossun evresini tetikleyebilir. Sonuç: { hedef, olay }.
+export function yoldasVurusu(durum, dusman, rng, { carpan, sersem = 0 }) {
+  const o = savasci(durum);
+  const olay = { tip: 'yoldas', kim: 'yoldas' };
+  if (sans(rng, kacinmaSansi(dusman.ceviklik))) return { hedef: dusman, olay: { ...olay, kacindi: true, hasar: 0 } };
+  const hasar = hasarHesapla({ guc: o.guc, savunma: dusman.savunma, rnd: aralik(rng, 0.9, 1.1), carpan });
+  const evre = evreKontrol({ ...dusman, can: Math.max(0, dusman.can - hasar) });
+  const sersemi = sersem && evre.hedef.can > 0 ? { sersem: sersemSuresi(dusman, sersem) } : {};
+  return { hedef: evre.hedef, olay: { ...olay, hasar, ...sersemi, ...(evre.olay ? { evre: evre.olay } : {}) } };
+}
+
 // Bölge bossu canı yarının altına düşünce bir kez güçlenir (gezgin bosslar güçlenmez).
 // Zülmet ise üç evreli savaşır: canı her evre eşiğinin altına düşünce sıradaki evreye geçer.
 // Evre bilgisi düşmanın üzerinde tutulur (evre, evreNo); güçlenmeden önceki gücü de
