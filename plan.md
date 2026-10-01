@@ -752,6 +752,16 @@ Yeteneklerin çoğu yalnızca çarpanıyla ayrışıyordu; kalabalık saldırıy
 - **Çeviklik tavanı (`savas.js → kritikCarpani`):** kritik şansı 37,5 çeviklikte, sıyrılma 40'ta tavana varıyordu; Kemankeş buna ~14. seviyede ulaşıp sonraki bütün çevikliği boşa harcıyordu. Artık 37,5'in üstündeki her çeviklik puanı yiğidin kritik çarpanına 0,006 ekler (en çok ×2,0; ör. Sv 50 Kemankeş ≈ ×1,94, Akıncı ≈ ×1,6). Düşmanlar ×1,5 ile vurmayı sürdürür. Karakter ekranı kritik şansını, çarpanını ve sıyrılma şansını gösterir.
 - **Denge:** tek hedefe vuruş çarpanları (Tufan Kılıcı, Menzil Atışı, Arınma Işığı) korunduğundan boss dengesi değişmedi; Zülmet simülasyonu ve kalabalık testleri geçer.
 
+### Ek — Kuşanılan eşyalar figürde
+Yiğidin çizimi kuşandıklarını gösterir (`cizimler/karakterler.js`). Kayıt şeması değişmez; görünüş her çizimde `oyuncu.kusanilan`dan türetilir.
+- **`ekipmanGorunumu(kusanilan)`:** her yuva için `{ nadirlik, renk }` ya da null; `renk` eşyanın bölgesinin rengidir (`bolgeler.js`). `oyuncuCizimi(oyuncu)` bunu `sinifCizimi(sinif, { ekipman })`e verir; eşyasız çizim yalın sınıf çizimiyle aynıdır. Yeni oyun ekranı yalın çizimi kullanır; gezinti figürü, üst çubuk düğmesi, karakter ve il ekranları ile bitiş sahnesi oyuncunun çizimini.
+- **Silah:** Akıncı kılıcı nadirde oluklu, kabza taşı bölge renginde; efsanevide sırtı altın, ışıltılı ve uçta parıltılı. Kemankeş yayı nadirde kırmızı laklı, kesik altın işlemeli; efsanevide koyu laklı, altın kakmalı, ışıltılı, temreni altın; ok tüyleri bölge renginde. Alperen asası nadirde koyu ceviz, iki pirinç halkalı, başı bölge renginde taş; efsanevide dört halka ve parlayan taş.
+- **Zırh:** kaftanın üstünde, kuşağın altında yelek. Sıradan: keçe (bölge rengine çalan kahve). Nadir: bölge renginde, kenarı sırmalı, çintemani benekli. Efsanevi: altın-bölge renginde pullu (clipPath ile yeleğe kırpılır), sırma kenarlı, göğsünde iki taş.
+- **Kuşak:** bölge renginde; nadirde iki ince çizgi, efsanevide taşlı altın toka ve altın püskül.
+- **Renk ayrışması:** eşya rengi kaftana çok yakınsa (`renkFarki` < 90) koyulaşır (ör. Akdeniz kırmızısı Akıncı'nın kaftanında).
+- **Efsanevi hale:** en az bir efsanevi eşya kuşanan yiğidin ardında ılık bir ışıltı.
+- Karakter ekranındaki portre büyütüldü (6,5rem) ki ayrıntılar seçilsin.
+
 ---
 
 ## 10. Sonraki Fikirler (Kapsam Dışı)

@@ -54,7 +54,7 @@ import { yuvaDugmeleri } from './kisayolYuvalari.js';
 import { kartliZaferMi, zaferKartiHtml } from './zaferKarti.js';
 import { karakterDugmesiniCiz } from './karakterDugmesi.js';
 import { haritaKatmani, kapiKatmani, KARO_BOYU } from './cizimler/karolar.js';
-import { sinifCizimi, halkCizimi, tuccarCizimi } from './cizimler/karakterler.js';
+import { oyuncuCizimi, halkCizimi, tuccarCizimi } from './cizimler/karakterler.js';
 import { dusmanCizimi } from './cizimler/dusmanlar.js';
 import { verenIsareti } from '../oyun/gorevler.js';
 import { afisOzelligi } from './cografyaBilgisi.js';
@@ -203,7 +203,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
   // ── Figürler ──
   const oyuncuFiguru = document.createElement('div');
   oyuncuFiguru.className = 'harita-figuru oyuncu-figuru';
-  oyuncuFiguru.innerHTML = `<div class="figur-ic">${sinifCizimi(depo.al().oyuncu.sinif)}</div>`;
+  oyuncuFiguru.innerHTML = `<div class="figur-ic">${oyuncuCizimi(depo.al().oyuncu)}</div>`;
   figurKatmani.appendChild(oyuncuFiguru);
   const dusmanFigurleri = new Map();
   const halkFigurleri = new Map();

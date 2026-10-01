@@ -1,10 +1,92 @@
 // Oyuncu sınıflarının çizimleri: stilize, edepli, sağa (düşmana) dönük figürler.
 // Yüzler sade tutulur; figürler çini paletinin renkleriyle giydirilir. Kumaşlar
 // hacim gradyanıyla, metal ve yüzler parlaklıkla gölgelenir.
-import { svgSar, golge, hacim, kure, metal, isilti, acik, koyu, parlak, leke } from './ortak.js';
+// Kuşanılan eşyalar figürde görünür (ekipmanGorunumu): silah nadirliğine göre süslenir,
+// zırh kaftanın üstüne yelek olarak giyilir, kuşak bölgesinin rengini alır; efsanevi
+// eşyalar parlar.
+import { svgSar, golge, hacim, kure, metal, isilti, acik, koyu, karistir, renkFarki, parlak, leke } from './ortak.js';
+import { esyaBilgisi } from '../../oyun/rota.js';
+import { bolgeler } from '../../veri/bolgeler.js';
 
 const TEN = '#e9b98f';
 const ALTIN = '#d4a537';
+const EFSANE_ISIGI = '#f7d774';
+
+// ── Ekipmanın görünüşü ──────────────────────────────────
+
+// Kuşanılan eşyaların çizimdeki karşılığı: her yuva için { nadirlik, renk } ya da null.
+// `renk`, eşyanın geldiği bölgenin rengidir. Bilinmeyen eşyalar yok sayılır.
+export function ekipmanGorunumu(kusanilan = {}) {
+  const sonuc = { silah: null, zirh: null, aksesuar: null };
+  for (const yuva of Object.keys(sonuc)) {
+    const esya = kusanilan?.[yuva] && esyaBilgisi(kusanilan[yuva]);
+    if (!esya) continue;
+    const renk = bolgeler.find((b) => b.anahtar === esya.bolge)?.renk ?? ALTIN;
+    sonuc[yuva] = { nadirlik: esya.nadirlik, renk };
+  }
+  return sonuc;
+}
+
+// Eşya rengi kaftana çok yakınsa koyulaşır ki iki kumaş birbirine karışmasın.
+const ayrisan = (renk, zemin) => (renkFarki(renk, zemin) < 90 ? koyu(renk, 0.5) : renk);
+
+// Dört köşeli küçük bir parıltı (efsanevi eşyalarda).
+const pirilti = (x, y, r = 3) => `
+  <circle cx="${x}" cy="${y}" r="${r * 2.2}" fill="${isilti(EFSANE_ISIGI)}" stroke="none"/>
+  <path d="M${x} ${y - r * 1.6} L${x + r * 0.4} ${y - r * 0.4} L${x + r * 1.6} ${y} L${x + r * 0.4} ${y + r * 0.4} L${x} ${y + r * 1.6} L${x - r * 0.4} ${y + r * 0.4} L${x - r * 1.6} ${y} L${x - r * 0.4} ${y - r * 0.4} Z" fill="#fffaf0" stroke="none"/>`;
+
+// Efsanevi eşya kuşanan yiğidin ardındaki ılık hale.
+const efsaneHalesi = (ekipman) => (Object.values(ekipman).some((e) => e?.nadirlik === 'efsanevi')
+  ? `<ellipse cx="60" cy="58" rx="46" ry="54" fill="${isilti(EFSANE_ISIGI)}" stroke="none" opacity=".4"/>`
+  : '');
+
+// Zırh: kaftanın üstüne giyilen yelek. Sıradan keçe, nadir bölge renginde sırma işlemeli,
+// efsanevi pul pul zırh. Kuşağın altında kalır.
+const YELEK_SOL = 'M44 53.5 Q46.5 47 52.5 46 L58.2 61 L57.8 67 L41.6 67 Z';
+const YELEK_SAG = 'M76 53.5 Q73.5 47 67.5 46 L61.8 61 L62.2 67 L78.4 67 Z';
+function yelek(zirh, kaftan) {
+  if (!zirh) return '';
+  const kenar = 'M52.5 46 L58.2 61 L57.8 67 M67.5 46 L61.8 61 L62.2 67';
+  if (zirh.nadirlik === 'siradan') {
+    const renk = ayrisan(karistir('#8a6a4a', zirh.renk, 0.3), kaftan);
+    return `<path d="${YELEK_SOL}" fill="${hacim(renk)}"/><path d="${YELEK_SAG}" fill="${hacim(renk)}"/>
+      <path d="M43 60 h14 M63 60 h14" stroke="${koyu(renk, 0.3)}" stroke-width="1" stroke-dasharray="1.6 1.8" opacity=".7"/>`;
+  }
+  if (zirh.nadirlik === 'nadir') {
+    const renk = ayrisan(zirh.renk, kaftan);
+    const cintemani = (x, y) => [[x, y], [x + 2.4, y], [x + 1.2, y - 2]]
+      .map(([cx, cy]) => `<circle cx="${cx}" cy="${cy}" r="1" fill="${ALTIN}" stroke="none"/>`).join('');
+    return `<path d="${YELEK_SOL}" fill="${hacim(renk)}"/><path d="${YELEK_SAG}" fill="${hacim(renk)}"/>
+      <path d="${kenar}" fill="none" stroke="${ALTIN}" stroke-width="1.5"/>
+      ${cintemani(47, 59)}${cintemani(70.6, 59)}
+      ${parlak('M46 55 Q48 50 52 48', 0.4)}`;
+  }
+  // Efsanevi: altın ve bölge renginden pullar, kenarda sırma, göğüste bir taş
+  const renk = karistir(ALTIN, zirh.renk, 0.25);
+  const pullar = [];
+  for (let sira = 0; sira < 6; sira++) {
+    const y = (49 + sira * 3.4).toFixed(1);
+    for (let x = 39 + (sira % 2) * 2; x <= 80; x += 4) pullar.push(`M${x} ${y} q2 2.6 4 0`);
+  }
+  return `<clipPath id="@yelek"><path d="${YELEK_SOL} ${YELEK_SAG}"/></clipPath>
+    <path d="${YELEK_SOL}" fill="${metal(renk)}"/><path d="${YELEK_SAG}" fill="${metal(renk)}"/>
+    <path d="${pullar.join(' ')}" fill="none" stroke="${koyu(renk, 0.45)}" stroke-width=".9" clip-path="url(#@yelek)"/>
+    <path d="${kenar}" fill="none" stroke="${acik(ALTIN, 0.3)}" stroke-width="1.6"/>
+    <circle cx="49" cy="56" r="2" fill="${kure(zirh.renk)}" stroke-width="1"/><circle cx="71" cy="56" r="2" fill="${kure(zirh.renk)}" stroke-width="1"/>
+    ${parlak('M46 55 Q48 50 52 48', 0.55)}`;
+}
+
+// Kuşak süsü: nadirde iki ince çizgi, efsanevide taşlı toka ve püsküller.
+function kusakSusu(kusak) {
+  if (!kusak || kusak.nadirlik === 'siradan') return '';
+  const cizgiler = `<path d="M40.6 68.2 Q60 73.2 79.4 68.2 M40.9 70.6 Q60 75.6 79.1 70.6" fill="none" stroke="#f7efdc" stroke-width=".8" opacity=".85"/>`;
+  if (kusak.nadirlik === 'nadir') return cizgiler;
+  return `${cizgiler}
+    <path d="M44.5 81 l-1 4 M46.5 80.5 l0 4" stroke="${ALTIN}" stroke-width="1.2"/>
+    <rect x="55.5" y="67.5" width="9" height="7.5" rx="1.6" fill="${metal(ALTIN)}" stroke-width="1.2"/>
+    <circle cx="60" cy="71.2" r="2.1" fill="${kure(kusak.renk)}" stroke-width=".9"/>
+    ${pirilti(64, 68, 1.6)}`;
+}
 
 // Çizme: burnu sağa bakar.
 const cizme = (x, renk) => `
@@ -37,8 +119,10 @@ function bas({ sac = '#3a2a1e', biyik = false, sakal = false, kas = '#3a2a1e' } 
 
 // Ortak gövde: şalvar, çizme, kaftan (kenar şeritli), kaytan düğmeler ve kuşak.
 // Kollar ve baş sınıfa göre ayrıca çizilir. Renkleri sınıfa göre değişir.
-function govde({ kaftan, kaftanKoyu, kusak, cizme: cizmeRenk = '#5b3a24', ic = '#f7efdc', serit = ALTIN, salvar }) {
+// `ekipman`: ekipmanGorunumu(); zırh yelek olarak giyilir, kuşak bölgesinin rengini alır.
+function govde({ kaftan, kaftanKoyu, kusak: sinifKusagi, cizme: cizmeRenk = '#5b3a24', ic = '#f7efdc', serit = ALTIN, salvar, ekipman = {} }) {
   const s = salvar ?? kaftanKoyu;
+  const kusak = ekipman.aksesuar ? ayrisan(ekipman.aksesuar.renk, kaftan) : sinifKusagi;
   return `
     <path d="M46 82 Q43 90 47 95 L57 95 Q59 88 58 82 Z" fill="${hacim(s)}"/>
     <path d="M63 82 Q62 88 63.5 95 L73.5 95 Q77 90 74 82 Z" fill="${hacim(s)}"/>
@@ -52,9 +136,11 @@ function govde({ kaftan, kaftanKoyu, kusak, cizme: cizmeRenk = '#5b3a24', ic = '
     <path d="M51.5 46 L60 60 L68.5 46" fill="none" stroke="${serit}" stroke-width="1.6"/>
     <path d="M55.5 52 h-4 M56.5 56 h-4 M64.5 52 h4 M63.5 56 h4" stroke="${serit}" stroke-width="1.4"/>
     <circle cx="58" cy="52" r="1" fill="${serit}" stroke="none"/><circle cx="62" cy="52" r="1" fill="${serit}" stroke="none"/>
+    ${yelek(ekipman.zirh, kaftan)}
     <path d="M40 65 Q60 70 80 65 L80.8 72.5 Q60 77.5 39.2 72.5 Z" fill="${hacim(kusak)}"/>
     <path d="M42 68.5 Q60 73 78 68.5" fill="none" stroke="${acik(kusak, 0.45)}" stroke-width="1" opacity=".8"/>
     <path d="M44 73 L42 82 L46 81 L47 74" fill="${hacim(kusak)}" stroke-width="1.4"/>
+    ${kusakSusu(ekipman.aksesuar)}
     ${parlak('M46 52 Q44 66 41 84', 0.25)}`;
 }
 
@@ -63,8 +149,17 @@ const kol = (d, renk, el) => `<path d="${d}" fill="${hacim(renk)}"/>${
   el ? `<circle cx="${el[0]}" cy="${el[1]}" r="4.6" fill="${kure(TEN)}"/>` : ''}`;
 
 // Akıncı: sivri miğfer ve tuğ, zincir ense örgüsü, çini desenli kalkan, pala ve pelerin.
-// Mercan kaftan.
-function akinci() {
+// Mercan kaftan. Kılıç: nadirde oluklu ve kabzası taşlı, efsanevide sırtı altın, ışıl ışıl.
+function akinci(ekipman) {
+  const silah = ekipman.silah?.nadirlik;
+  const kilicYolu = 'M85.5 50 Q98 40 104 14 Q107 30 101 41 Q95 51 89 56 Z';
+  const kabzaTasi = silah === 'nadir' || silah === 'efsanevi' ? ekipman.silah.renk : ALTIN;
+  const kilicIsigi = silah === 'efsanevi'
+    ? `<path d="${kilicYolu}" fill="none" stroke="${EFSANE_ISIGI}" stroke-width="7" opacity=".45"/>` : '';
+  const kilicSusu = silah === 'nadir' || silah === 'efsanevi'
+    ? `<path d="M89.5 49 Q97 41.5 102.2 24" fill="none" stroke="${koyu('#dfe6ea', 0.35)}" stroke-width="1"/>` : '';
+  const kilicSirti = silah === 'efsanevi'
+    ? `<path d="M85.5 50 Q98 40 104 14" fill="none" stroke="${ALTIN}" stroke-width="1.5"/>${pirilti(103, 19, 2.4)}` : '';
   const kaftan = '#d9483b';
   const kalkanYapraklari = Array.from({ length: 6 }, (_, i) =>
     `<ellipse cx="36" cy="61.5" rx="2.4" ry="5" fill="${i % 2 ? '#f7efdc' : '#d9483b'}" stroke-width="1" transform="rotate(${i * 60} 36 68)"/>`).join('');
@@ -72,16 +167,19 @@ function akinci() {
     const a = (i / 8) * Math.PI * 2;
     return `<circle cx="${(36 + Math.cos(a) * 13).toFixed(1)}" cy="${(68 + Math.sin(a) * 13).toFixed(1)}" r="1.2" fill="${ALTIN}" stroke="none"/>`;
   }).join('');
-  return `${golge()}
+  return `${golge()}${efsaneHalesi(ekipman)}
     <path d="M45 50 Q30 64 26 100 Q34 97 38 101 Q41 98 46 100 L48 58 Z" fill="${hacim('#9e2f26')}"/>
     <path d="M32 74 Q30 86 29 97" fill="none" stroke="${acik('#9e2f26', 0.3)}" stroke-width="1.4" opacity=".7"/>
-    ${govde({ kaftan, kaftanKoyu: '#9e2f26', kusak: ALTIN, salvar: '#1b2a5c' })}
+    ${govde({ kaftan, kaftanKoyu: '#9e2f26', kusak: ALTIN, salvar: '#1b2a5c', ekipman })}
     ${kol('M70 49 Q81 45 87 50 L84.5 58.5 Q78 55 72 60 Z', kaftan, [87, 55])}
-    <path d="M85.5 50 Q98 40 104 14 Q107 30 101 41 Q95 51 89 56 Z" fill="${metal('#dfe6ea')}"/>
+    ${kilicIsigi}
+    <path d="${kilicYolu}" fill="${metal(silah === 'efsanevi' ? '#eef3f6' : '#dfe6ea')}"/>
+    ${kilicSusu}
     ${parlak('M91 48 Q99 38 102.5 22', 0.6)}
+    ${kilicSirti}
     <rect x="80" y="51" width="15" height="4" rx="2" fill="${metal(ALTIN)}" transform="rotate(36 87.5 53)"/>
     <path d="M85 58.5 L81 63.5" stroke-width="3.6"/><path d="M85 58.5 L81 63.5" stroke="#5b3a24" stroke-width="1.8"/>
-    <circle cx="80.5" cy="64" r="2" fill="${kure(ALTIN)}" stroke-width="1.2"/>
+    <circle cx="80.5" cy="64" r="2" fill="${kure(kabzaTasi)}" stroke-width="1.2"/>
     ${bas({ biyik: true })}
     <path d="M47.5 31 Q46 44 51.5 49 L57.5 46 L55.5 31 Z" fill="${metal('#9aa4ae')}"/>
     <path d="M49 35 h6 M49.3 39 h6.6 M50.5 43 h6" stroke="#1b2a5c" stroke-width="1" stroke-dasharray="1.2 1.6" opacity=".7"/>
@@ -102,27 +200,34 @@ function akinci() {
 }
 
 // Kemankeş: tüylü sorguçlu keçe börk, sadak, kolçak ve gerilmiş Türk yayı.
-// Turkuaz kaftan.
-function kemankes() {
+// Turkuaz kaftan. Yay: nadirde laklı ve altın işlemeli, efsanevide koyu lak, altın
+// kakmalı ve ışıl ışıl; okun tüyleri yayın geldiği bölgenin rengini alır.
+function kemankes(ekipman) {
   const kaftan = '#2aa7a7';
-  const yay = '#7b5236';
+  const silah = ekipman.silah?.nadirlik;
+  const yay = { nadir: '#8e2a22', efsanevi: '#5a1f2e' }[silah] ?? '#7b5236';
+  const tuy = silah === 'nadir' || silah === 'efsanevi' ? ekipman.silah.renk : '#d9483b';
   const yayYolu = 'M89 22 Q93 25 91 30 Q82 44 86 60 Q82 76 91 90 Q93 95 89 98';
-  return `${golge()}
+  return `${golge()}${efsaneHalesi(ekipman)}
     <path d="M34 42 L27 78 Q31 81 37.5 80 L44 45 Z" fill="${hacim('#7b5236')}"/>
     <path d="M31.5 52 L42 54 M29.5 64 L40 66" stroke="${ALTIN}" stroke-width="1.8"/>
     <path d="M30 71 l3 8 M36 72 l-1 8" stroke="#d9483b" stroke-width="1.6"/>
     <path d="M33 43 L30 34 L35 37 Z M37.5 44 L36.5 34 L40 38 Z M42 45 L42.5 35.5 L45 40 Z" fill="#d9483b" stroke-width="1.2"/>
     <path d="M33 43 L35 37 M37.5 44 L38 37 M42 45 L43 39" stroke="#f7efdc" stroke-width=".8"/>
-    ${govde({ kaftan, kaftanKoyu: '#1d7d7d', kusak: '#d9483b', salvar: '#5b3a24' })}
+    ${govde({ kaftan, kaftanKoyu: '#1d7d7d', kusak: '#d9483b', salvar: '#5b3a24', ekipman })}
     ${kol('M43 52 Q38 56 46 60 L66 57 Q70 55 68 51 L50 50 Z', kaftan, [70, 54])}
+    ${silah === 'efsanevi' ? `<path d="${yayYolu}" fill="none" stroke="${EFSANE_ISIGI}" stroke-width="11" opacity=".4"/>` : ''}
     <path d="${yayYolu}" fill="none" stroke="#1b2a5c" stroke-width="6.2"/>
     <path d="${yayYolu}" fill="none" stroke="${yay}" stroke-width="3.6"/>
+    ${silah === 'nadir' || silah === 'efsanevi'
+    ? `<path d="${yayYolu}" fill="none" stroke="${ALTIN}" stroke-width="1"${silah === 'nadir' ? ' stroke-dasharray="1.6 4"' : ''}/>` : ''}
     <path d="M90 25 Q93 27 91 30 M90 95 Q93 93 91 90" fill="none" stroke="#2b2620" stroke-width="3.6"/>
     <path d="M85 32 Q83 40 84 48" fill="none" stroke="${acik(yay, 0.45)}" stroke-width="1.2"/>
     <path d="M89.5 24 L71 54 L89.5 96" fill="none" stroke="#f7efdc" stroke-width="1"/>
     <path d="M71 54 L109 54" stroke="#1b2a5c" stroke-width="3.6"/><path d="M71 54 L109 54" stroke="#9e6b3a" stroke-width="1.8"/>
-    <path d="M110 54 L103.5 50.5 L104.5 54 L103.5 57.5 Z" fill="${metal('#b8c2cc')}" stroke-width="1.2"/>
-    <path d="M74 54 L70 50 L66 50.5 L70 54 Z M74 54 L70 58 L66 57.5 L70 54 Z" fill="#d9483b" stroke-width="1"/>
+    <path d="M110 54 L103.5 50.5 L104.5 54 L103.5 57.5 Z" fill="${metal(silah === 'efsanevi' ? ALTIN : '#b8c2cc')}" stroke-width="1.2"/>
+    ${silah === 'efsanevi' ? pirilti(110, 54, 2.2) : ''}
+    <path d="M74 54 L70 50 L66 50.5 L70 54 Z M74 54 L70 58 L66 57.5 L70 54 Z" fill="${tuy}" stroke-width="1"/>
     ${kol('M73 50 Q80 49 86 55 L84 62 Q79 58 74 60 Z', kaftan)}
     <path d="M78 51.5 L84 56 L82 61.5 L76 58.5 Z" fill="${hacim('#5b3a24')}" stroke-width="1.4"/>
     <circle cx="87" cy="59" r="4.6" fill="${kure(TEN)}"/>
@@ -139,20 +244,32 @@ function kemankes() {
 
 // Alperen: derviş külahı, sakal, uzun hırka, meşe asa (pirinç başlıklı, püsküllü).
 // Yeşil-kahve tonlar.
-function alperen() {
+// Asa: nadirde koyu ceviz, pirinç halkalı ve başında bölge renginde taş; efsanevide
+// taş ışıl ışıl parlar, sapı altın halkalarla sarılır.
+function alperen(ekipman) {
   const kaftan = '#5f8a4a';
   const hirka = '#7b5236';
-  return `${golge()}
+  const silah = ekipman.silah?.nadirlik;
+  const sap = silah === 'nadir' || silah === 'efsanevi' ? '#5b3a24' : hirka;
+  const tas = silah === 'nadir' || silah === 'efsanevi' ? ekipman.silah.renk : '#c98f3a';
+  const halkalar = { nadir: [40, 72], efsanevi: [34, 46, 72, 86] }[silah] ?? [];
+  return `${golge()}${efsaneHalesi(ekipman)}
     <path d="M90 105 L93 21" stroke-width="7"/>
-    <path d="M90 105 L93 21" stroke="${hirka}" stroke-width="4.2"/>
+    <path d="M90 105 L93 21" stroke="${sap}" stroke-width="4.2"/>
     <path d="M91.6 40 l2 .4 M90.8 72 l2 .3" stroke="#3f2a1a" stroke-width="1.6"/>
-    ${govde({ kaftan, kaftanKoyu: '#3f6232', kusak: ALTIN, cizme: '#7b5236', salvar: '#6e5b45' })}
+    ${halkalar.map((y) => {
+    const x = (90 + (3 * (105 - y)) / 84).toFixed(1);
+    return `<rect x="${(x - 3).toFixed(1)}" y="${y - 1.4}" width="6" height="2.8" rx="1" fill="${metal(ALTIN)}" stroke-width="1"/>`;
+  }).join('')}
+    ${govde({ kaftan, kaftanKoyu: '#3f6232', kusak: ALTIN, cizme: '#7b5236', salvar: '#6e5b45', ekipman })}
     <path d="M42 50 Q34 74 39 96 Q44 97 48 95 L50 56 Q47 50 42 50 Z" fill="${hacim(hirka)}"/>
     <path d="M78 50 Q86 74 81 96 Q76 97 72 95 L70 56 Q73 50 78 50 Z" fill="${hacim(hirka)}"/>
     <path d="M40.5 92 Q44 95 48 93.5 M79.5 92 Q76 95 72 93.5" fill="none" stroke="${ALTIN}" stroke-width="1.4"/>
     ${kol('M73 50 Q84 48 90 54 L88 63 Q80 59 74 62 Z', hirka, [91, 58])}
     <path d="M86.5 55.5 L96 57 M86 60.5 L95.5 62" stroke-width="1.2" opacity=".6"/>
-    <circle cx="93" cy="19" r="5.6" fill="${kure('#c98f3a')}"/>
+    ${silah === 'efsanevi' ? `<circle cx="93" cy="19" r="15" fill="${isilti(acik(tas, 0.35))}" stroke="none" opacity=".9"/>` : ''}
+    <circle cx="93" cy="19" r="5.6" fill="${kure(silah === 'efsanevi' ? acik(tas, 0.25) : tas)}"/>
+    ${silah === 'efsanevi' ? pirilti(96, 15.5, 2) : ''}
     <path d="M89 23 Q93 26 97 23" fill="none" stroke="${ALTIN}" stroke-width="2"/>
     <path d="M96 25 Q100 33 98 40 M98 25 Q103 31 101.5 37" fill="none" stroke="#d9483b" stroke-width="1.6"/>
     ${bas({ sac: '#5b3a24', sakal: true, biyik: true, kas: '#5b3a24' })}
@@ -167,9 +284,14 @@ const cizimler = { akinci, kemankes, alperen };
 
 export const SINIF_CIZIMLERI = Object.keys(cizimler);
 
-// Sınıfın SVG çizimi (HTML metni).
-export function sinifCizimi(sinif, secenekler = {}) {
-  return svgSar(cizimler[sinif](), { sinif: 'cizim cizim-oyuncu', ...secenekler });
+// Sınıfın SVG çizimi (HTML metni). `ekipman`: ekipmanGorunumu(); verilmezse yalın figür.
+export function sinifCizimi(sinif, { ekipman = {}, ...secenekler } = {}) {
+  return svgSar(cizimler[sinif](ekipman), { sinif: 'cizim cizim-oyuncu', ...secenekler });
+}
+
+// Oyuncunun kuşandıklarıyla birlikte çizimi.
+export function oyuncuCizimi(oyuncu, secenekler = {}) {
+  return sinifCizimi(oyuncu.sinif, { ...secenekler, ekipman: ekipmanGorunumu(oyuncu.kusanilan) });
 }
 
 // Meydanda dolaşan halk (köylüler): sade kıyafetler, başlarında kasket, yazma ya da

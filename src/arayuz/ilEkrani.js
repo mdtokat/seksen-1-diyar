@@ -9,7 +9,7 @@ import { arinmaYuzdesi } from '../oyun/ilerleme.js';
 import { statlar } from '../oyun/karakter.js';
 import { yemekGucu, HEYBE_YUVA } from '../oyun/envanter.js';
 import { kacis, sablon, ilerlemeCubugu, degerCubugu } from './bilesenler.js';
-import { sinifCizimi } from './cizimler/karakterler.js';
+import { oyuncuCizimi } from './cizimler/karakterler.js';
 import { cografyaSatirlari, ozellikRozetleri } from './cografyaBilgisi.js';
 import { haritaBoyutu } from '../oyun/gezinti.js';
 
@@ -48,7 +48,7 @@ function icerik(durum) {
 
     <section class="kart oyuncu-ozeti">
       <div class="oyuncu-ozeti-ust">
-        <span class="oyuncu-ozeti-ikon">${sinifCizimi(o.sinif)}</span>
+        <span class="oyuncu-ozeti-ikon">${oyuncuCizimi(o)}</span>
         <strong>${kacis(o.ad)}</strong>
         <span class="rozet">${sablon(metinler.karakter.seviye, { seviye: o.seviye })}</span>
         <span class="akce">🪙 ${sablon(M.akce, { akce: durum.akce })}</span>

@@ -1566,6 +1566,12 @@ h3 {
   flex-shrink: 0;
 }
 
+/* Karakter ekranında yiğit, kuşandıkları seçilsin diye büyük çizilir */
+.karakter-ozet .karakter-ikon {
+  width: 6.5rem;
+  height: 6.5rem;
+}
+
 .karakter-dugmesi-ikon .cizim,
 .oyuncu-ozeti-ikon .cizim {
   width: 100%;

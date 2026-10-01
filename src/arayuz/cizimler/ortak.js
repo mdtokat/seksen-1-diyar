@@ -20,6 +20,13 @@ export function karistir(renk, hedef, oran) {
   return hex(a.map((v, i) => v + (b[i] - v) * oran));
 }
 
+// İki renk arasındaki uzaklık (RGB uzayında; 0 aynı renk, ~441 siyah–beyaz).
+export function renkFarki(a, b) {
+  const x = rgb(a);
+  const y = rgb(b);
+  return Math.hypot(...x.map((v, i) => v - y[i]));
+}
+
 // Açık ton beyaza, koyu ton laciverte doğru gider (gölgeler soğuk ve çini paletinde kalır).
 export const acik = (renk, oran = 0.3) => karistir(renk, '#fffaf0', oran);
 export const koyu = (renk, oran = 0.3) => karistir(renk, '#10183a', oran);

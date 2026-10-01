@@ -3,7 +3,7 @@ import { siniflar, STAT_PUANI_DEGERI } from '../veri/siniflar.js';
 import { metinler } from '../veri/metinler.js';
 import { statlar, gerekenXp, statPuaniDagit, STATLAR } from '../oyun/karakter.js';
 import { kacis, sablon, degerCubugu } from './bilesenler.js';
-import { sinifCizimi } from './cizimler/karakterler.js';
+import { oyuncuCizimi } from './cizimler/karakterler.js';
 import { esyaBilgisi } from '../oyun/rota.js';
 import { YUVALAR } from '../veri/esyalar.js';
 import { kusan, kusanKontrol, cikar, kusaniliMi } from '../oyun/ekipman.js';
@@ -125,7 +125,7 @@ function icerik(durum, secilenYuva = null) {
 
   return `
     <section class="kart karakter-ozet">
-      <span class="karakter-ikon">${sinifCizimi(o.sinif)}</span>
+      <span class="karakter-ikon">${oyuncuCizimi(o)}</span>
       <div>
         <h2>${kacis(o.ad)}</h2>
         <p class="karakter-alt">${kacis(sinif.ad)} · <strong>${sablon(M.seviye, { seviye: o.seviye })}</strong> · ${M.akce}: ${durum.akce ?? 0}</p>
