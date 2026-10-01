@@ -412,3 +412,14 @@ describe('sınıf özellikleri haritada', () => {
     expect(new Set(y.olaylar.filter((o) => o.hasar !== undefined).map((o) => o.id))).toEqual(new Set([1, 4]));
   });
 });
+
+describe('uzmanlık dalı haritada', () => {
+  it('Derviş yendiği düşmanla daha çok nefes kazanır', () => {
+    const d = durum('alperen', 25);
+    const az = (dal) => ({ ...d, oyuncu: { ...d.oyuncu, nefes: 10, dal } });
+    const zayif = () => kayit(1, 10, 10, {}, { ...dusmanOlustur('boz_ayi', 12), can: 1 });
+    const kazanc = (dal) => oyuncuVurur(az(dal), [zayif()], { tur: 'saldir' }, sabit(0.99), { hedef: zayif(), oyuncu: { x: 10, y: 11 } })
+      .olaylar.find((o) => o.tip === 'pasif').miktar;
+    expect(kazanc('dervis')).toBeGreaterThan(kazanc('gazi'));
+  });
+});

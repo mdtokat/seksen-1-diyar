@@ -25,7 +25,7 @@ import {
 import { siniflar } from '../veri/siniflar.js';
 import { yemekler } from '../veri/yemekler.js';
 import { yemekYe, yemekYeKontrol } from './envanter.js';
-import { statlar, acikYetenekler, tamIyilestir } from './karakter.js';
+import { statlar, acikYetenekler, tamIyilestir, dalBilgisi } from './karakter.js';
 import { aralik, sans, sec } from './rastgele.js';
 import { sofraGucCarpani } from './ilerleme.js';
 import { dusmanCarpanlari } from './rota.js';
@@ -146,6 +146,7 @@ export function savasci(durum) {
   const s = statlar(o);
   return {
     sinif: o.sinif,
+    dal: o.dal ?? null,
     seviye: o.seviye,
     canEnCok: s.can,
     can: Math.min(o.can, s.can),
@@ -204,19 +205,25 @@ export function sersemSuresi(dusman, sure) {
   return korunakli ? Math.ceil(sure / 2) : sure;
 }
 
-// Sınıfın pasif özelliği (siniflar.js → pasif) ya da null.
-export const pasifOzellik = (sinif) => siniflar[sinif]?.pasif ?? null;
+// Sınıfın pasif özelliği (siniflar.js → pasif) ya da null; uzmanlık dalı (`dal`)
+// değerlerini değiştirebilir.
+export function pasifOzellik(sinif, dal = null) {
+  const p = siniflar[sinif]?.pasif;
+  if (!p) return null;
+  const degisiklik = dal && siniflar[sinif].dallar?.[dal]?.pasif;
+  return degisiklik ? { ...p, ...degisiklik } : p;
+}
 
 // Gözü pek (canı eşiğin altındaki Akıncı) gibi cana bağlı pasif şu an etkin mi?
-// `o`: { sinif, can, canEnCok } (savasci() ya da oyuncu değerleri).
+// `o`: { sinif, dal, can, canEnCok } (savasci() ya da oyuncu değerleri).
 export function canEsigiEtkinMi(o) {
-  const p = pasifOzellik(o.sinif);
+  const p = pasifOzellik(o.sinif, o.dal);
   return p?.tur === 'can_esigi' && o.can > 0 && o.can < o.canEnCok * p.esik;
 }
 
 // Uzak Nişan: `uzaklik` karo öteye vuruşta hasar çarpanı (pasif yoksa 1).
-export function uzakNisanCarpani(sinif, uzaklik) {
-  const p = pasifOzellik(sinif);
+export function uzakNisanCarpani(sinif, uzaklik, dal = null) {
+  const p = pasifOzellik(sinif, dal);
   return p?.tur === 'uzak_nisan' && uzaklik >= p.uzaklik ? 1 + p.hasar : 1;
 }
 
@@ -226,16 +233,18 @@ function oyuncuVurusu(o, hedef, rng, { guc, kritikBonusu = 0, carpan = 1, yetene
   const olay = { tip: yetenek ? 'yetenek' : 'saldiri', kim: 'oyuncu', yetenek: yetenek?.anahtar };
   if (sans(rng, kacinmaSansi(hedef.ceviklik))) return { hedef, olay: { ...olay, kacindi: true, hasar: 0 } };
 
-  const kritik = sans(rng, kritikSansi(o.ceviklik, kritikBonusu));
+  const dal = dalBilgisi(o);
+  const kritik = sans(rng, kritikSansi(o.ceviklik, kritikBonusu + (dal?.kritikSansi ?? 0)));
   const ekHasar = Boolean(yetenek?.ekHasarTurleri?.includes(hedef.tur));
+  const dalEki = dal?.ekHasar?.turler.includes(hedef.tur) ? dal.ekHasar.carpan : 1;
   const hasar = hasarHesapla({
     guc,
     savunma: hedef.savunma * (1 - (yetenek?.zirhDelme ?? 0)),
     rnd: aralik(rng, 0.9, 1.1),
     carpan,
     kritik,
-    kritikCarpi: kritikCarpani(o.ceviklik),
-    ek: ekHasar ? yetenek.ekHasarCarpani : 1,
+    kritikCarpi: kritikCarpani(o.ceviklik) + (dal?.kritikHasari ?? 0),
+    ek: (ekHasar ? yetenek.ekHasarCarpani : 1) * dalEki,
   });
   const yeni = { ...hedef, can: Math.max(0, hedef.can - hasar) };
   const sersem = yetenek?.sersem && yeni.can > 0 ? { sersem: sersemSuresi(hedef, yetenek.sersem) } : {};
@@ -296,7 +305,8 @@ function evreKontrol(d) {
 // listesi boştur. `uzaklik`: hedefin karo uzaklığı (Uzak Nişan için; verilmezse yok sayılır).
 // Sonuç: { durum, hedef (güncel düşman ya da null), ekHedefler, etkiler, olaylar }.
 // Güçlenme, kritik, coşku ve ürkme etkileri hamle başına bir kez azalır (çok vuruşlu
-// yetenekte de). Gözü Pek (canı azken güç) ve Uzak Nişan pasifleri vuruşa katılır.
+// yetenekte de). Gözü Pek (canı azken güç) ve Uzak Nişan pasifleri vuruşa katılır;
+// uzmanlık dalı kritik, alan, şifa, korunma ve türe göre ek hasarı değiştirir.
 // Hedef düşerse olaylara { tip: 'dustu' } eklenir; bossun evre değişimi { tip: 'evre' };
 // coşkunun yenilediği can { tip: 'canlanma', miktar }.
 // Ek hedeflerin olayları `ek` (ekHedefler sırası) taşır.
@@ -320,10 +330,12 @@ export function oyuncuHamlesi(durum, eylem, rng, { hedef = null, ekHedefler = []
   let yeniEkler = ekHedefler;
   const olaylar = [];
 
+  const dal = dalBilgisi(o);
+  const sifaCarpani = 1 + (dal?.sifaCarpani ?? 0);
   if (vurus) {
-    const gozuPek = canEsigiEtkinMi(o) ? pasifOzellik(o.sinif).guc : 0;
+    const gozuPek = canEsigiEtkinMi(o) ? pasifOzellik(o.sinif, o.dal).guc : 0;
     const guc = o.guc * Math.max(0, 1 + etkiDegeri(etkiler, 'guclenme') + gozuPek - etkiDegeri(etkiler, 'zayiflatma'));
-    const uzak = uzaklik === null ? 1 : uzakNisanCarpani(o.sinif, uzaklik);
+    const uzak = uzaklik === null ? 1 : uzakNisanCarpani(o.sinif, uzaklik, o.dal);
     const secenek = { guc, kritikBonusu: etkiDegeri(etkiler, 'kritik'), yetenek };
     yeniEtkiler = etkiTuket(etkiler, ['guclenme', 'kritik', 'zayiflatma', 'cosku']);
     const r = vuruslar(o, hedef, rng, { ...secenek, carpan: (yetenek?.carpan ?? 1) * uzak, kac: yetenek?.vurus ?? 1 });
@@ -332,7 +344,7 @@ export function oyuncuHamlesi(durum, eylem, rng, { hedef = null, ekHedefler = []
     if (yetenek?.alan) {
       yeniEkler = ekHedefler.map((ekHedef, ek) => {
         if (ekHedef.can <= 0) return ekHedef;
-        const e = vuruslar(o, ekHedef, rng, { ...secenek, carpan: yetenek.alanCarpani * uzak, ek });
+        const e = vuruslar(o, ekHedef, rng, { ...secenek, carpan: yetenek.alanCarpani * uzak * (1 + (dal?.alanCarpani ?? 0)), ek });
         olaylar.push(...e.olaylar);
         return e.hedef;
       });
@@ -341,14 +353,14 @@ export function oyuncuHamlesi(durum, eylem, rng, { hedef = null, ekHedefler = []
     const cosku = etkiDegeri(etkiler, 'cosku');
     if (cosku > 0) {
       const toplam = olaylar.reduce((t, ol) => t + (ol.hasar ?? 0), 0);
-      const miktar = Math.min(o.canEnCok - o.can, Math.round(toplam * cosku));
+      const miktar = Math.min(o.canEnCok - o.can, Math.round(toplam * cosku * sifaCarpani));
       if (miktar > 0) {
         yeniOyuncu.can += miktar;
         olaylar.push({ tip: 'canlanma', kim: 'oyuncu', miktar });
       }
     }
   } else if (yetenek.etki === 'sifa') {
-    const miktar = Math.min(o.canEnCok - o.can, Math.round(o.canEnCok * yetenek.deger));
+    const miktar = Math.min(o.canEnCok - o.can, Math.round(o.canEnCok * yetenek.deger * sifaCarpani));
     yeniOyuncu.can += miktar;
     const olay = { tip: 'yetenek', kim: 'oyuncu', yetenek: yetenek.anahtar, etki: 'sifa', miktar };
     if (yetenek.arindirir && etkiler.some((e) => e.etki === 'zayiflatma')) {
@@ -357,10 +369,12 @@ export function oyuncuHamlesi(durum, eylem, rng, { hedef = null, ekHedefler = []
     }
     olaylar.push(olay);
   } else {
-    yeniEtkiler = etkiEkle(etkiler, yetenek.etki, yetenek.deger, yetenek.sure);
+    // Sipahi: korunma yetenekleri daha çok korur
+    const deger = yetenek.etki === 'savunma' ? Math.min(0.9, yetenek.deger + (dal?.korunma ?? 0)) : yetenek.deger;
+    yeniEtkiler = etkiEkle(etkiler, yetenek.etki, deger, yetenek.sure);
     const olay = { tip: 'yetenek', kim: 'oyuncu', yetenek: yetenek.anahtar, etki: yetenek.etki, sure: yetenek.sure };
     if (yetenek.ekSifa) {
-      olay.miktar = Math.min(o.canEnCok - o.can, Math.round(o.canEnCok * yetenek.ekSifa));
+      olay.miktar = Math.min(o.canEnCok - o.can, Math.round(o.canEnCok * yetenek.ekSifa * sifaCarpani));
       yeniOyuncu.can += olay.miktar;
     }
     olaylar.push(olay);

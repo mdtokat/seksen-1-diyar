@@ -133,6 +133,8 @@ export function durumGecerliMi(d) {
   if (!Array.isArray(d.esyalar) || !d.esyalar.every((a) => esyalar[a])) return false;
   if (d.sonKervansaray !== null && !plakalar.has(d.sonKervansaray)) return false;
   if (!o.kusanilan || !Object.values(o.kusanilan).every((a) => a === null || d.esyalar.includes(a))) return false;
+  // Uzmanlık dalı sonradan eklendi: eski kayıtlarda yoktur (seçilmemiş sayılır)
+  if (o.dal != null && !siniflar[o.sinif].dallar?.[o.dal]) return false;
   if (!d.gorevler || typeof d.gorevler !== 'object' || Array.isArray(d.gorevler)) return false;
   if (!Object.entries(d.gorevler).every(([a, k]) => gorevVerisi[a] && GOREV_KAYIT_DURUMLARI.has(k?.durum)
       && (k.durum !== 'aktif' || sayiMi(k.sayac)))) return false;

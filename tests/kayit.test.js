@@ -103,3 +103,27 @@ describe('kaydet / yükle', () => {
     expect(goc(null)).toBeNull();
   });
 });
+
+describe('uzmanlık dalı kayıtta', () => {
+  const kayitli = (oyuncu) => {
+    const depo = sahteDepo();
+    const d = yeniOyunDurumu({ ad: 'A', sinif: 'akinci' });
+    kaydet({ ...d, oyuncu: { ...d.oyuncu, ...oyuncu } }, depo);
+    return yukle(depo);
+  };
+
+  it('seçilmiş dal korunur; dalı olmayan eski kayıt geçerlidir', () => {
+    expect(kayitli({ dal: 'sipahi' }).oyuncu.dal).toBe('sipahi');
+    expect(kayitli({ dal: null }).oyuncu.dal).toBeNull();
+    const d = yeniOyunDurumu({ ad: 'A', sinif: 'akinci' });
+    const { dal, ...eski } = d.oyuncu;
+    const depo = sahteDepo();
+    kaydet({ ...d, oyuncu: eski }, depo);
+    expect(yukle(depo)).not.toBeNull();
+  });
+
+  it('bilinmeyen ya da başka sınıfın dalı bozuk sayılır', () => {
+    expect(kayitli({ dal: 'yok' })).toBeNull();
+    expect(kayitli({ dal: 'nisanci' })).toBeNull();
+  });
+});

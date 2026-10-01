@@ -1034,6 +1034,58 @@ h3 {
   opacity: 0.6;
 }
 
+/* Uzmanlık dalları */
+.dal-listesi {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.dal-secenegi {
+  padding: 0.6rem 0.75rem;
+  border: 2px solid rgba(27, 42, 92, 0.15);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.dal-secenegi.secili {
+  border-color: var(--altin);
+  background: #fff;
+}
+
+.dal-secenegi.kilitli {
+  opacity: 0.7;
+}
+
+.dal-secenegi p {
+  margin: 0.25rem 0;
+}
+
+.dal-etkileri {
+  margin: 0.3rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--turkuaz-koyu);
+}
+
+.dal-onay {
+  font-weight: 700;
+  color: var(--mercan-koyu);
+}
+
+.dal-dugmeleri {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.dal-karti.secim-bekliyor {
+  box-shadow: 0 0 0 3px var(--altin);
+}
+
 .pasif-karti p {
   margin: 0.3rem 0 0;
 }

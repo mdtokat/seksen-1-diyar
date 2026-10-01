@@ -9,7 +9,11 @@ import {
   statPuaniDagit,
   adTemizle,
   tamIyilestir,
+  dalSec,
+  dalSecebilirMi,
+  dalBilgisi,
 } from '../src/oyun/karakter.js';
+import { DAL_SEVIYESI } from '../src/veri/siniflar.js';
 import { yeniOyunDurumu } from '../src/oyun/durum.js';
 import { siniflar } from '../src/veri/siniflar.js';
 
@@ -148,5 +152,46 @@ describe('stat puanı dağıtma', () => {
   it('tam iyileştirme can ve nefesi doldurur', () => {
     const o = { ...yeniKarakter('A', 'alperen'), can: 1, nefes: 2 };
     expect(tamIyilestir(o)).toMatchObject({ can: 85, nefes: 70 });
+  });
+});
+
+describe('uzmanlık dalı', () => {
+  const seviyeli = (sinif, seviye) => {
+    let o = yeniKarakter('A', sinif);
+    while (o.seviye < seviye) o = xpEkle(o, gerekenXp(o.seviye)).oyuncu;
+    return o;
+  };
+
+  it('her sınıfın iki dalı var; yeni karakter dalsız başlar', () => {
+    for (const s of Object.values(siniflar)) expect(Object.keys(s.dallar)).toHaveLength(2);
+    expect(yeniKarakter('A', 'akinci').dal).toBeNull();
+    expect(dalBilgisi(yeniKarakter('A', 'akinci'))).toBeNull();
+  });
+
+  it(`dal ${DAL_SEVIYESI}. seviyede bir kez seçilir; başka sınıfın dalı seçilemez`, () => {
+    const genc = seviyeli('akinci', DAL_SEVIYESI - 1);
+    expect(dalSecebilirMi(genc)).toBe(false);
+    expect(dalSec(genc, 'sipahi')).toBe(genc);
+    const o = seviyeli('akinci', DAL_SEVIYESI);
+    expect(dalSecebilirMi(o)).toBe(true);
+    expect(dalSec(o, 'nisanci')).toBe(o);
+    const sipahi = dalSec(o, 'sipahi');
+    expect(sipahi.dal).toBe('sipahi');
+    expect(dalBilgisi(sipahi).ad).toBe('Sipahi');
+    expect(dalSecebilirMi(sipahi)).toBe(false);
+    expect(dalSec(sipahi, 'serdengecti')).toBe(sipahi);
+  });
+
+  it('dal statları oranla artırır; can ve nefes en yüksek değeri aşmaz', () => {
+    const o = seviyeli('akinci', DAL_SEVIYESI);
+    const once = statlar(o);
+    const sipahi = dalSec(o, 'sipahi');
+    const sonra = statlar(sipahi);
+    expect(sonra.savunma).toBe(Math.round(once.savunma * 1.2));
+    expect(sonra.can).toBe(Math.round(once.can * 1.1));
+    expect(sonra.guc).toBe(once.guc);
+    expect(sipahi.can).toBe(o.can);
+    const dervis = dalSec(seviyeli('alperen', DAL_SEVIYESI), 'dervis');
+    expect(statlar(dervis).nefes).toBe(Math.round(statlar(seviyeli('alperen', DAL_SEVIYESI)).nefes * 1.2));
   });
 });
