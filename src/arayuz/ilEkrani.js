@@ -1,5 +1,6 @@
 // İl bilgisi ekranı: bulunulan ilin adı, meşhur yemeği, arınma yüzdesi ve oyuncu özeti.
 // Gezintide tabeladan ya da üst çubuktan açılır.
+import { ilSeviyesi } from '../oyun/rota.js';
 import { iller } from '../veri/iller.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { yemekler } from '../veri/yemekler.js';
@@ -35,7 +36,7 @@ function icerik(durum) {
       <p class="kart-bolge"><span class="bolge-noktasi" style="background:${bolge.renk}"></span>${kacis(bolge.ad)}</p>
       ${ozellikRozetleri(il.plaka)}
       <dl class="kart-bilgi">
-        <div><dt>${M.seviye}</dt><dd>${sablon(metinler.harita.seviyeDegeri, { en_az: il.seviye[0], en_cok: il.seviye[1] })}</dd></div>
+        <div><dt>${M.seviye}</dt><dd>${sablon(metinler.harita.seviyeDegeri, { en_az: ilSeviyesi(il.plaka)[0], en_cok: ilSeviyesi(il.plaka)[1] })}</dd></div>
         <div><dt>${M.yemek}</dt><dd><span aria-hidden="true">${yemek.ikon}</span> ${kacis(yemek.ad)}
           <small>${kacis(yemek.aciklama)} (${yemekEtkisi})</small></dd></div>
         <div><dt>${M.arinma}</dt><dd>${ilerlemeCubugu(yuzde, { etiket: M.arinma, renk: 'var(--arinmis)' })}</dd></div>

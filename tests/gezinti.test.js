@@ -189,7 +189,8 @@ describe('haritadaki düşmanlar', () => {
     let oyuncu = { ...h.dogus };
     for (let adim = 0; adim < 300; adim++) {
       // Oyuncu da rastgele gezinsin
-      const yol = yolBul(h, oyuncu, { x: 1 + (adim * 7) % 22, y: 1 + (adim * 11) % 28 });
+      // (oyunda olduğu gibi düşmanların içinden geçmez)
+      const yol = yolBul(h, oyuncu, { x: 1 + (adim * 7) % 22, y: 1 + (adim * 11) % 28 }, { engeller: ds });
       if (yol && yol.length) oyuncu = yol[0];
       ds = dusmanlariYurut(h, ds, oyuncu, rng);
       const yerler = new Set();
@@ -222,7 +223,7 @@ describe('haritadaki düşmanlar', () => {
   // Oyuncu düşmandan kaçmaya çalışır: her tıkta ondan uzaklaşan en iyi adımı atar.
   function kacisDenemesi(takipci, tik = 60) {
     const [d0] = dusmanlariYerlestir(h, 0, rastgeleUreteci(5));
-    let d = { ...d0, dusman: { ...d0.dusman, takipci } };
+    let d = { ...d0, dusman: { ...d0.dusman, takipci, takip: takipci ? 'takipci' : 'bekci' } };
     const yol = yolBul(h, d, h.dogus);
     let oyuncu = yol[2];
     let ds = [d];

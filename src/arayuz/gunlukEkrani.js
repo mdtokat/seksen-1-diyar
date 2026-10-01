@@ -68,7 +68,8 @@ function icerik(durum) {
   const aktif = ANAHTARLAR.filter((a) => durumlar[a] === 'hazir' || durumlar[a] === 'aktif')
     .sort((a, b) => Number(durumlar[b] === 'hazir') - Number(durumlar[a] === 'hazir'));
   const acik = ANAHTARLAR.filter((a) => durumlar[a] === 'alinabilir');
-  const tamamSayilari = bolgeler.filter((b) => durum.acikBolgeler.includes(b.anahtar)).map((b) => {
+  // Bölgeler açıldıkları sırayla (yolculuğun rotası)
+  const tamamSayilari = durum.acikBolgeler.map((a) => bolgeler.find((b) => b.anahtar === a)).map((b) => {
     const bolgeninki = ANAHTARLAR.filter((a) => gorevler[a].bolge === b.anahtar);
     const tamam = bolgeninki.filter((a) => durumlar[a] === 'tamam');
     return `

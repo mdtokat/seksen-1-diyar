@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { iller } from '../src/veri/iller.js';
 import { bolgeler, final } from '../src/veri/bolgeler.js';
 import { yemekler, YEMEK_TABANI } from '../src/veri/yemekler.js';
-import { dusmanlar, DUSMAN_TURLERI, OZEL_HAMLELER, SINIF_XP_CARPANI } from '../src/veri/dusmanlar.js';
+import { dusmanlar, DUSMAN_TURLERI, OZEL_HAMLELER, SINIF_XP_CARPANI, TAKIP_TURLERI } from '../src/veri/dusmanlar.js';
 import { siniflar, STAT_PUANI_DEGERI } from '../src/veri/siniflar.js';
 import { metinler } from '../src/veri/metinler.js';
 import { esyalar } from '../src/veri/esyalar.js';
@@ -183,7 +183,7 @@ describe('bölgeler', () => {
   });
 
   it('final: Zülmet, Ağrı, seviye 48', () => {
-    expect(final).toMatchObject({ boss: 'zulmet', il: 4, seviye: 48, onkosulBolge: 'dogu_anadolu' });
+    expect(final).toMatchObject({ boss: 'zulmet', il: 4, seviye: 48 });
     expect(final.dusmanSeviyesi).toBeGreaterThanOrEqual(final.seviye);
     expect(dusmanlar.zulmet.sinif).toBe('final');
   });
@@ -223,13 +223,23 @@ describe('düşmanlar', () => {
     for (const [anahtar, d] of Object.entries(dusmanlar)) {
       expect(anahtar).toMatch(/^[a-z_]+$/);
       expect(DUSMAN_TURLERI, anahtar).toContain(d.tur);
-      expect(['siradan', 'mini_boss', 'bolge_bossu', 'final'], anahtar).toContain(d.sinif);
-      expect(bolgeAnahtarlari, anahtar).toContain(d.bolge);
+      expect(['siradan', 'mini_boss', 'bolge_bossu', 'final', 'yankesici'], anahtar).toContain(d.sinif);
+      // Yankesiciler her bölgede çıkar; bölgeleri yoktur
+      if (d.sinif === 'yankesici') expect(d.bolge, anahtar).toBeUndefined();
+      else expect(bolgeAnahtarlari, anahtar).toContain(d.bolge);
+      if (d.sinif === 'siradan') expect(TAKIP_TURLERI, anahtar).toContain(d.takip);
       expect(d.aciklama.length, anahtar).toBeGreaterThan(10);
       for (const stat of ['can', 'guc', 'savunma', 'ceviklik']) {
         expect(d.carpan[stat], `${anahtar}.${stat}`).toBeGreaterThan(0);
       }
       if (d.sinif === 'bolge_bossu' || d.sinif === 'final') expect(d.tur, anahtar).toBe('boss');
+    }
+  });
+
+  it('yaratıkların takip tavrı türden türe değişir: Marmara dışındaki her bölgede üç tavır da var', () => {
+    for (const b of bolgeler.filter((x) => x.anahtar !== 'marmara')) {
+      const tavirlar = Object.values(dusmanlar).filter((d) => d.bolge === b.anahtar && d.sinif === 'siradan').map((d) => d.takip);
+      expect(new Set(tavirlar), b.ad).toEqual(new Set(TAKIP_TURLERI));
     }
   });
 

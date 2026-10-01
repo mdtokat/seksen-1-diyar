@@ -12,7 +12,8 @@ import { bitisEkrani } from './arayuz/bitisEkrani.js';
 import { sesCal } from './arayuz/ses.js';
 import { bolgeler } from './veri/bolgeler.js';
 import { dusmanlar } from './veri/dusmanlar.js';
-import { kaydet, yukle } from './oyun/kayit.js';
+import { kaydet, yukle, baslangicGecmisi, baslangicGecmisiniYaz } from './oyun/kayit.js';
+import { rotaOlustur, rotaAyarla, baslangicGecmisiniGuncelle } from './oyun/rota.js';
 import { iller } from './veri/iller.js';
 import { siniflar } from './veri/siniflar.js';
 import { haritaEkrani } from './arayuz/harita.js';
@@ -100,6 +101,8 @@ function ekranGoster(kur, ad = null) {
 // Durum her değiştiğinde (savaş sonu, seyahat, seviye atlama, yemek, stat
 // puanı) otomatik kayıt yapılır. Kayıt yapılamazsa oyuncu bir kez uyarılır.
 function oyunuBaslat(durum) {
+  // Seviyeler, yemekler, eşyalar ve yaratıkların gücü yolculuğun rotasına göredir
+  rotaAyarla(durum.rota);
   // Her yeni durum başarımlar ve yemek defteri için denetlenir
   depo = durumDeposu(durum, { donustur: oyunDurumunuIsle });
   durum = depo.al();
@@ -170,8 +173,19 @@ function yeniOyunGoster() {
     yeniOyunEkrani(kap, {
       geri: baslikGoster,
       olustur: ({ ad, sinif }) => {
-        oyunuBaslat(yeniOyunDurumu({ ad, sinif }));
-        gezintiGoster();
+        // Her yolculuk başka bir bölgenin küçük bir ilinden başlar: Marmara'dan hiç, bu
+        // turda başlanmış bölgelerden de başlanmaz (geçmiş yoksa son kayıt sayılır)
+        let gecmis = baslangicGecmisi();
+        const sonKayit = depo?.al() ?? yukle();
+        if (!gecmis.length && sonKayit?.rota) gecmis = [sonKayit.rota.bolgeler[0]];
+        const rota = rotaOlustur(rng, { gecmis });
+        baslangicGecmisiniYaz(baslangicGecmisiniGuncelle(gecmis, rota.bolgeler[0]));
+        oyunuBaslat(yeniOyunDurumu({ ad, sinif, rota }));
+        gezintiGoster({ ilGirisi: true });
+        bildirimGoster(uygulama.querySelector('.gezinti-ekrani'), sablon(metinler.yeniOyun.yolculukBasliyor, {
+          il: iller.find((il) => il.plaka === rota.baslangic).ad,
+          bolge: bolgeler.find((b) => b.anahtar === rota.bolgeler[0]).ad,
+        }), { tur: 'kutlama', sure: 5000 });
       },
     }),
   );
@@ -205,6 +219,7 @@ function gezintiHazirla() {
     // Yolda bekleyen seyyar tüccar (tuccar.js) ve son gelişinden ya da gidişinden bu yana atılan adım
     tuccar: tuccarYerlestir(harita, rng, { oyuncu, dolu: [...siradanlar, ...inDekiler] }),
     tuccarAdimi: 0,
+    yankesiciAdimi: 0, // son yankesiciden (ya da ile girişten) bu yana atılan adım
   };
   return gezinti;
 }
@@ -319,9 +334,13 @@ function savasGoster(kayit, yoldaslar = []) {
     if (islendi || !sonuc) return;
     islendi = true;
     const g = gezinti;
+    // Yankesiciler savaştan sonra haritada kalmaz: yenilen kaçar, kazanan keseyi kapıp gider
+    const yankesici = (d) => d.dusman.sinif === 'yankesici';
+    g.dusmanlar = g.dusmanlar.filter((d) => !(idler.has(d.id) && yankesici(d)));
+    g.yankesiciAdimi = 0;
     if (sonuc === 'zafer') {
       g.dusmanlar = g.dusmanlar.filter((d) => !idler.has(d.id));
-      for (const d of katilanlar) if (!d.sabit) g.dogusSayaclari.push(YENIDEN_DOGUS_ADIMI);
+      for (const d of katilanlar) if (!d.sabit && !yankesici(d)) g.dogusSayaclari.push(YENIDEN_DOGUS_ADIMI);
       g.dokunulmaz = 2;
     } else if (sonuc === 'kacis') {
       // Kısa bir soluklanma: takipçiler az sonra yeniden peşine düşebilir

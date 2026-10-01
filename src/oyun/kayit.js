@@ -11,9 +11,12 @@ import { basarimlar as basarimVerisi } from '../veri/basarimlar.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { STATLAR } from './karakter.js';
 import { KISAYOL_YUVA, kisayolGecerliMi, varsayilanKisayollar } from './kisayollar.js';
+import { KLASIK_ROTA, rotaGecerliMi } from './rota.js';
 
 export const KAYIT_ANAHTARI = 'seksen-bir-diyar/kayit';
-export const KAYIT_SURUMU = 6;
+export const KAYIT_SURUMU = 7;
+// Önceki oyunların başladığı bölgeler (bu tur): yeni oyun bunlardan başlamaz (rota.js).
+export const BASLANGIC_ANAHTARI = 'seksen-bir-diyar/baslangic-gecmisi';
 
 function varsayilanDepo() {
   try {
@@ -79,6 +82,12 @@ function bestenAltiya(veri) {
   return { surum: 6, durum: { kisayollar: varsayilanKisayollar(d), ...d } };
 }
 
+// Sürüm 6 → 7: yolculuğun rotası (bölge sırası ve başlangıç ili) eklendi. Eski
+// kayıtlar Marmara'dan başlayan klasik rotayla sürer.
+function altidanYediye(veri) {
+  return { surum: 7, durum: { rota: { bolgeler: [...KLASIK_ROTA.bolgeler], baslangic: KLASIK_ROTA.baslangic }, ...veri.durum } };
+}
+
 // Eski sürümdeki bir kaydı adım adım güncel şemaya taşır. Tanınmayan sürüm → null.
 export function goc(veri) {
   if (!veri || typeof veri !== 'object' || !veri.durum) return null;
@@ -88,6 +97,7 @@ export function goc(veri) {
   if (v.surum === 3) v = ucdenDorde(v);
   if (v.surum === 4) v = dorttenBese(v);
   if (v.surum === 5) v = bestenAltiya(v);
+  if (v.surum === 6) v = altidanYediye(v);
   return v.surum === KAYIT_SURUMU ? v : null;
 }
 
@@ -101,6 +111,7 @@ const sayiMi = (x) => typeof x === 'number' && Number.isFinite(x);
 export function durumGecerliMi(d) {
   if (!d || typeof d !== 'object') return false;
   if (!plakalar.has(d.konum)) return false;
+  if (!rotaGecerliMi(d.rota)) return false;
   if (!Array.isArray(d.acikBolgeler) || d.acikBolgeler.length === 0) return false;
   if (!d.arinma || typeof d.arinma !== 'object') return false;
   if (!sayiMi(d.akce) || d.akce < 0) return false;
@@ -151,6 +162,27 @@ export function yukle(depo = varsayilanDepo()) {
     return veri && durumGecerliMi(veri.durum) ? veri.durum : null;
   } catch {
     return null;
+  }
+}
+
+// Bu turda başlanmış bölgeler (sonuncusu en yenisi). Kayıt yoksa ya da bozuksa boş dizi.
+export function baslangicGecmisi(depo = varsayilanDepo()) {
+  if (!depo) return [];
+  try {
+    const liste = JSON.parse(depo.getItem(BASLANGIC_ANAHTARI) ?? '[]');
+    return Array.isArray(liste) ? liste.filter((b) => bolgeAnahtarlari.has(b)) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function baslangicGecmisiniYaz(gecmis, depo = varsayilanDepo()) {
+  if (!depo) return false;
+  try {
+    depo.setItem(BASLANGIC_ANAHTARI, JSON.stringify(gecmis));
+    return true;
+  } catch {
+    return false;
   }
 }
 

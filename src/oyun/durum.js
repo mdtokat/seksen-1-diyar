@@ -1,21 +1,23 @@
 // Oyun durumu ve abonelik. Saf oyun mantığı — DOM'a dokunmaz.
-import { bolgeler } from '../veri/bolgeler.js';
 import { yeniKarakter } from './karakter.js';
-import { BASLANGIC_HEYBESI } from './envanter.js';
+import { baslangicHeybesi } from './envanter.js';
 import { varsayilanKisayollar } from './kisayollar.js';
+import { KLASIK_ROTA } from './rota.js';
 
-// Yeni bir oyunun başlangıç durumu: yalnızca ilk bölge açık,
-// oyuncu o bölgenin giriş ilinde (İstanbul).
-// `ad` ve `sinif` verilirse karakter de oluşturulur.
-export function yeniOyunDurumu({ ad, sinif } = {}) {
-  const ilkBolge = bolgeler.find((b) => b.sira === 1);
+// Yeni bir oyunun başlangıç durumu: yalnızca rotanın ilk bölgesi açık, oyuncu rotanın
+// başlangıç ilinde. Oyun her yeni yolculukta rota.js → rotaOlustur ile yeni bir rota
+// verir (Marmara dışındaki bir bölgenin küçük bir ili); rota verilmezse klasik rota
+// (İstanbul) kullanılır. `ad` ve `sinif` verilirse karakter de oluşturulur.
+export function yeniOyunDurumu({ ad, sinif, rota = KLASIK_ROTA } = {}) {
+  const heybe = baslangicHeybesi(rota);
   const durum = {
-    konum: ilkBolge.giris,
-    acikBolgeler: [ilkBolge.anahtar],
+    rota: { bolgeler: [...rota.bolgeler], baslangic: rota.baslangic },
+    konum: rota.baslangic,
+    acikBolgeler: [rota.bolgeler[0]],
     arinma: {}, // { plaka: 0–100 }
     oyuncu: sinif ? yeniKarakter(ad, sinif) : null,
     akce: 0,
-    heybe: BASLANGIC_HEYBESI.map((y) => ({ ...y })),
+    heybe,
     yenilenBosslar: [], // bölge anahtarları
     yenilenMiniBosslar: [], // il plakaları
     sofra: null, // { bolge, kalan } — zafer sofrasının kalan savaş sayısı
@@ -26,7 +28,7 @@ export function yeniOyunDurumu({ ad, sinif } = {}) {
     hediyeAlinan: [], // muhtarın köylüler adına hediye verdiği iller
     zulmetYenildi: false, // final savaşı kazanıldı mı (oyun bitti; sonrasında da sürer)
     basarimlar: [], // kazanılan başarımlar (basarimlar.js anahtarları)
-    toplananYemekler: BASLANGIC_HEYBESI.map((y) => y.anahtar), // en az bir kez sahip olunan yemekler
+    toplananYemekler: heybe.map((y) => y.anahtar), // en az bir kez sahip olunan yemekler
     istatistik: { zafer: 0, bayilma: 0, bolgeBayilma: {} },
   };
   // Savaş kısayol yuvaları (1–4 tuşları): kisayollar.js

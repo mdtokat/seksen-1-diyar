@@ -20,6 +20,7 @@ import { statlar, acikYetenekler, xpEkle, tamIyilestir } from './karakter.js';
 import { aralik, sans, sec } from './rastgele.js';
 import { sofraTuket } from './ilerleme.js';
 import { yeniYetenekleriYerlestir } from './kisayollar.js';
+import { dusmanCarpanlari } from './rota.js';
 
 // ── Formüller (plan.md Bölüm 5) ──────────────────────────
 
@@ -64,9 +65,10 @@ export function kacmaSansi(oyuncuCev, dusmanCev, { takipci = false } = {}) {
   return Math.max(0, sans);
 }
 
-// Düşman statları seviye ve tür çarpanıyla ölçeklenir.
+// Düşman statları seviye ve tür çarpanıyla ölçeklenir. Çarpan, yaratığın bölgesinin
+// rotadaki kademesine göredir (rota.js → dusmanCarpanlari; klasik rotada veridekiyle aynı).
 export function dusmanStatlari(anahtar, seviye) {
-  const c = dusmanlar[anahtar].carpan;
+  const c = dusmanCarpanlari(anahtar);
   return {
     can: Math.round((20 + seviye * 12) * c.can),
     guc: Math.round((6 + seviye * 2) * c.guc),
@@ -104,7 +106,8 @@ export function dusmanOlustur(anahtar, seviye) {
     ikon: veri.ikon,
     tur: veri.tur,
     sinif: veri.sinif,
-    takipci: Boolean(veri.takipci),
+    takip: veri.takip ?? 'bekci',
+    takipci: veri.takip === 'takipci',
     seviye,
     canEnCok: s.can,
     can: s.can,

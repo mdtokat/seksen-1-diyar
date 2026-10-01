@@ -81,6 +81,8 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 │  │  ├─ ekipman.js          # eşya kuşanma ve çıkarma
 │  │  ├─ ticaret.js          # arasta ve Ahi esnafı alışverişi (dönen tezgâh)
 │  │  ├─ tuccar.js           # seyyar tüccar: güçlü mallar, haritada belirme
+│  │  ├─ yankesici.js        # yolda beliren yankesiciler
+│  │  ├─ rota.js             # yolculuğun rotası: bölge sırası, başlangıç ili, kademeye göre güç
 │  │  ├─ kervansaray.js      # dinlenme ve hızlı yolculuk
 │  │  ├─ gezinti.js          # il içi karo harita, yürüme, haritadaki düşmanlar
 │  │  ├─ gorevler.js         # görev alma, ilerleme, teslim ve ödül
@@ -694,6 +696,23 @@ Kullanıcı kararları: kuşbakışı görünüm; düşmanlar haritada görünü
 - **Ödül (`kesif.js`):** düşürülen her yaratık tek başına yenilmiş gibi arınma, akçe, yemek şansı ve görev sayacı getirir; XP toplamı `savas.xpOdulu`dur. `istatistik.zafer` savaş başına 1 artar. Kaçış ve bayılmada hiçbir yaratık sayılmaz (haritada hepsi yeniden tam canla durur).
 - **Haritada (`gezinti.js`):** temas eden sıradan yaratığa, oyuncudan ≤ 5 karo uzaktaki peşinde koşanlar ve ≤ 2 karodaki herkes katılır (`saldiriGrubu`). Bosslar, mini bosslar, Zülmet ve gezgin bosslar hep tek başına çıkar. Takipçiler (kurt, çakal, yol kesen cin…) %40 ihtimalle 2, %25'inde 3'lü **sürü** doğar (`suruUyeleri`); sürü üyeleri toplam düşman sayısından sayılır.
 - **Ekran:** her yaratığın sahnede figürü, altında kartı (ad, seviye, can); karta dokununca hedef değişir, hedefin altında halka görünür. Aynı türden yaratıklar "Aç Kurt 1/2/3" diye numaralanır.
+
+### Ek — Rastgele başlangıç, yaratık tavırları ve yankesiciler
+- **Rota (`rota.js`):** her yeni oyun bir rota üretir: `{ bolgeler: [anahtar…], baslangic: plaka }`, oyun durumunda `rota` olarak saklanır (kayıt şeması 7; eski kayıtlar Marmara'dan başlayan klasik rotayla sürer).
+  - **Başlangıç bölgesi:** Marmara hiç seçilmez. Başlangıç bölgeleri torbadan çekilir: kalan altı bölgenin hepsinden birer kez başlanmadan hiçbiri tekrarlanmaz, yeni turun ilki de bir öncekinin sonuncusu olmaz. Geçmiş, kayıttan ayrı bir anahtarda tutulur (`seksen-bir-diyar/baslangic-gecmisi`), yani "Yeni Oyun" kaydı silse de geçmiş kalır.
+  - **Başlangıç ili:** bölgenin, bossun ili dışında nüfusça en küçük 3 ilinden biri (Karadeniz: Bayburt/Gümüşhane/Artvin, Doğu: Tunceli/Ardahan/Iğdır, Güneydoğu: Kilis/Siirt/Şırnak, Akdeniz: Burdur/Isparta/Osmaniye, Ege: Uşak/Kütahya/Afyonkarahisar, İç Anadolu: Çankırı/Kırşehir/Karaman).
+  - **Bölge sırası:** kalan bölgeler komşuluk zinciriyle dizilir: her adımda son bölgeye komşu (yoksa açılmış herhangi bir bölgeye komşu) bölgelerden biri rastgele seçilir.
+  - **Kademe:** rotanın k. bölgesi, klasik sıranın (veri dosyalarındaki `sira`) k. bölgesinin seviye aralığını ve yemek çarpanını alır. Bölgenin giriş ili: ilk bölgede başlangıç ili; sonrakilerde önceki bölgeye sınırı olan iller arasından verideki giriş ili, o uygun değilse bossun ili dışındaki en az nüfuslu aday. İl seviyeleri bu girişten bölge içi BFS ile hesaplanır (her ilin aralığı en az iki seviyedir). Bölge bossu kademenin üst seviyesinde bekler, mührü kademenin üst seviyesinin bir altında çözülür.
+  - **Güç ölçekleme:** bölge bossları ve mini bosslar kademenin (klasik sıradaki aynı yerin) bossunun stat çarpanlarını alır; sıradan yaratıkların çarpanları, kendi bölgelerinin ortalamasından kademenin ortalamasına oranla çekilir (karakterleri korunur). Eşyalarda her stat, esyalar.js'teki formüllerin (güç ≈ 12 + 3L …) kademe orta seviyesine oranıyla, fiyat (3 + 2L) oranıyla ölçeklenir; kuşanma seviyesi kademenin alt seviyesidir. Yemeklerin çarpanı kademeninkidir. Klasik rotada her şey verideki değerlerle birebir aynıdır (testle korunur).
+  - **Heybe:** başlangıç ilinin yemeğinden 3, bölgede başlangıç iline en yakın ilden öbür türde (can/nefes) bir yemekten 2.
+  - **Etkin rota:** durum alan fonksiyonlar `durum.rota`yı, düşman/yemek/eşya değerleri gibi durum almayanlar `rotaAyarla` ile seçilen etkin rotayı kullanır (oyun başlatılırken ya da yüklenirken ayarlanır).
+  - **Hikâye:** boss yenilince bölgenin kendi hikâyesine rotadaki sıradaki bölgenin haberi (`hikayeSonraki`), son bölgede kalenin haberi eklenir. Zülmet'in kalesi rotanın **son bölgesinin** bossu yenilince ve seviye 48'de açılır.
+- **Yaratık tavırları (`dusmanlar.js → takip`, `gezinti.js → DAVRANIS`):** sıradan yaratıklar peşe düşme tavrıyla ayrışır; Marmara dışındaki her bölgede üçü de vardır.
+  - `takipci` (görüş 6, bırakma 13, hız 0,85): kurtlar, çakallar, parslar, kara/sis cinleri, kum ifriti. Sürü hâlinde doğabilirler; savaşta kaçması zordur.
+  - `bekci` (görüş 4, bırakma 7, hız 0,55): yol kesen cin, yaban domuzu, mağara/toz ifriti, boz ayı, çöl akrebi, Zülmet'in muhafızı.
+  - `kayitsiz` (peşe hiç düşmez): zeytinlik/orman hortlağı, akrep sürüsü, peri bacası cini, taş dev, buz cini.
+  - Kovalamayan yaratıklar dolaşırken oyuncunun yanı başına kendiliğinden sokulmaz; kayıtsızlarla ancak oyuncu üstlerine varırsa dövüşülür. Haritada 👣 takipçi, 💤 kayıtsız rozeti görünür.
+- **Yankesiciler (`yankesici.js`):** `yankesici` (tür `insan`, sınıf `yankesici`, bölgesiz). Oyuncu meydan dışında yürürken, son yankesiciden (ya da ile girişten) en az 45 adım sonra her adımda %1,2 ihtimalle 4–6 karo ötede (yürüyerek ulaşılan bir yerde) bir, %30 ihtimalle iki yankesici çıkar ve hemen kovalar (görüş 9, bırakma 12, hız 0,8). Seviyesi ilin (rotaya göre) seviye aralığından. Peşini bırakınca (meydan, dokunulmazlık ya da uzaklık) haritadan çekilir. Yaratıklarla birlik olmaz, ilin yaratık sayısına sayılmaz. Zaferde XP (çarpan 1,5) ve 2 kat bol akçe; arınma, yemek ve görev ilerlemesi yok. Kaçış ya da bayılmada her yankesici kesenin %8'ini aşırır (`calinanAkce`). Savaştan sonra haritada kalmaz. Özel hamlesi *Çelme Takma* (zayıflatma).
 
 ---
 

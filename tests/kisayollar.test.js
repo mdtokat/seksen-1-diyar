@@ -103,7 +103,7 @@ describe('savaş kısayol yuvaları', () => {
 describe('takipçi düşmanlar', () => {
   it('her bölgede peşe takılan (takipçi) en az bir sıradan düşman var', () => {
     for (const b of bolgeler) {
-      const takipciler = Object.values(dusmanlar).filter((d) => d.bolge === b.anahtar && d.sinif === 'siradan' && d.takipci);
+      const takipciler = Object.values(dusmanlar).filter((d) => d.bolge === b.anahtar && d.sinif === 'siradan' && d.takip === 'takipci');
       expect(takipciler.length, b.ad).toBeGreaterThan(0);
     }
     expect(dusmanOlustur('ac_kurt', 3).takipci).toBe(true);

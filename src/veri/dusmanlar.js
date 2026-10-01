@@ -1,13 +1,18 @@
 // Düşmanlar. Yalnızca veri — mantık kodu yok.
-// tur: 'hayvan' | 'cin' | 'ifrit' | 'hortlak' | 'dev' | 'boss'
-// sinif: 'siradan' (illerde karşılaşılır) | 'mini_boss' | 'bolge_bossu' | 'final'
-// takipci: true → oyuncuyu uzaktan fark eder, peşine takılır ve kolay kolay bırakmaz
-//   (gezinti.js → DAVRANIS). Savaşta bunlardan kaçmak da daha zordur (savas.js → kacmaSansi).
+// tur: 'hayvan' | 'cin' | 'ifrit' | 'hortlak' | 'dev' | 'insan' | 'boss'
+// sinif: 'siradan' (illerde karşılaşılır) | 'mini_boss' | 'bolge_bossu' | 'final' |
+//   'yankesici' (her bölgede, yürürken yolda çıkan insan düşman; yankesici.js)
+// takip: sıradan yaratıkların haritadaki tavrı (gezinti.js → DAVRANIS); yaratıktan yaratığa değişir:
+//   'takipci'  → oyuncuyu uzaktan fark eder, peşine takılır ve kolay kolay bırakmaz.
+//                Savaşta bunlardan kaçmak da daha zordur (savas.js → kacmaSansi).
+//   'bekci'    → yalnızca yakına gelince saldırır, biraz uzaklaşınca peşini bırakır.
+//   'kayitsiz' → kendi hâlinde dolaşır, peşine hiç düşmez; ancak üstüne varılırsa dövüşür.
 // carpan: stat çarpanları. Örnek: can = (20 + sv × 12) × carpan.can (plan.md Bölüm 5).
 //   Boss ve mini boss çarpanları Faz 7'de simülasyonla dengelendi (plan.md Faz 7).
 // Yenilen düşmanlar ölmez; dağılır, kaçar ya da üzerindeki sihir bozulur.
 
-export const DUSMAN_TURLERI = ['hayvan', 'cin', 'ifrit', 'hortlak', 'dev', 'boss'];
+export const DUSMAN_TURLERI = ['hayvan', 'cin', 'ifrit', 'hortlak', 'dev', 'insan', 'boss'];
+export const TAKIP_TURLERI = ['takipci', 'bekci', 'kayitsiz'];
 
 // Düşman yapay zekâsının ara sıra yaptığı özel hamle, türe göre (plan.md Bölüm 5).
 // Mini bosslar ve bölge bossları kendi `ozelHamleler` listelerini kullanır.
@@ -24,6 +29,7 @@ export const OZEL_HAMLELER = {
   ifrit: { ad: 'Alev Dalgası', etki: 'hasar', carpan: 1.6 },
   hortlak: { ad: 'Ürkütücü Çığlık', etki: 'zayiflatma', deger: 0.25, sure: 2 },
   dev: { ad: 'Kaya Fırlatma', etki: 'hasar', carpan: 1.8 },
+  insan: { ad: 'Çelme Takma', etki: 'zayiflatma', deger: 0.2, sure: 2 },
   boss: { ad: 'Zülmet\'in Sihri', etki: 'hasar', carpan: 1.7 },
 };
 
@@ -34,6 +40,7 @@ export const SINIF_XP_CARPANI = {
   bolge_bossu: 8,
   final: 15,
   gezgin: 3, // haritada dolaşan ya da sürpriz çıkan boss yaratıklar (gezginBoss.js)
+  yankesici: 1.5, // yolda çıkan yankesiciler (yankesici.js); kesesi de dolgundur
 };
 
 export const dusmanlar = {
@@ -42,7 +49,7 @@ export const dusmanlar = {
     ad: 'Aç Kurt',
     tur: 'hayvan',
     sinif: 'siradan',
-    takipci: true,
+    takip: 'takipci',
     bolge: 'marmara',
     ikon: '🐺',
     carpan: { can: 0.9, guc: 0.9, savunma: 0.8, ceviklik: 1.1 },
@@ -52,7 +59,7 @@ export const dusmanlar = {
     ad: 'Çakal Sürüsü',
     tur: 'hayvan',
     sinif: 'siradan',
-    takipci: true,
+    takip: 'takipci',
     bolge: 'marmara',
     ikon: '🦊',
     carpan: { can: 1.0, guc: 0.8, savunma: 0.7, ceviklik: 1.2 },
@@ -62,7 +69,7 @@ export const dusmanlar = {
     ad: 'Yol Kesen Cin',
     tur: 'cin',
     sinif: 'siradan',
-    takipci: true,
+    takip: 'bekci',
     bolge: 'marmara',
     ikon: '👤',
     carpan: { can: 0.9, guc: 1.1, savunma: 0.8, ceviklik: 1.0 },
@@ -94,6 +101,7 @@ export const dusmanlar = {
     ad: 'Yaban Domuzu',
     tur: 'hayvan',
     sinif: 'siradan',
+    takip: 'bekci',
     bolge: 'ege',
     ikon: '🐗',
     carpan: { can: 1.2, guc: 1.0, savunma: 1.1, ceviklik: 0.8 },
@@ -103,6 +111,7 @@ export const dusmanlar = {
     ad: 'Zeytinlik Hortlağı',
     tur: 'hortlak',
     sinif: 'siradan',
+    takip: 'kayitsiz',
     bolge: 'ege',
     ikon: '👻',
     carpan: { can: 1.0, guc: 1.0, savunma: 0.9, ceviklik: 1.0 },
@@ -112,7 +121,7 @@ export const dusmanlar = {
     ad: 'Kara Cin',
     tur: 'cin',
     sinif: 'siradan',
-    takipci: true,
+    takip: 'takipci',
     bolge: 'ege',
     ikon: '👤',
     carpan: { can: 0.9, guc: 1.2, savunma: 0.8, ceviklik: 1.1 },
@@ -144,6 +153,7 @@ export const dusmanlar = {
     ad: 'Akrep Sürüsü',
     tur: 'hayvan',
     sinif: 'siradan',
+    takip: 'kayitsiz',
     bolge: 'akdeniz',
     ikon: '🦂',
     carpan: { can: 0.9, guc: 1.1, savunma: 1.0, ceviklik: 1.1 },
@@ -153,7 +163,7 @@ export const dusmanlar = {
     ad: 'Anadolu Parsı',
     tur: 'hayvan',
     sinif: 'siradan',
-    takipci: true,
+    takip: 'takipci',
     bolge: 'akdeniz',
     ikon: '🐆',
     carpan: { can: 1.0, guc: 1.2, savunma: 0.9, ceviklik: 1.3 },
@@ -163,6 +173,7 @@ export const dusmanlar = {
     ad: 'Mağara İfriti',
     tur: 'ifrit',
     sinif: 'siradan',
+    takip: 'bekci',
     bolge: 'akdeniz',
     ikon: '🔥',
     carpan: { can: 1.1, guc: 1.2, savunma: 1.0, ceviklik: 0.9 },
@@ -194,7 +205,7 @@ export const dusmanlar = {
     ad: 'Bozkır Kurdu',
     tur: 'hayvan',
     sinif: 'siradan',
-    takipci: true,
+    takip: 'takipci',
     bolge: 'ic_anadolu',
     ikon: '🐺',
     carpan: { can: 1.0, guc: 1.1, savunma: 0.9, ceviklik: 1.2 },
@@ -204,6 +215,7 @@ export const dusmanlar = {
     ad: 'Peri Bacası Cini',
     tur: 'cin',
     sinif: 'siradan',
+    takip: 'kayitsiz',
     bolge: 'ic_anadolu',
     ikon: '👤',
     carpan: { can: 0.9, guc: 1.2, savunma: 0.9, ceviklik: 1.1 },
@@ -213,7 +225,7 @@ export const dusmanlar = {
     ad: 'Toz İfriti',
     tur: 'ifrit',
     sinif: 'siradan',
-    takipci: true,
+    takip: 'bekci',
     bolge: 'ic_anadolu',
     ikon: '🌪️',
     carpan: { can: 1.1, guc: 1.1, savunma: 1.0, ceviklik: 1.0 },
@@ -245,6 +257,7 @@ export const dusmanlar = {
     ad: 'Boz Ayı',
     tur: 'hayvan',
     sinif: 'siradan',
+    takip: 'bekci',
     bolge: 'karadeniz',
     ikon: '🐻',
     carpan: { can: 1.3, guc: 1.2, savunma: 1.1, ceviklik: 0.8 },
@@ -254,7 +267,7 @@ export const dusmanlar = {
     ad: 'Sis Cini',
     tur: 'cin',
     sinif: 'siradan',
-    takipci: true,
+    takip: 'takipci',
     bolge: 'karadeniz',
     ikon: '🌫️',
     carpan: { can: 0.9, guc: 1.1, savunma: 0.9, ceviklik: 1.3 },
@@ -264,6 +277,7 @@ export const dusmanlar = {
     ad: 'Orman Hortlağı',
     tur: 'hortlak',
     sinif: 'siradan',
+    takip: 'kayitsiz',
     bolge: 'karadeniz',
     ikon: '👻',
     carpan: { can: 1.1, guc: 1.1, savunma: 1.0, ceviklik: 1.0 },
@@ -295,6 +309,7 @@ export const dusmanlar = {
     ad: 'Çöl Akrebi',
     tur: 'hayvan',
     sinif: 'siradan',
+    takip: 'bekci',
     bolge: 'guneydogu',
     ikon: '🦂',
     carpan: { can: 1.0, guc: 1.2, savunma: 1.1, ceviklik: 1.1 },
@@ -304,7 +319,7 @@ export const dusmanlar = {
     ad: 'Kum İfriti',
     tur: 'ifrit',
     sinif: 'siradan',
-    takipci: true,
+    takip: 'takipci',
     bolge: 'guneydogu',
     ikon: '🌪️',
     carpan: { can: 1.1, guc: 1.2, savunma: 1.0, ceviklik: 1.0 },
@@ -314,6 +329,7 @@ export const dusmanlar = {
     ad: 'Taş Dev',
     tur: 'dev',
     sinif: 'siradan',
+    takip: 'kayitsiz',
     bolge: 'guneydogu',
     ikon: '🪨',
     carpan: { can: 1.4, guc: 1.1, savunma: 1.3, ceviklik: 0.7 },
@@ -345,7 +361,7 @@ export const dusmanlar = {
     ad: 'Karlı Dağ Kurdu',
     tur: 'hayvan',
     sinif: 'siradan',
-    takipci: true,
+    takip: 'takipci',
     bolge: 'dogu_anadolu',
     ikon: '🐺',
     carpan: { can: 1.1, guc: 1.2, savunma: 1.0, ceviklik: 1.2 },
@@ -355,6 +371,7 @@ export const dusmanlar = {
     ad: 'Buz Cini',
     tur: 'cin',
     sinif: 'siradan',
+    takip: 'kayitsiz',
     bolge: 'dogu_anadolu',
     ikon: '🧊',
     carpan: { can: 1.0, guc: 1.2, savunma: 1.0, ceviklik: 1.1 },
@@ -364,7 +381,7 @@ export const dusmanlar = {
     ad: 'Zülmet\'in Muhafızı',
     tur: 'dev',
     sinif: 'siradan',
-    takipci: true,
+    takip: 'bekci',
     bolge: 'dogu_anadolu',
     ikon: '🛡️',
     carpan: { can: 1.3, guc: 1.2, savunma: 1.3, ceviklik: 0.9 },
@@ -417,5 +434,17 @@ export const dusmanlar = {
       },
     ],
     aciklama: 'Yasak sihirle cinleri ve ifritleri Anadolu\'ya salan zalim sihirbaz.',
+  },
+
+  // ── Yankesici (her bölge) ────────────────────────────────
+  // Zülmet'in sihriyle ilgisi yoktur: kargaşadan yararlanıp yolcuların kesesine göz
+  // diken bir yol haramisidir. Gücü bulunduğu ilin seviyesine göredir.
+  yankesici: {
+    ad: 'Yankesici',
+    tur: 'insan',
+    sinif: 'yankesici',
+    ikon: '🗡️',
+    carpan: { can: 0.85, guc: 1.0, savunma: 0.8, ceviklik: 1.3 },
+    aciklama: 'Kargaşadan yararlanıp yolcuların kesesine göz diken çevik bir yol haramisi.',
   },
 };

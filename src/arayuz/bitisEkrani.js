@@ -1,5 +1,6 @@
 // Bitiş sahnesi (plan.md Faz 10): Zülmet yenilince hikâyeyi kapatan metin, yolculuğun
 // özeti ve 81 ilin arınma durumu. Oyuncu ardından yolculuğa devam edebilir.
+import { durumRotasi } from '../oyun/rota.js';
 import { iller } from '../veri/iller.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { gorevler } from '../veri/gorevler.js';
@@ -31,9 +32,9 @@ function ozetKutusu(durum) {
     `<div><dt>${ad}</dt><dd>${kacis(deger)}</dd></div>`).join('')}</dl>`;
 }
 
-// Bölge bölge 81 il: arınmış iller ✓ ile, diğerleri yüzdeleriyle.
+// Bölge bölge (yolculuğun sırasıyla) 81 il: arınmış iller ✓ ile, diğerleri yüzdeleriyle.
 function ilOzeti(durum) {
-  return bolgeler.map((b) => {
+  return durumRotasi(durum).bolgeler.map((a) => bolgeler.find((b) => b.anahtar === a)).map((b) => {
     const bIller = iller.filter((il) => il.bolge === b.anahtar).sort((x, y) => x.ad.localeCompare(y.ad, 'tr'));
     return `
       <section class="bitis-bolge" style="--bolge-rengi:${b.renk}">

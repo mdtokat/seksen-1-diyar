@@ -1,7 +1,7 @@
 // Karakter: stat hesapları, XP eğrisi, seviye atlama ve stat puanları.
 // Saf oyun mantığı — DOM'a dokunmaz.
 import { siniflar, STAT_PUANI_SEVIYE_BASI, STAT_PUANI_DEGERI } from '../veri/siniflar.js';
-import { esyalar } from '../veri/esyalar.js';
+import { esyaBilgisi } from './rota.js';
 
 export const STATLAR = ['can', 'nefes', 'guc', 'savunma', 'ceviklik'];
 export const AD_EN_FAZLA = 20;
@@ -41,7 +41,7 @@ export function yeniKarakter(ad, sinifAnahtari) {
 export function ekipmanStatlari(oyuncu) {
   const toplam = Object.fromEntries(STATLAR.map((s) => [s, 0]));
   for (const anahtar of Object.values(oyuncu.kusanilan ?? {})) {
-    const esya = esyalar[anahtar];
+    const esya = esyaBilgisi(anahtar);
     if (!esya) continue;
     for (const [stat, deger] of Object.entries(esya.statlar)) toplam[stat] += deger;
   }

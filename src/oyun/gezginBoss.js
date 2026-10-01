@@ -16,6 +16,7 @@ import { dusmanlar } from '../veri/dusmanlar.js';
 import { iller } from '../veri/iller.js';
 import { dusmanStatlari } from './savas.js';
 import { sans, sec, tamSayi } from './rastgele.js';
+import { ilSeviyesi } from './rota.js';
 
 export const GEZGIN_BOSS = {
   dogusSansi: 0.12, // yeni doğan düşmanın boss yaratık olma şansı
@@ -55,7 +56,7 @@ export function gezginBossOlustur(anahtar, plaka, rng, { tehlike = null } = {}) 
   const il = ilHaritasi.get(plaka);
   if (!il) throw new Error(`Bilinmeyen il: ${plaka}`);
   const t = tehlike ?? (sans(rng, GEZGIN_BOSS.kesilemezSansi) ? 'kesilemez' : 'zorlu');
-  const seviye = il.seviye[1] + tamSayi(rng, ...TEHLIKE[t].seviyeFarki);
+  const seviye = ilSeviyesi(plaka)[1] + tamSayi(rng, ...TEHLIKE[t].seviyeFarki);
   const s = dusmanStatlari(anahtar, seviye);
   const c = TEHLIKE[t].carpan;
   const can = Math.round(s.can * c.can);

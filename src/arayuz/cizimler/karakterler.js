@@ -243,3 +243,28 @@ export function tuccarCizimi() {
     <path d="M45 30.5 Q60 23.5 75.5 30.5 L75.5 35 Q60 28.5 45 35 Z" fill="${hacim('#2aa7a7')}"/>
     <circle cx="65" cy="16" r="2.2" fill="${kure('#d9483b')}" stroke-width="1.2"/>`, { sinif: 'cizim cizim-halk cizim-tuccar' });
 }
+
+// Yankesici: koyu, yamalı bir kaftan, yüzünün altını örten peçe, başında atkı; bir
+// elinde kısa bir sopa, kuşağında aşırdığı kese. Düşman olduğu için sola (oyuncuya)
+// dönük çizilir: `renk` { ana, koyu, acik, goz } — dusmanlar.js çizim eşlemesinden gelir.
+export function yankesiciBedeni(renk) {
+  const kaftan = renk.ana;
+  return `${golge(26)}<g transform="translate(120 0) scale(-1 1)">
+    ${govde({ kaftan, kaftanKoyu: renk.koyu, kusak: '#7b5236', cizme: '#3a2a1e', ic: renk.acik, serit: '#9e6b3a', salvar: '#3a3a44' })}
+    <path d="M47 77 l4 -2 l1 5 l-4 1 z M71 60 l5 -1 l0.5 4.5 l-5 .5 z" fill="${hacim(koyu(kaftan, 0.25))}" stroke-width="1"/>
+    <path d="M41 74 Q36 80 39 86 Q44 90 48 85 Q50 79 45 74 Z" fill="${kure('#c9a24a')}" stroke-width="1.6"/>
+    <path d="M40.5 75 h6" stroke="#7b5236" stroke-width="2"/>
+    <circle cx="43.5" cy="81" r="1.2" fill="#fff" stroke="none" opacity=".7"/>
+    ${kol('M72 50 Q82 50 87 57 L83 63 Q78 58 73 60 Z', kaftan, [85, 60])}
+    <path d="M84 63 L95 40" stroke-width="7"/><path d="M84 63 L95 40" stroke="#6e4a2e" stroke-width="4.6"/>
+    <path d="M93 44 L97 36" stroke="#5b3a24" stroke-width="5.6"/>
+    ${parlak('M87 57 L94 42', 0.3)}
+    ${bas({ sac: '#2b2620', kas: '#2b2620' })}
+    <path d="M58.5 35.5 Q61 44 70 45 Q76 43 77 36 Q70 38 64 37 Z" fill="${hacim(renk.koyu)}" stroke-width="1.6"/>
+    <path d="M62 39 Q68 41.5 75 39" fill="none" stroke="${acik(renk.koyu, 0.35)}" stroke-width="1" opacity=".8"/>
+    <path d="M46 34 Q43 17 61 16.5 Q77 17 75.5 30 Q69 23.5 60 24 Q50 25.5 46 34 Z" fill="${hacim(renk.koyu)}"/>
+    <path d="M47 33 Q41 40 43 50 L49 47 L50 36 Z" fill="${hacim(renk.koyu)}"/>
+    <path d="M51 21 Q60 18 70 21" fill="none" stroke="${acik(renk.koyu, 0.3)}" stroke-width="1.2" opacity=".7"/>
+    <path d="M62.5 28.5 l5 1.4 M69 29.8 l4 -1.2" stroke="#2b2620" stroke-width="1.8"/>
+  </g>`;
+}

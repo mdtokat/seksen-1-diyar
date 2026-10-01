@@ -3,6 +3,7 @@
 // Kırmızı çizgiler (plan.md Bölüm 2): kan, vahşet ve müstehcenlik yoktur;
 // mahlûklar ürkütücü değil, masalsı görünür.
 import { svgSar, golge, hale, hacim, kure, metal, isilti, acik, koyu, parlak, leke, parlakGoz } from './ortak.js';
+import { yankesiciBedeni } from './karakterler.js';
 
 const LACI = '#1b2a5c';
 const ALTIN = '#d4a537';
@@ -507,6 +508,8 @@ export const DUSMAN_CIZIMLERI = {
   van_golu_canavari: [canavar, R('#2f6a7a', '#1d4450', '#8fc8d4', '#f2c94c'), true],
   // Final
   zulmet: [zulmet, R('#3a2a55', '#1b1330', '#8a6ab3', '#b36ae0'), true],
+  // Her bölgede yolda çıkabilen insan düşman
+  yankesici: [yankesiciBedeni, R('#5a4a3e', '#2e2a33', '#c9b8a0', '#d4a537')],
 };
 
 // Havada süzülen varlıklar (CSS ile hafifçe inip kalkar).

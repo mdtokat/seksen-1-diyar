@@ -133,7 +133,7 @@ export const metinler = {
   // Final: Ağrı Dağı'ndaki kale ve Zülmet (plan.md Faz 10).
   final: {
     rozet: 'Zülmet',
-    muhurlu: 'Kalenin kapısı Zülmet\'in sihriyle mühürlü. Mührü çözmek için Van Gölü Canavarı yenilmeli ({boss}) ve seviyen en az {gerekenSeviye} olmalı (şimdi {seviye}).',
+    muhurlu: 'Kalenin kapısı Zülmet\'in sihriyle mühürlü. Mührü çözmek için son bölgenin bossu {sonBoss} yenilmeli ({boss}) ve seviyen en az {gerekenSeviye} olmalı (şimdi {seviye}).',
     bossDurumu: { evet: 'yenildi ✓', hayir: 'henüz yenilmedi' },
     acildi: 'Ağrı Dağı\'ndaki kalenin mührü çözüldü! Zülmet seni kalesinde bekliyor.',
     kartBasligi: 'Zülmet\'in kalesi',
@@ -302,16 +302,27 @@ export const metinler = {
     },
   },
 
-  // Bölge bossu yenilince gösterilen kısa hikâye (plan.md Faz 7).
+  // Bölge bossu yenilince gösterilen kısa hikâye (plan.md Faz 7). Ardından rotadaki
+  // sıradaki bölgenin haberi (hikayeSonraki), son bölgede ise kalenin haberi (hikayeSon) gelir.
   hikaye: {
-    marmara: 'Boğaz\'ın suları duruldu; kayıklar yeniden denize açıldı, halk sevinçle kıyılara indi. Ama Zülmet\'in sihri güneye, Ege\'nin zeytinliklerine uzanıyor.',
-    ege: 'Yelbegen\'in üç başı da sustu; Ege yolları yeniden kervanlara açıldı, zeytinlikler rahat bir nefes aldı. Toros\'ların ardında ise Şahmeran\'ın gözleri parlıyor.',
-    akdeniz: 'Şahmeran\'ın aklı sihirden arındı; yılanlar mağaralarına çekildi, Akdeniz limanları yeniden şenlendi. Bozkırdan ise soğuk bir rüzgâr esiyor.',
-    ic_anadolu: 'Albastı\'nın gölgesi bozkırdan çekildi; peri bacalarının arasına yeniden güneş doğdu. Kuzeyde, sisli yaylalardan bir uğultu yükseliyor.',
-    karadeniz: 'Karakoncolos\'un kışı sona erdi; yaylalara bahar geldi, çay bahçeleri yeşerdi. Güneydoğunun kızgın ovalarında ise Tepegöz uyanmış.',
-    guneydogu: 'Tepegöz\'ün sihri bozuldu; ovalarda yeniden harman kalktı, kervanlar yola koyuldu. Doğunun karlı dağlarında ise Van Gölü\'nün suları kabarıyor.',
-    dogu_anadolu: 'Van Gölü\'nün suları sakinleşti. Ağrı Dağı\'nın eteklerinde, Zülmet\'in kalesine giden yolun izleri belirmeye başladı…',
+    marmara: 'Boğaz\'ın suları duruldu; kayıklar yeniden denize açıldı, halk sevinçle kıyılara indi.',
+    ege: 'Yelbegen\'in üç başı da sustu; Ege yolları yeniden kervanlara açıldı, zeytinlikler rahat bir nefes aldı.',
+    akdeniz: 'Şahmeran\'ın aklı sihirden arındı; yılanlar mağaralarına çekildi, Akdeniz limanları yeniden şenlendi.',
+    ic_anadolu: 'Albastı\'nın gölgesi bozkırdan çekildi; peri bacalarının arasına yeniden güneş doğdu.',
+    karadeniz: 'Karakoncolos\'un kışı sona erdi; yaylalara bahar geldi, çay bahçeleri yeşerdi.',
+    guneydogu: 'Tepegöz\'ün sihri bozuldu; ovalarda yeniden harman kalktı, kervanlar yola koyuldu.',
+    dogu_anadolu: 'Van Gölü\'nün suları sakinleşti; karlı dağların eteklerinde köylüler yeniden ocak tüttürdü.',
   },
+  hikayeSonraki: {
+    marmara: 'Ama Zülmet\'in sihri Marmara\'ya uzanıyor; Boğaz\'ın sularında bir ejderin gölgesi dolaşıyor.',
+    ege: 'Ama Zülmet\'in sihri Ege\'nin zeytinliklerine uzanıyor.',
+    akdeniz: 'Toros\'ların ardında ise Şahmeran\'ın gözleri parlıyor.',
+    ic_anadolu: 'Bozkırdan ise soğuk bir rüzgâr esiyor.',
+    karadeniz: 'Sisli Karadeniz yaylalarından ise bir uğultu yükseliyor.',
+    guneydogu: 'Güneydoğunun kızgın ovalarında ise Tepegöz uyanmış.',
+    dogu_anadolu: 'Doğunun karlı dağlarında ise Van Gölü\'nün suları kabarıyor.',
+  },
+  hikayeSon: 'Ağrı Dağı\'nın eteklerinde, Zülmet\'in kalesine giden yolun izleri belirmeye başladı…',
 
   baslik: {
     devamEt: 'Devam Et',
@@ -344,6 +355,12 @@ export const metinler = {
     kisayollar: 'Klavye kısayolları',
     takip: '👣 {dusman} peşine takıldı! Kolay kolay bırakmaz; meydana sığın ya da savaş.',
     takipciRozeti: 'İz sürer: peşine takılır',
+    bekciRozeti: 'Yakına gelirsen saldırır',
+    kayitsizRozeti: 'Kendi hâlinde: peşine düşmez, üstüne varırsan dövüşür',
+    yankesiciRozeti: 'Yankesici: kesene göz dikti',
+    yankesici: '🗡️ Bir yankesici kesene göz dikti! Savaş ya da meydana sığın.',
+    yankesiciIkili: '🗡️ İki yankesici kesene göz dikti! Savaş ya da meydana sığın.',
+    yankesiciGitti: 'Yankesici izini kaybetti, söylenerek çekip gitti.',
   },
 
   // Savaş kısayol yuvaları (1–4 tuşları)
@@ -472,6 +489,7 @@ export const metinler = {
     ifrit: 'İfrit',
     hortlak: 'Hortlak',
     dev: 'Dev',
+    insan: 'Yol haramisi',
     boss: 'Boss',
   },
 
@@ -484,6 +502,7 @@ export const metinler = {
     sinifSec: '{sinif} sınıfını seç',
     secimYok: 'Yola çıkmak için bir sınıf seç.',
     baslat: 'Yola Çık',
+    yolculukBasliyor: 'Yolculuğun {bolge} bölgesinde, {il} ilinde başlıyor. Diğer bölgeler bossları yendikçe açılacak.',
   },
 
   karakter: {
@@ -568,6 +587,7 @@ export const metinler = {
       ifrit: '{dusman} üzerindeki sihir bozuldu, dumana dönüşüp dağıldı.',
       hortlak: '{dusman} sisin içinde dağılıp kayboldu.',
       dev: '{dusman} üzerindeki sihir bozuldu; sessizce çekip gitti.',
+      insan: '{dusman} sopasını bırakıp tabana kuvvet kaçtı; kesesi geride kaldı.',
       boss: '{dusman} üzerindeki sihir bozuldu!',
     },
     sonuc: {
@@ -578,6 +598,7 @@ export const metinler = {
       bayilma: '{il} merkezinde kendine geldin. Halk seni misafir etti; canın ve nefesin yerine geldi.',
       bayilmaKervansaray: '{il} kervansarayında kendine geldin. Hancı seni misafir etti; canın ve nefesin yerine geldi.',
       akceKaybi: 'Kesenden {akce} akçe düşmüş.',
+      calinanAkce: '🗡️ Yankesici fırsatı kaçırmadı: kesenden {akce} akçe aşırdı.',
       kacis: 'Canını kurtardın; bu karşılaşmadan ödül yok.',
       seviyeAtladin: '🎉 Seviye atladın! Artık Sv {seviye}.',
       statPuaniKazandin: 'Dağıtılacak {puan} stat puanın var.',

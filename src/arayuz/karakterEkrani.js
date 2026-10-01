@@ -4,7 +4,7 @@ import { metinler } from '../veri/metinler.js';
 import { statlar, gerekenXp, statPuaniDagit, STATLAR } from '../oyun/karakter.js';
 import { kacis, sablon, degerCubugu } from './bilesenler.js';
 import { sinifCizimi } from './cizimler/karakterler.js';
-import { esyalar, YUVALAR } from '../veri/esyalar.js';
+import { esyaBilgisi } from '../oyun/rota.js';
 import { kusan, kusanKontrol, cikar, kusaniliMi } from '../oyun/ekipman.js';
 import { esyaKarti } from './esyaKarti.js';
 import { hayirPuani, itibarKademesi } from '../oyun/itibar.js';
@@ -38,7 +38,7 @@ function ekipmanBolumu(durum) {
   const cantaListesi = canta.length
     ? `<ul class="esya-listesi">${canta.map((a) => {
         const k = kusanKontrol(durum, a);
-        const not = k.olur ? '' : sablon(E.neden[k.neden] ?? '', { seviye: esyalar[a].seviye });
+        const not = k.olur ? '' : sablon(E.neden[k.neden] ?? '', { seviye: esyaBilgisi(a).seviye });
         return esyaKarti(a, {
           sag: `<button class="buton buton-kucuk" data-kusan="${a}" ${k.olur ? '' : 'disabled'}>${E.kusan}</button>`,
           not,

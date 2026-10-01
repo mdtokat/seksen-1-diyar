@@ -2,6 +2,7 @@
 import { iller } from '../veri/iller.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { esyalar } from '../veri/esyalar.js';
+import { esyaBilgisi } from './rota.js';
 import { yemekFiyati, yemekEkle } from './envanter.js';
 import { kusaniliMi } from './ekipman.js';
 import { indirimliFiyat } from './itibar.js';
@@ -86,7 +87,7 @@ export function ahiMallari(plaka, donem = 0) {
   const rng = rastgeleUreteci(stokTohumu(plaka, donem));
   const gruplar = new Map();
   for (const a of havuz) {
-    const e = esyalar[a];
+    const e = esyaBilgisi(a);
     const grup = e.yuva === 'silah' ? e.sinif : 'giyim';
     gruplar.set(grup, [...(gruplar.get(grup) ?? []), a]);
   }
@@ -97,20 +98,20 @@ export function ahiMallari(plaka, donem = 0) {
 }
 
 export function satisFiyati(anahtar) {
-  return Math.floor(esyalar[anahtar].fiyat * SATIS_ORANI);
+  return Math.floor(esyaBilgisi(anahtar).fiyat * SATIS_ORANI);
 }
 
 // neden: 'satilmiyor' | 'zaten_var' | 'akce_yetersiz'
 export function esyaAlKontrol(durum, anahtar) {
   if (!ahiMallari(durum.konum, pazarDonemi(durum)).includes(anahtar)) return { olur: false, neden: 'satilmiyor' };
   if ((durum.esyalar ?? []).includes(anahtar)) return { olur: false, neden: 'zaten_var' };
-  if (durum.akce < esyalar[anahtar].fiyat) return { olur: false, neden: 'akce_yetersiz' };
+  if (durum.akce < esyaBilgisi(anahtar).fiyat) return { olur: false, neden: 'akce_yetersiz' };
   return { olur: true };
 }
 
 export function esyaAl(durum, anahtar) {
   if (!esyaAlKontrol(durum, anahtar).olur) return durum;
-  return { ...durum, akce: durum.akce - esyalar[anahtar].fiyat, esyalar: [...(durum.esyalar ?? []), anahtar] };
+  return { ...durum, akce: durum.akce - esyaBilgisi(anahtar).fiyat, esyalar: [...(durum.esyalar ?? []), anahtar] };
 }
 
 // neden: 'dukkan_yok' | 'sahip_degil' | 'kusanili'

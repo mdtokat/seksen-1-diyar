@@ -18,6 +18,7 @@ import {
 } from '../oyun/savas.js';
 import { gerekenXp } from '../oyun/karakter.js';
 import { sofraGucCarpani, SOFRA } from '../oyun/ilerleme.js';
+import { bolgeGirisi } from '../oyun/rota.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { yemekAdedi, yemekGucu } from '../oyun/envanter.js';
 import { kisayolAta, kisayolEylemi, bosKisayollar } from '../oyun/kisayollar.js';
@@ -425,11 +426,12 @@ export function savasEkrani(kap, depo, { dusman, yoldaslar = [], rng, sonucuUygu
         const sofraYemekleri = Object.values(yemekler)
           .filter((y) => ilHaritasi.get(y.il).bolge === bolge.anahtar)
           .map((y) => `${y.ikon} ${y.ad}`);
-        satirlar.push(`<em class="hikaye">${metinler.hikaye[bolge.anahtar]}</em>`);
+        const devami = ozet.acilanBolge ? metinler.hikayeSonraki[ozet.acilanBolge] : metinler.hikayeSon;
+        satirlar.push(`<em class="hikaye">${metinler.hikaye[bolge.anahtar]} ${devami}</em>`);
         satirlar.push(sablon(B.sofra, { yemekler: kacis(sofraYemekleri.join(', ')), savas: SOFRA.savas }));
         if (ozet.acilanBolge) {
           const yeni = bolgeler.find((b) => b.anahtar === ozet.acilanBolge);
-          satirlar.push(`<strong class="kutlama">🗺️ ${sablon(B.yeniBolge, { bolge: yeni.ad, il: kacis(ilHaritasi.get(yeni.giris).ad) })}</strong>`);
+          satirlar.push(`<strong class="kutlama">🗺️ ${sablon(B.yeniBolge, { bolge: yeni.ad, il: kacis(ilHaritasi.get(bolgeGirisi(yeni.anahtar)).ad) })}</strong>`);
         }
       }
     } else if (ozet.sonuc === 'yenilgi') {
@@ -439,6 +441,7 @@ export function savasEkrani(kap, depo, { dusman, yoldaslar = [], rng, sonucuUygu
     } else {
       satirlar.push(S.kacis);
     }
+    if (ozet.calinanAkce > 0) satirlar.push(`<strong>${sablon(S.calinanAkce, { akce: ozet.calinanAkce })}</strong>`);
     const o = sonDurum.oyuncu;
     const xpCubugu = ozet.sonuc === 'zafer'
       ? degerCubugu(o.xp, gerekenXp(o.seviye), { etiket: 'XP', renk: 'var(--altin)' })

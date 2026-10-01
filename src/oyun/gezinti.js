@@ -16,6 +16,7 @@ import { dusmanOlustur, EN_COK_SALDIRGAN } from './savas.js';
 import { bossDurumu, miniBossVarMi, finalDurumu } from './ilerleme.js';
 import { rastgeleUreteci, tamSayi, sans } from './rastgele.js';
 import { gezginBossUret, GEZGIN_BOSS } from './gezginBoss.js';
+import { ilSeviyesi, bolgeSeviyesi, durumRotasi } from './rota.js';
 
 // Harita boyutu: karo sayısı = TEMEL_KARO × (yüzölçümü / TEMEL_ALAN)^ALAN_USSU.
 // Gerçek oranla (Konya/Yalova ≈ 51 kat) oynanabilir kalmayacağı için alan bir
@@ -69,13 +70,19 @@ const DOLASMA_YARICAPI = 3;
 
 // Düşmanların davranışı (her tıkta bir kez yürütülür; oyuncu her tıkta bir karo yürür).
 // gorus: oyuncuyu fark ettiği uzaklık · birakma: peşini bıraktığı uzaklık ·
-// hiz: kovalarken tık başına karo. Takipçiler (kurtlar, çakallar, yol kesen cinler…)
-// oyuncuyu uzaktan fark eder, neredeyse onun kadar hızlı koşar ve kolay kolay bırakmaz.
-// Gezgin bosslar (gezginBoss.js) ağır adımlıdır ama gözleri keskindir.
+// hiz: kovalarken tık başına karo. Sıradan yaratıkların tavrı türüne göre değişir
+// (dusmanlar.js → takip): takipçiler (kurtlar, parslar, kara cinler…) oyuncuyu uzaktan
+// fark eder, neredeyse onun kadar hızlı koşar ve kolay kolay bırakmaz; bekçiler yalnızca
+// yakına gelince saldırır; kayıtsızlar (hortlaklar, akrepler, taş devler…) peşe hiç düşmez.
+// Gezgin bosslar (gezginBoss.js) ağır adımlıdır ama gözleri keskindir. Yankesiciler
+// (yankesici.js) oyuncuyu gözüne kestirip çıkar, çevik koşar; meydana ya da uzağa kaçana
+// dek bırakmaz.
 export const DAVRANIS = {
   bekci: { gorus: 4, birakma: 7, hiz: 0.55 },
   takipci: { gorus: 6, birakma: 13, hiz: 0.85 },
+  kayitsiz: { gorus: 0, birakma: 0, hiz: 0 },
   gezgin: { gorus: 5, birakma: 10, hiz: 0.7 },
+  yankesici: { gorus: 9, birakma: 12, hiz: 0.8 },
 };
 const DOLASMA_HIZI = 0.25;
 
@@ -518,7 +525,6 @@ export const SURU = {
 // `onc` bir takipçiyse yanına (0–2) sürü üyesi üretir. `dolu`: haritada duran yaratıklar.
 export function suruUyeleri(harita, onc, rng, { dolu = [], ilkId = 1 } = {}) {
   if (onc.sabit || onc.dusman.gezgin || !onc.dusman.takipci || !sans(rng, SURU.sansi)) return [];
-  const il = ilHaritasi.get(harita.plaka);
   const uyeler = [];
   for (let i = 0; i < (sans(rng, SURU.ucluSansi) ? 2 : 1); i++) {
     const yerler = dogusNoktalari(harita).filter((n) => {
@@ -529,7 +535,7 @@ export function suruUyeleri(harita, onc, rng, { dolu = [], ilkId = 1 } = {}) {
     const n = yerler[Math.floor(rng() * yerler.length)];
     uyeler.push({
       id: ilkId + i,
-      dusman: dusmanOlustur(onc.dusman.anahtar, tamSayi(rng, il.seviye[0], il.seviye[1])),
+      dusman: dusmanOlustur(onc.dusman.anahtar, tamSayi(rng, ...ilSeviyesi(harita.plaka))),
       x: n.x, y: n.y, evX: n.x, evY: n.y,
     });
   }
@@ -553,9 +559,12 @@ export function dusmanlariYerlestir(harita, arinma, rng, { oyuncu = null, ilkId 
   return dusmanlar;
 }
 
+export const yankesiciMi = (d) => d.dusman?.sinif === 'yankesici';
+
 export function davranisi(d) {
   if (d.dusman?.gezgin) return DAVRANIS.gezgin;
-  return d.dusman?.takipci ? DAVRANIS.takipci : DAVRANIS.bekci;
+  if (yankesiciMi(d)) return DAVRANIS.yankesici;
+  return DAVRANIS[d.dusman?.takip] ?? (d.dusman?.takipci ? DAVRANIS.takipci : DAVRANIS.bekci);
 }
 
 // ── Sürpriz baskın ───────────────────────────────────────
@@ -582,7 +591,8 @@ export function surprizBaskin(harita, { dusmanlar, oyuncu, adim, id }, rng) {
 // Düşmanların bir tıkı. Oyuncu görüş uzaklığına girince düşman peşine düşer ve
 // hemen bir adım atılır; oyuncu bırakma uzaklığından öteye kaçana, meydana girene
 // ya da dokunulmaz olana dek kovalar. Kovalamayan düşman yuvasına döner ve çevresinde
-// gezinir. Hız, tık başına biriken adım payıyla uygulanır. Meydana ve çıkışlara
+// gezinir; gezinirken oyuncunun yanı başına sokulmaz (kayıtsız yaratıklarla ancak
+// oyuncu üstlerine varırsa dövüşülür). Hız, tık başına biriken adım payıyla uygulanır. Meydana ve çıkışlara
 // girmez, birbirinin ve oyuncunun üstüne basmaz; `engeller` (ör. seyyar tüccar) de
 // geçilmez. Yeni dizi döndürür.
 export function dusmanlariYurut(harita, dusmanlar, oyuncu, rng, { dokunulmaz = false, engeller = [] } = {}) {
@@ -618,6 +628,7 @@ export function dusmanlariYurut(harita, dusmanlar, oyuncu, rng, { dokunulmaz = f
       const aday = { x: d.x + yon.dx, y: d.y + yon.dy };
       if (mesafe(aday, ev) <= DOLASMA_YARICAPI) hedef = aday;
     }
+    if (hedef && !d.kovaliyor && mesafe(hedef, oyuncu) <= 1) hedef = null;
     if (hedef && dusmanYurunurMu(harita, hedef.x, hedef.y) && !dolu(hedef.x, hedef.y, d)) {
       d.yon = Math.sign(hedef.x - d.x) || d.yon || -1;
       d.x = hedef.x;
@@ -635,13 +646,14 @@ export function yeniKovalayanlar(onceki, sonraki) {
 
 // Kalabalık saldırı: oyuncuya değen düşmana (`ilk`), peşinde koşan ve yakınındaki ya da hemen
 // yanındaki sıradan düşmanlar katılır (en çok EN_COK_SALDIRGAN yaratık, en yakınlar öncelikli).
-// Bosslar, mini bosslar ve gezgin bosslar hep tek başına çıkar. Sonuç: [ilk, ...katılanlar].
+// Bosslar, mini bosslar ve gezgin bosslar hep tek başına çıkar. Yankesiciler yaratıklarla
+// birlik olmaz, yalnızca birbirlerine katılır. Sonuç: [ilk, ...katılanlar].
 export const TOPLU_SALDIRI = { yaricap: 5, yanindaYaricap: 2 };
 export function saldiriGrubu(dusmanlar, oyuncu, ilk) {
   const tek = (d) => d.sabit || d.dusman.gezgin;
   if (tek(ilk)) return [ilk];
   const katilanlar = dusmanlar
-    .filter((d) => d.id !== ilk.id && !tek(d))
+    .filter((d) => d.id !== ilk.id && !tek(d) && yankesiciMi(d) === yankesiciMi(ilk))
     .map((d) => ({ d, u: mesafe(d, oyuncu) }))
     .filter(({ d, u }) => (d.kovaliyor && u <= TOPLU_SALDIRI.yaricap) || u <= TOPLU_SALDIRI.yanindaYaricap)
     .sort((a, b) => a.u - b.u)
@@ -735,14 +747,15 @@ export function ozelDusmanlar(harita, durum) {
     return [kayit('final', final.boss, final.dusmanSeviyesi, 'final')];
   }
   if (bolge.bossIli === harita.plaka && bossDurumu(durum, bolge.anahtar) !== 'yenildi') {
-    return [kayit('boss', bolge.boss, bolge.seviye[1], 'boss')];
+    return [kayit('boss', bolge.boss, bolgeSeviyesi(bolge.anahtar, durumRotasi(durum))[1], 'boss')];
   }
   if (miniBossVarMi(durum, harita.plaka)) {
-    return [kayit('mini', bolge.miniBoss, il.seviye[1] + 1, 'mini')];
+    return [kayit('mini', bolge.miniBoss, ilSeviyesi(harita.plaka, durumRotasi(durum))[1] + 1, 'mini')];
   }
   return [];
 }
 
+// İlin yaratık sayısı (inlerdeki bosslar ve yoldan geçen yankesiciler sayılmaz).
 export function siradanDusmanSayisi(dusmanlar) {
-  return dusmanlar.filter((d) => !d.sabit).length;
+  return dusmanlar.filter((d) => !d.sabit && !yankesiciMi(d)).length;
 }

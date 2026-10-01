@@ -12,9 +12,16 @@ import { hayirEkle } from './itibar.js';
 import { zaferIlerlemesi, gorevIlerlemesi, hazirGorevler } from './gorevler.js';
 import { aralik, sans, sec, tamSayi } from './rastgele.js';
 import { GEZGIN_BOSS } from './gezginBoss.js';
+import { ilSeviyesi } from './rota.js';
 
 export const ARINMA_ARTISI = [12, 18]; // zafer başına % (iki uç dahil)
 export const YEMEK_DUSME_SANSI = 0.3;
+// Yankesiciler (yankesici.js): yenilince kesesindeki akçe bu kadar kat bol çıkar; oyuncu
+// kaçar ya da bayılırsa her yankesici kesesinden bu oranda akçe aşırır.
+export const YANKESICI_AKCE_CARPANI = 2;
+export const YANKESICI_CALMA = 0.08;
+
+const yankesiciMi = (d) => d.sinif === 'yankesici';
 
 const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
 
@@ -30,11 +37,11 @@ export function istatistikYaz(durum, sonuc, bolge) {
   };
 }
 
-// İlin düşman havuzundan ve seviye aralığından rastgele bir düşman üretir.
+// İlin düşman havuzundan ve (rotaya göre) seviye aralığından rastgele bir düşman üretir.
 export function karsilasmaUret(plaka, rng) {
   const il = ilHaritasi.get(plaka);
   const anahtar = sec(rng, il.dusmanlar);
-  const seviye = tamSayi(rng, il.seviye[0], il.seviye[1]);
+  const seviye = tamSayi(rng, ...ilSeviyesi(plaka));
   return dusmanOlustur(anahtar, seviye);
 }
 
@@ -52,11 +59,15 @@ export function arinmaArtir(durum, plaka, rng) {
 }
 
 // Zafer ganimeti: akçe ve belli bir şansla ilin yöresel yemeği.
-// Akçe: round((3 + sv × 2) × rnd(0.8–1.2) × sınıf çarpanı).
+// Akçe: round((3 + sv × 2) × rnd(0.8–1.2) × sınıf çarpanı). Yankesicinin kesesi bol
+// akçe çıkarır, yemek çıkmaz.
 // XP ganimeti savaş motorunda hesaplanır (savas.js → xpOdulu).
 // Gezgin bossların çarpanı sınıflarından bağımsızdır (SINIF_XP_CARPANI.gezgin).
 export function ganimetUret(dusman, plaka, rng) {
   const carpan = dusman.gezgin ? SINIF_XP_CARPANI.gezgin : SINIF_XP_CARPANI[dusmanlar[dusman.anahtar].sinif];
+  if (yankesiciMi(dusman)) {
+    return { akce: Math.round((3 + dusman.seviye * 2) * aralik(rng, 0.8, 1.2) * carpan * YANKESICI_AKCE_CARPANI), yemek: null };
+  }
   const akce = Math.round((3 + dusman.seviye * 2) * aralik(rng, 0.8, 1.2) * carpan);
   const yemek = sans(rng, YEMEK_DUSME_SANSI) ? ilHaritasi.get(plaka).yemek : null;
   return { akce, yemek };
@@ -84,7 +95,9 @@ export function bossGanimeti(durum, bolge, nadirlik, rng) {
 //     bossYenildi (bölge anahtarı | null), acilanBolge, miniBossYenildi, miniBossBelirdi,
 //     esya (düşen eşyanın anahtarı | null), hayir (kazanılan Hayır puanı),
 //     gorevIlerlemesi ([{ anahtar, mevcut, hedef }]), hazirOlanGorevler ([anahtar]),
-//     zulmetYenildi, gezginBoss ('zorlu' | 'kesilemez' | null) }
+//     zulmetYenildi, gezginBoss ('zorlu' | 'kesilemez' | null),
+//     calinanAkce (kaçışta ya da bayılınca yankesicinin aşırdığı akçe) }
+// Yankesiciler ilin arınmasına sayılmaz; yenilince yalnızca XP ve akçe getirirler.
 // Gezgin bosslar (gezginBoss.js) ilerlemeyi etkilemez: yenilmeleri bölge bossunu ya da
 // mini bossu yenilmiş saydırmaz. Zorlu olanlar bazen bölgenin nadir eşyalarından birini,
 // kesilemez olanlar (yenilebilirse) efsanevi bir eşyayı düşürür.
@@ -112,8 +125,18 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
     hazirOlanGorevler: [],
     zulmetYenildi: false,
     gezginBoss: savas.dusman.gezgin ? savas.dusman.tehlike : null,
+    calinanAkce: 0,
   };
-  if (savas.sonuc !== 'zafer') return { durum: yeni, ozet };
+  if (savas.sonuc !== 'zafer') {
+    // Kaçan ya da bayılan yiğidin kesesinden yankesiciler akçe aşırır
+    const yankesiciler = (savas.grup ?? [savas.dusman]).filter(yankesiciMi).length;
+    if (yankesiciler && ['kacis', 'yenilgi'].includes(savas.sonuc)) {
+      const calinan = Math.min(yeni.akce ?? 0, Math.round((yeni.akce ?? 0) * YANKESICI_CALMA * yankesiciler));
+      yeni = { ...yeni, akce: (yeni.akce ?? 0) - calinan };
+      ozet.calinanAkce = calinan;
+    }
+    return { durum: yeni, ozet };
+  }
   const onceHazir = new Set(hazirGorevler(durum));
   const onceArinma = yeni.arinma[plaka] ?? 0;
 
@@ -121,10 +144,12 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
   let arinmaArtisi = 0;
   let arindi = false;
   for (const d of yaratiklar) {
-    const a = arinmaArtir(yeni, plaka, rng);
-    yeni = a.durum;
-    arinmaArtisi += a.artis;
-    arindi ||= a.arindi;
+    if (!yankesiciMi(d)) {
+      const a = arinmaArtir(yeni, plaka, rng);
+      yeni = a.durum;
+      arinmaArtisi += a.artis;
+      arindi ||= a.arindi;
+    }
 
     const g = ganimetUret(d, plaka, rng);
     yeni = { ...yeni, akce: (yeni.akce ?? 0) + g.akce };
