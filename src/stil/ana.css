@@ -1562,6 +1562,37 @@ h3 {
   width: 100%;
   height: 100%;
   overflow: visible;
+  transform-origin: 50% 90%;
+  animation: sahne-nefes 3.2s ease-in-out infinite;
+}
+
+.figur-dusman .cizim {
+  animation-duration: 2.6s;
+  animation-delay: -1.1s;
+}
+
+/* Cin, hortlak, ifrit ve albastı havada süzülür (savaşta ve haritada). */
+.cizim.cizim-suzulen,
+.figur .cizim.cizim-suzulen {
+  animation: suzul 2.8s ease-in-out infinite;
+}
+
+/* Bossların sihir halesi yavaşça döner. */
+.hale-halka {
+  transform-origin: 60px 58px;
+  animation: hale-don 26s linear infinite;
+}
+
+@keyframes sahne-nefes {
+  50% { transform: scale(1.012, 0.982); }
+}
+
+@keyframes suzul {
+  50% { transform: translateY(-4%); }
+}
+
+@keyframes hale-don {
+  to { transform: rotate(360deg); }
 }
 
 .figur-dusman {
@@ -1794,6 +1825,12 @@ h3 {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .figur .cizim,
+  .cizim.cizim-suzulen,
+  .hale-halka {
+    animation: none;
+  }
+
   .figur-dusman.giris,
   .hamle-sag,
   .hamle-sol,
