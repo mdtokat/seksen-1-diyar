@@ -778,6 +778,22 @@ Yiğidin çizimi kuşandıklarını gösterir (`cizimler/karakterler.js`). Kayı
   - Alperen **Gönül Gücü** (`zafer_nefesi`): düşen her düşmanla en yüksek nefesin %10'u yenilenir (`catisma.js → oyuncuVurur`, `{ tip: 'pasif' }` olayı).
 - Yeni oyun ekranındaki sınıf kartları ve karakter ekranı sınıf özelliğini gösterir; karakter ekranında geç yeteneklerin etiketleri (🗡️ zırh deler, 💚 can yeniler, ❤️ vurdukça can) görünür.
 
+### Ek — Uzmanlık dalları
+20. seviyede (`DAL_SEVIYESI`) her sınıf iki daldan birini seçer; seçim kalıcıdır (`karakter.js → dalSec`). Kayıt şeması değişmedi: `oyuncu.dal` isteğe bağlıdır; eski kayıtlarda yoktur ve seçilmemiş sayılır, doğrulama yalnızca dolu dalın o sınıfa ait olmasını ister.
+
+| Sınıf | Dal | Getirdikleri |
+|---|---|---|
+| Akıncı | Serdengeçti | güç +%15, kritik şansı +%5, Gözü Pek gücü %20 → %35 |
+| Akıncı | Sipahi | savunma +%20, can +%10, korunma yetenekleri +0,15 (en çok 0,9) |
+| Kemankeş | Nişancı | çeviklik +%10, kritik çarpanı +0,25, Uzak Nişan %15 → %30 |
+| Kemankeş | Avcı | can +%10, alan vuruşu ek hedeflere ×1,3, hayvanlara ×1,25 |
+| Alperen | Derviş | nefes +%20, şifa / ek şifa / coşku ×1,3, Gönül Gücü %10 → %18 |
+| Alperen | Gazi | güç +%15, savunma +%10, cin ve ifritlere ×1,2 |
+
+- **Dal alanları (`siniflar.js → dallar`):** `statlar` (en son statlara oran; `karakter.js → statlar`), `kritikSansi`, `kritikHasari`, `pasif` (sınıf özelliğinin değerlerini değiştirir; `savas.js → pasifOzellik(sinif, dal)`), `korunma`, `sifaCarpani`, `alanCarpani`, `ekHasar: { turler, carpan }` (her vuruşta; yeteneğin kendi ek hasarıyla çarpılır).
+- **Arayüz:** karakter ekranında "Uzmanlık" bölümü. Seviyesi yetmeyene iki yol önizlenir; seviyesi yetene seçim sunulur (seçim ikinci bir "Onayla" ile kesinleşir); seçilmişse yalnızca seçilen yol görünür. Dalın getirdikleri veriden üretilir. Karakter özetinde sınıfın yanında dalın adı yazar; karakter düğmesindeki işaret seçilmemiş dalı da gösterir; 20. seviyeye ulaşınca bildirim çıkar.
+- **Denge:** dallar yalnızca seçen oyuncuyu etkiler; boss, gezgin boss ve kalabalık simülasyonları dalsız yiğitle ölçülür ve değişmedi.
+
 ---
 
 ## 10. Sonraki Fikirler (Kapsam Dışı)

@@ -1,6 +1,6 @@
 // Karakter: stat hesapları, XP eğrisi, seviye atlama ve stat puanları.
 // Saf oyun mantığı — DOM'a dokunmaz.
-import { siniflar, STAT_PUANI_SEVIYE_BASI, STAT_PUANI_DEGERI } from '../veri/siniflar.js';
+import { siniflar, STAT_PUANI_SEVIYE_BASI, STAT_PUANI_DEGERI, DAL_SEVIYESI } from '../veri/siniflar.js';
 import { esyaBilgisi } from './rota.js';
 
 export const STATLAR = ['can', 'nefes', 'guc', 'savunma', 'ceviklik'];
@@ -34,6 +34,7 @@ export function yeniKarakter(ad, sinifAnahtari) {
     can: sinif.baslangic.can,
     nefes: sinif.baslangic.nefes,
     kusanilan: { silah: null, zirh: null, aksesuar: null }, // esyalar.js anahtarları
+    dal: null, // uzmanlık dalı (DAL_SEVIYESI'nde seçilir)
   };
 }
 
@@ -49,19 +50,41 @@ export function ekipmanStatlari(oyuncu) {
 }
 
 // Karakterin güncel statları: başlangıç + otomatik seviye artışları +
-// dağıtılan stat puanları + kuşanılan eşyalar. `can` ve `nefes` en yüksek değerlerdir.
+// dağıtılan stat puanları + kuşanılan eşyalar; uzmanlık dalı bunları oranla artırır.
+// `can` ve `nefes` en yüksek değerlerdir.
 export function statlar(oyuncu) {
   const sinif = siniflar[oyuncu.sinif];
   const ekipman = ekipmanStatlari(oyuncu);
+  const dalStatlari = dalBilgisi(oyuncu)?.statlar ?? {};
   const sonuc = {};
   for (const s of STATLAR) {
-    sonuc[s] =
+    const toplam =
       sinif.baslangic[s] +
       (oyuncu.seviye - 1) * sinif.seviyeArtisi[s] +
       (oyuncu.dagitilan[s] ?? 0) * STAT_PUANI_DEGERI[s] +
       ekipman[s];
+    sonuc[s] = dalStatlari[s] ? Math.round(toplam * (1 + dalStatlari[s])) : toplam;
   }
   return sonuc;
+}
+
+// ── Uzmanlık dalı ────────────────────────────────────────
+
+// Oyuncunun seçtiği dalın verisi ya da null. `oyuncu`: { sinif, dal } taşıyan her nesne.
+export function dalBilgisi(oyuncu) {
+  return (oyuncu?.dal && siniflar[oyuncu.sinif]?.dallar?.[oyuncu.dal]) || null;
+}
+
+// Oyuncu şimdi dal seçebilir mi (seviyesi yetti ve henüz seçmedi)?
+export const dalSecebilirMi = (oyuncu) => oyuncu.seviye >= DAL_SEVIYESI && !oyuncu.dal;
+
+// Uzmanlık dalını seçer. Seçim kalıcıdır: seviye yetmiyorsa, dal zaten seçildiyse ya da
+// dal o sınıfın değilse aynı oyuncu döner. Can ve nefes yeni en yüksek değerleri aşmaz.
+export function dalSec(oyuncu, dal) {
+  if (!dalSecebilirMi(oyuncu) || !siniflar[oyuncu.sinif].dallar?.[dal]) return oyuncu;
+  const yeni = { ...oyuncu, dal };
+  const enCok = statlar(yeni);
+  return { ...yeni, can: Math.min(yeni.can, enCok.can), nefes: Math.min(yeni.nefes, enCok.nefes) };
 }
 
 // Oyuncunun seviyesinde açık olan yetenekler.

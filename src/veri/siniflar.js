@@ -33,6 +33,17 @@
 // `mermi`: uzaktan vuruşun görünüşü ('ok' | 'isik'); yakın dövüşte null.
 // Değerler ilk sürüm içindir; Faz 3'te dengelenebilir.
 
+// Uzmanlık dalı (dallar): bu seviyede her sınıf iki daldan birini seçer; seçim kalıcıdır.
+// Dal alanları (hepsi isteğe bağlı; karakter.js, savas.js, catisma.js uygular):
+//   statlar: en son statlara oran olarak eklenir (ör. { guc: 0.15 } → güç ×1,15),
+//   kritikSansi: kritik şansına eklenir, kritikHasari: kritik çarpanına eklenir,
+//   pasif: sınıf özelliğinin değerlerini değiştirir (ör. Gözü Pek'te { guc: 0.35 }),
+//   korunma: korunma (savunma) yeteneklerinin değerine eklenir (en çok 0,9),
+//   sifaCarpani: şifa, ek şifa ve coşkunun yenilediği can bu oranda artar,
+//   alanCarpani: alan vuruşunun ek hedeflere vuruşu bu oranda ağırlaşır,
+//   ekHasar: { turler, carpan } → bu türlerdeki düşmanlara her vuruş bu çarpanla iner.
+export const DAL_SEVIYESI = 20;
+
 export const STAT_PUANI_SEVIYE_BASI = 3;
 
 // Dağıtılan bir stat puanının statı ne kadar artırdığı.
@@ -45,6 +56,10 @@ export const siniflar = {
     tarif: 'Kılıçlı öncü süvari. Dayanıklıdır, ön safta göğüs gerer; yakından vurur.',
     menzil: 1,
     mermi: null,
+    dallar: {
+      serdengecti: { ad: 'Serdengeçti', ikon: '🔥', tarif: 'Gözünü budaktan sakınmayan öncü; yalnızca saldırmayı bilir.', statlar: { guc: 0.15 }, kritikSansi: 0.05, pasif: { guc: 0.35 } },
+      sipahi: { ad: 'Sipahi', ikon: '🛡️', tarif: 'Zırhlı atlı; dayanıklılığıyla cepheyi tutar, kolay kolay sarsılmaz.', statlar: { savunma: 0.2, can: 0.1 }, korunma: 0.15 },
+    },
     pasif: { anahtar: 'gozu_pek', ad: 'Gözü Pek', tur: 'can_esigi', esik: 0.35, guc: 0.2, aciklama: 'Canı %35\'in altına düşünce yılmaz, daha da hırslanır: gücü %20 artar.' },
     baslangic: { can: 120, nefes: 30, guc: 12, savunma: 10, ceviklik: 6 },
     seviyeArtisi: { can: 12, nefes: 3, guc: 2, savunma: 2, ceviklik: 1 },
@@ -64,6 +79,10 @@ export const siniflar = {
     tarif: 'Osmanlı okçusu. Çevik ve isabetlidir, beş karo öteden ok atar.',
     menzil: 5,
     mermi: 'ok',
+    dallar: {
+      nisanci: { ad: 'Nişancı', ikon: '🎯', tarif: 'Tek oku tek düşmana; uzaktan, sessiz ve ölümcül.', statlar: { ceviklik: 0.1 }, kritikHasari: 0.25, pasif: { hasar: 0.3 } },
+      avci: { ad: 'Avcı', ikon: '🐺', tarif: 'Sürülerle boğuşmaya alışık dağ avcısı; okları kalabalığa yağar.', statlar: { can: 0.1 }, alanCarpani: 0.3, ekHasar: { turler: ['hayvan'], carpan: 1.25 } },
+    },
     pasif: { anahtar: 'uzak_nisan', ad: 'Uzak Nişan', tur: 'uzak_nisan', uzaklik: 3, hasar: 0.15, aciklama: 'Üç karo ve daha uzaktaki düşmana attığı oklar %15 daha ağır iner.' },
     baslangic: { can: 90, nefes: 40, guc: 11, savunma: 6, ceviklik: 12 },
     seviyeArtisi: { can: 11, nefes: 4, guc: 2, savunma: 1, ceviklik: 2 },
@@ -83,6 +102,10 @@ export const siniflar = {
     tarif: 'Gazi-derviş geleneğinden gelir. Uzun asası ve manevi gücüyle (Nefes) iki karo öteye erişir, iyileşir.',
     menzil: 2,
     mermi: 'isik',
+    dallar: {
+      dervis: { ad: 'Derviş', ikon: '🌿', tarif: 'Gönül ehli bir yolcu; sabrı ve sükûnetiyle dayanır, çabuk toparlanır.', statlar: { nefes: 0.2 }, sifaCarpani: 0.3, pasif: { nefes: 0.18 } },
+      gazi: { ad: 'Gazi', ikon: '⚔️', tarif: 'Asasını silah gibi kullanan yiğit; zalim cinlerin ve ifritlerin korkulu rüyası.', statlar: { guc: 0.15, savunma: 0.1 }, ekHasar: { turler: ['cin', 'ifrit'], carpan: 1.2 } },
+    },
     pasif: { anahtar: 'gonul_gucu', ad: 'Gönül Gücü', tur: 'zafer_nefesi', nefes: 0.1, aciklama: 'Yendiği her düşmanla gönlü ferahlar; nefesinin %10\'u yenilenir.' },
     baslangic: { can: 85, nefes: 70, guc: 9, savunma: 7, ceviklik: 8 },
     seviyeArtisi: { can: 8, nefes: 7, guc: 2, savunma: 1, ceviklik: 1 },

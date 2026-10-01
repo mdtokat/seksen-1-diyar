@@ -102,7 +102,7 @@ export function oyuncuVurur(durum, dusmanlar, eylem, rng, { hedef = null, etkile
   const dusenler = [...yeniler.values()].filter((d) => d.dusman.can <= 0);
 
   // Gönül Gücü: yenilen her düşmanla nefes yenilenir
-  const pasif = pasifOzellik(durum.oyuncu.sinif);
+  const pasif = pasifOzellik(durum.oyuncu.sinif, durum.oyuncu.dal);
   if (pasif?.tur === 'zafer_nefesi' && dusenler.length) {
     const s = savasci(sonuc.durum);
     const miktar = Math.min(s.nefesEnCok - s.nefes, Math.round(s.nefesEnCok * pasif.nefes * dusenler.length));

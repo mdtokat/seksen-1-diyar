@@ -1,7 +1,7 @@
 // Üst çubuktaki karakter düğmesi: sınıf çizimi, seviye, can ve nefes çubukları ve
-// dağıtılmamış stat puanı işareti. Harita ve gezinti ekranları kullanır.
+// dağıtılmamış stat puanı ya da seçilmemiş uzmanlık işareti. Harita ve gezinti ekranları kullanır.
 import { metinler } from '../veri/metinler.js';
-import { statlar } from '../oyun/karakter.js';
+import { statlar, dalSecebilirMi } from '../oyun/karakter.js';
 import { sablon } from './bilesenler.js';
 import { oyuncuCizimi } from './cizimler/karakterler.js';
 
@@ -22,5 +22,5 @@ export function karakterDugmesiniCiz(dugme, oyuncu) {
       <span class="mini-cubuk" aria-hidden="true"><span style="width:${canYuzde}%"></span></span>
       <span class="mini-cubuk mini-nefes" aria-hidden="true"><span style="width:${nefesYuzde}%"></span></span>
     </span>
-    ${oyuncu.statPuani > 0 ? '<span class="puan-isareti" aria-hidden="true"></span>' : ''}`;
+    ${oyuncu.statPuani > 0 || dalSecebilirMi(oyuncu) ? '<span class="puan-isareti" aria-hidden="true"></span>' : ''}`;
 }

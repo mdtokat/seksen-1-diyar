@@ -6,6 +6,7 @@ import {
   sersemSuresi,
   canEsigiEtkinMi,
   uzakNisanCarpani,
+  pasifOzellik,
   KRITIK_CARPANI,
   KRITIK_TAVAN_CEVIKLIGI,
   kacinmaSansi,
@@ -545,5 +546,70 @@ describe('sınıf özellikleri (pasifler) ve geç seviye yetenekleri', () => {
     expect(eylemKontrol(durum('kemankes', 38), { tur: 'yetenek', anahtar: 'yaylim_atesi' })).toEqual({ olur: true });
     expect(eylemKontrol(durum('alperen', 44), { tur: 'yetenek', anahtar: 'cinar_sukuneti' }).olur).toBe(false);
     expect(eylemKontrol(durum('alperen', 45), { tur: 'yetenek', anahtar: 'cinar_sukuneti' }).olur).toBe(true);
+  });
+});
+
+describe('uzmanlık dallarının savaştaki etkileri', () => {
+  const ayi = (seviye) => dusmanOlustur('boz_ayi', seviye);
+  const dalli = (sinif, dal, seviye = 25, ek = {}) => {
+    const d = durum(sinif, seviye, ek);
+    return { ...d, oyuncu: { ...d.oyuncu, dal } };
+  };
+  const vurus = (d, hedef, ek = {}) => oyuncuHamlesi(d, { tur: 'saldir' }, sabit(0.99), { hedef, ...ek }).olaylar[0].hasar;
+
+  it('dal pasifi güçlendirir: Gözü Pek, Uzak Nişan, Gönül Gücü', () => {
+    expect(pasifOzellik('akinci', 'serdengecti').guc).toBe(0.35);
+    expect(pasifOzellik('akinci', 'sipahi').guc).toBe(0.2);
+    expect(uzakNisanCarpani('kemankes', 4, 'nisanci')).toBeCloseTo(1.3);
+    expect(pasifOzellik('alperen', 'dervis').nefes).toBe(0.18);
+    expect(pasifOzellik('alperen').nefes).toBe(0.1);
+  });
+
+  it('Serdengeçti daha sert ve daha sık kritik vurur', () => {
+    const hedef = ayi(25);
+    expect(vurus(dalli('akinci', 'serdengecti'), hedef)).toBeGreaterThan(vurus(durum('akinci', 25), hedef));
+    // Kritik şansı tavanı (%30) +%5: 0,32 ile normalde kritik olmaz, Serdengeçti'de olur
+    const r = oyuncuHamlesi(dalli('akinci', 'serdengecti', 40), { tur: 'saldir' }, sirali(0.99, 0.32, 0.5), { hedef });
+    expect(r.olaylar[0].kritik).toBe(true);
+    expect(oyuncuHamlesi(durum('akinci', 40), { tur: 'saldir' }, sirali(0.99, 0.32, 0.5), { hedef }).olaylar[0].kritik).toBe(false);
+  });
+
+  it('Sipahi\'nin korunma yetenekleri daha çok korur', () => {
+    const r = oyuncuHamlesi(dalli('akinci', 'sipahi'), { tur: 'yetenek', anahtar: 'kalkan_durusu' }, sabit(0.99));
+    expect(r.etkiler).toEqual([{ etki: 'savunma', deger: 0.65, kalan: 2 }]);
+  });
+
+  it('Nişancı\'nın kritik vuruşu daha ağırdır', () => {
+    const hedef = dusmanOlustur('yol_kesen_cin', 25); // hayvan değil: Avcı'nın ek hasarı karışmasın
+    const nisanci = oyuncuHamlesi(dalli('kemankes', 'nisanci'), { tur: 'saldir' }, sirali(0.99, 0, 0.5), { hedef }).olaylar[0];
+    const yalin = oyuncuHamlesi(dalli('kemankes', 'avci'), { tur: 'saldir' }, sirali(0.99, 0, 0.5), { hedef }).olaylar[0];
+    expect(nisanci.kritik && yalin.kritik).toBe(true);
+    expect(nisanci.hasar).toBeGreaterThan(yalin.hasar);
+  });
+
+  it('Avcı hayvanlara daha ağır vurur, alan vuruşu çevredekilere daha ağır iner', () => {
+    const avci = dalli('kemankes', 'avci');
+    const yalin = durum('kemankes', 25);
+    expect(vurus(avci, ayi(25))).toBeGreaterThan(vurus(yalin, ayi(25)));
+    const cin = dusmanOlustur('yol_kesen_cin', 25);
+    expect(vurus(avci, cin)).toBe(vurus(yalin, cin));
+    const yan = dusmanOlustur('yol_kesen_cin', 25);
+    const alan = (d) => oyuncuHamlesi(d, { tur: 'yetenek', anahtar: 'ok_yagmuru' }, sabit(0.99), { hedef: cin, ekHedefler: [yan] })
+      .olaylar.find((o) => o.ek === 0).hasar;
+    expect(alan(avci)).toBeGreaterThan(alan(yalin));
+  });
+
+  it('Derviş daha çok iyileşir; Gazi cinlere ve ifritlere daha ağır vurur', () => {
+    const yarali = (d) => ({ ...d, oyuncu: { ...d.oyuncu, can: 10 } });
+    const sifa = (d) => oyuncuHamlesi(yarali(d), { tur: 'yetenek', anahtar: 'sifa_nefesi' }, sabit(0.99)).olaylar[0].miktar;
+    const dervis = dalli('alperen', 'dervis');
+    expect(sifa(dervis)).toBe(Math.round(statlar(dervis.oyuncu).can * 0.35 * 1.3));
+    const cin = dusmanOlustur('yol_kesen_cin', 25);
+    const gazi = dalli('alperen', 'gazi');
+    const gaziSadece = { ...gazi, oyuncu: { ...gazi.oyuncu, dal: null } };
+    // Aynı statlarla: Gazi'nin ek hasarı cinlere ×1,2
+    expect(vurus(gazi, cin)).toBeGreaterThan(vurus(gaziSadece, cin));
+    const s = savasci(gazi);
+    expect(vurus(gazi, cin)).toBe(hasarHesapla({ guc: s.guc, savunma: cin.savunma, rnd: 0.9 + 0.99 * 0.2, ek: 1.2 }));
   });
 });

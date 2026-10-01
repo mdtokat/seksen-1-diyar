@@ -18,11 +18,11 @@ import { bolgeler } from '../veri/bolgeler.js';
 import { metinler } from '../veri/metinler.js';
 import { arinmaYuzdesi, seyahatKontrol, bolgeAcikMi, bossDurumu, bossKosullari, finalDurumu, finalKosullari, finalOnkosulBolgesi } from '../oyun/ilerleme.js';
 import { dusmanlar as dusmanVerisi } from '../veri/dusmanlar.js';
-import { siniflar } from '../veri/siniflar.js';
+import { siniflar, DAL_SEVIYESI } from '../veri/siniflar.js';
 import { yemekler } from '../veri/yemekler.js';
 import { gorevler as gorevVerisi } from '../veri/gorevler.js';
 import { sesAcikMi, sesAyarla, sesCal } from './ses.js';
-import { statlar } from '../oyun/karakter.js';
+import { statlar, dalSecebilirMi } from '../oyun/karakter.js';
 import {
   yurunurMu,
   yolBul,
@@ -416,7 +416,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     const sofra = durum.sofra?.kalan > 0 ? [{ etki: 'sofra', kalan: durum.sofra.kalan }] : [];
     // Gözü Pek gibi cana bağlı pasif, etkinken gösterilir
     const o = durum.oyuncu;
-    const pasif = canEsigiEtkinMi({ sinif: o.sinif, can: o.can, canEnCok: statlar(o).can }) ? [{ etki: pasifOzellik(o.sinif).anahtar }] : [];
+    const pasif = canEsigiEtkinMi({ sinif: o.sinif, dal: o.dal, can: o.can, canEnCok: statlar(o).can }) ? [{ etki: pasifOzellik(o.sinif).anahtar }] : [];
     etkiListesi.innerHTML = [...pasif, ...g.etkiler, ...sofra]
       .map((e) => `<li class="etki etki-${e.etki}">${sablon(S.etkiler[e.etki], { kalan: e.kalan })}</li>`).join('');
     etkiListesi.hidden = !etkiListesi.childElementCount;
@@ -824,6 +824,9 @@ export function gezintiEkrani(kap, depo, secenekler) {
       titret(oyuncuFiguru, 'parilti', 1200);
       bildirimGoster(ekran, sablon(S.sonuc.seviyeAtladin, { seviye: o.seviyeler.at(-1) }), { tur: 'kutlama', sure: 3500 });
       for (const y of o.yeniYetenekler) bildirimGoster(ekran, sablon(S.sonuc.yeniYetenek, { yetenek: y.ad }), { tur: 'kutlama', sure: 3500 });
+      if (dalSecebilirMi(depo.al().oyuncu) && o.seviyeler.includes(DAL_SEVIYESI)) {
+        bildirimGoster(ekran, S.sonuc.dalSecebilirsin, { tur: 'kutlama', sure: 4500 });
+      }
     }
     if (kartliZaferMi(o)) return zaferKartiAc(o, kayit.dusman);
     // Tek bildirim: dağılma, XP, akçe, bulunan yemek ve görev ilerlemesi

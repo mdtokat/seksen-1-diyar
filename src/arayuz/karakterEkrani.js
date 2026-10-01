@@ -1,14 +1,14 @@
 // Karakter ekranı: seviye, XP çubuğu, statlar, stat puanı dağıtma ve yetenekler.
-import { siniflar, STAT_PUANI_DEGERI } from '../veri/siniflar.js';
+import { siniflar, STAT_PUANI_DEGERI, DAL_SEVIYESI } from '../veri/siniflar.js';
 import { metinler } from '../veri/metinler.js';
-import { statlar, gerekenXp, statPuaniDagit, STATLAR } from '../oyun/karakter.js';
+import { statlar, gerekenXp, statPuaniDagit, STATLAR, dalSec, dalSecebilirMi, dalBilgisi } from '../oyun/karakter.js';
 import { kacis, sablon, degerCubugu } from './bilesenler.js';
 import { oyuncuCizimi } from './cizimler/karakterler.js';
 import { esyaBilgisi } from '../oyun/rota.js';
 import { YUVALAR } from '../veri/esyalar.js';
 import { kusan, kusanKontrol, cikar, kusaniliMi } from '../oyun/ekipman.js';
 import { esyaKarti } from './esyaKarti.js';
-import { kritikSansi, kritikCarpani, kacinmaSansi, canEsigiEtkinMi, KRITIK_TAVAN_CEVIKLIGI, KRITIK_CARPANI, KRITIK_EK_HASAR } from '../oyun/savas.js';
+import { kritikSansi, kritikCarpani, kacinmaSansi, canEsigiEtkinMi, pasifOzellik, KRITIK_TAVAN_CEVIKLIGI, KRITIK_CARPANI, KRITIK_EK_HASAR } from '../oyun/savas.js';
 import { hayirPuani, itibarKademesi } from '../oyun/itibar.js';
 import { kisayolAta, bosKisayollar } from '../oyun/kisayollar.js';
 import { yuvaDugmeleri, secimListesi, koddanIcerik } from './kisayolYuvalari.js';
@@ -76,6 +76,71 @@ function yetenekEtiketleri(y, menzilMetni, sinifMenzili) {
 }
 
 const yuzde = (oran) => Math.round(oran * 100);
+
+// Pasifin dalın değiştirdiği değeri (türüne göre).
+const PASIF_DEGERI = { can_esigi: 'guc', uzak_nisan: 'hasar', zafer_nefesi: 'nefes' };
+
+// Uzmanlık dalının getirdikleri, okunur satırlar olarak (veriden üretilir).
+function dalEtkileri(sinifAnahtari, dalAnahtari) {
+  const D = M.dal.etkiler;
+  const dal = siniflar[sinifAnahtari].dallar[dalAnahtari];
+  const satirlar = Object.entries(dal.statlar ?? {})
+    .map(([stat, oran]) => sablon(D.stat, { stat: metinler.statAdlari[stat], oran: yuzde(oran) }));
+  if (dal.kritikSansi) satirlar.push(sablon(D.kritikSansi, { oran: yuzde(dal.kritikSansi) }));
+  if (dal.kritikHasari) satirlar.push(sablon(D.kritikHasari, { deger: String(dal.kritikHasari).replace('.', ',') }));
+  if (dal.pasif) {
+    const eski = pasifOzellik(sinifAnahtari);
+    const alan = PASIF_DEGERI[eski.tur];
+    satirlar.push(sablon(D.pasif, { pasif: eski.ad, eski: yuzde(eski[alan]), yeni: yuzde(pasifOzellik(sinifAnahtari, dalAnahtari)[alan]) }));
+  }
+  if (dal.korunma) satirlar.push(sablon(D.korunma, { oran: yuzde(dal.korunma) }));
+  if (dal.sifaCarpani) satirlar.push(sablon(D.sifaCarpani, { oran: yuzde(dal.sifaCarpani) }));
+  if (dal.alanCarpani) satirlar.push(sablon(D.alanCarpani, { oran: yuzde(dal.alanCarpani) }));
+  if (dal.ekHasar) {
+    const turler = dal.ekHasar.turler.map((t) => M.dal.turler[t]).join(' ve ');
+    satirlar.push(sablon(D.ekHasar, { turler: turler[0].toLocaleUpperCase('tr') + turler.slice(1), oran: yuzde(dal.ekHasar.carpan - 1) }));
+  }
+  return satirlar;
+}
+
+// Uzmanlık bölümü: seviyesi yetmeyene iki yol önizlenir; yetene seçim (onaylı) sunulur;
+// seçmiş olana yalnızca seçtiği yol gösterilir. `onayDal`: onay bekleyen dal.
+function dalBolumu(o, onayDal) {
+  const D = M.dal;
+  const dallar = siniflar[o.sinif].dallar;
+  const secebilir = dalSecebilirMi(o);
+  const gosterilen = o.dal ? [o.dal] : Object.keys(dallar);
+  let not;
+  if (o.dal) not = D.secildi;
+  else if (secebilir) not = D.sec;
+  else not = sablon(D.ileride, { seviye: DAL_SEVIYESI });
+  const secenekler = gosterilen.map((a) => {
+    const dal = dallar[a];
+    let dugmeler = '';
+    if (secebilir && onayDal === a) {
+      dugmeler = `<p class="dal-onay">${kacis(sablon(D.onaySorusu, { dal: dal.ad }))}</p>
+        <div class="dal-dugmeleri">
+          <button class="buton buton-kucuk buton-ana" data-dal-onayla="${a}">${D.onayla}</button>
+          <button class="buton buton-kucuk" data-dal-vazgec>${D.vazgec}</button>
+        </div>`;
+    } else if (secebilir) {
+      dugmeler = `<div class="dal-dugmeleri"><button class="buton buton-kucuk" data-dal-sec="${a}">${D.secButonu}</button></div>`;
+    }
+    return `
+      <li class="dal-secenegi${o.dal === a ? ' secili' : ''}${!o.dal && !secebilir ? ' kilitli' : ''}">
+        <strong>${dal.ikon} ${kacis(dal.ad)}</strong>
+        <p>${kacis(dal.tarif)}</p>
+        <ul class="dal-etkileri">${dalEtkileri(o.sinif, a).map((e) => `<li>${kacis(e)}</li>`).join('')}</ul>
+        ${dugmeler}
+      </li>`;
+  }).join('');
+  return `
+    <section class="kart dal-karti${secebilir ? ' secim-bekliyor' : ''}">
+      <h3>🧭 ${D.baslik}</h3>
+      <p class="kart-not${secebilir ? ' bilgi-not' : ''}">${not}</p>
+      <ul class="dal-listesi">${secenekler}</ul>
+    </section>`;
+}
 const ondalik = (sayi) => sayi.toFixed(2).replace(/0$/, '').replace('.', ',');
 
 // Çevikliğin savaştaki karşılığı: kritik şansı, kritik hasarı ve sıyrılma. Kritik şansı
@@ -89,7 +154,7 @@ function kritikNotu(ceviklik) {
   return `<p class="kart-not">⚡ ${satir}.${ek}</p>`;
 }
 
-function icerik(durum, secilenYuva = null) {
+function icerik(durum, secilenYuva = null, onayDal = null) {
   const o = durum.oyuncu;
   const sinif = siniflar[o.sinif];
   const s = statlar(o);
@@ -131,7 +196,7 @@ function icerik(durum, secilenYuva = null) {
       <span class="karakter-ikon">${oyuncuCizimi(o)}</span>
       <div>
         <h2>${kacis(o.ad)}</h2>
-        <p class="karakter-alt">${kacis(sinif.ad)} · <strong>${sablon(M.seviye, { seviye: o.seviye })}</strong> · ${M.akce}: ${durum.akce ?? 0}</p>
+        <p class="karakter-alt">${kacis(sinif.ad)}${dalBilgisi(o) ? ` · ${kacis(dalBilgisi(o).ad)}` : ''} · <strong>${sablon(M.seviye, { seviye: o.seviye })}</strong> · ${M.akce}: ${durum.akce ?? 0}</p>
         <p class="karakter-alt">🌟 ${kacis(itibarKademesi(durum).ad)} · ${M.hayir}: ${hayirPuani(durum)}</p>
       </div>
     </section>
@@ -158,10 +223,11 @@ function icerik(durum, secilenYuva = null) {
       <h3>✦ ${M.pasif}</h3>
       <div class="yetenek-ust">
         <strong>${kacis(sinif.pasif.ad)}</strong>
-        ${canEsigiEtkinMi({ sinif: o.sinif, can: o.can, canEnCok: s.can }) ? `<span class="yetenek-bedel pasif-etkin">${M.pasifEtkin}</span>` : ''}
+        ${canEsigiEtkinMi({ sinif: o.sinif, dal: o.dal, can: o.can, canEnCok: s.can }) ? `<span class="yetenek-bedel pasif-etkin">${M.pasifEtkin}</span>` : ''}
       </div>
       <p>${kacis(sinif.pasif.aciklama)}</p>
     </section>
+    ${dalBolumu(o, onayDal)}
     <section class="kart">
       <h3>${M.yetenekler}</h3>
       <ul class="yetenek-listesi">${yetenekler}</ul>
@@ -182,8 +248,9 @@ export function karakterEkrani(kap, depo, { geri } = {}) {
 
   const alan = kap.querySelector('.sayfa-icerik');
   let secilenYuva = null;
+  let onayDal = null;
   const ciz = (durum) => {
-    alan.innerHTML = icerik(durum, secilenYuva);
+    alan.innerHTML = icerik(durum, secilenYuva, onayDal);
   };
 
   kap.querySelector('.karakter-ekrani').addEventListener('click', (e) => {
@@ -191,6 +258,19 @@ export function karakterEkrani(kap, depo, { geri } = {}) {
     if (!buton) return;
     if (buton.dataset.eylem === 'geri') {
       geri?.();
+    } else if (buton.dataset.dalSec) {
+      onayDal = buton.dataset.dalSec;
+      ciz(depo.al());
+      alan.querySelector('[data-dal-onayla]')?.focus();
+    } else if (buton.dataset.dalVazgec !== undefined) {
+      const once = onayDal;
+      onayDal = null;
+      ciz(depo.al());
+      alan.querySelector(`[data-dal-sec="${once}"]`)?.focus();
+    } else if (buton.dataset.dalOnayla) {
+      onayDal = null;
+      const durum = depo.al();
+      depo.ayarla({ ...durum, oyuncu: dalSec(durum.oyuncu, buton.dataset.dalOnayla) });
     } else if (buton.dataset.kisayol !== undefined) {
       const sira = Number(buton.dataset.kisayol);
       secilenYuva = secilenYuva === sira ? null : sira;
