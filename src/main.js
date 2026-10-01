@@ -33,6 +33,8 @@ import { gorevEkrani } from './arayuz/gorevEkrani.js';
 import { gunlukEkrani } from './arayuz/gunlukEkrani.js';
 import { kademeSirasi, hayirPuani } from './oyun/itibar.js';
 import { itibarKademeleri } from './veri/itibar.js';
+import { bolgeArkaPlani } from './arayuz/cizimler/arkaplanlar.js';
+import { sinifCizimi } from './arayuz/cizimler/karakterler.js';
 
 // Sekiz köşeli Selçuklu yıldızı: biri 45° döndürülmüş iki karenin birleşimi.
 const yildiz = (sinif) => `
@@ -41,8 +43,25 @@ const yildiz = (sinif) => `
     <circle r="4" />
   </svg>`;
 
+// Başlık ekranının arkasındaki manzara: kayıtlı oyunda bulunulan ilin bölgesi, yeni
+// oyunda yolculuğun başladığı Marmara. Önde üç yol (sınıf); kayıtlı oyunda oyuncunun
+// yolu ortada ve öne çıkar.
+function baslikSahnesi(kayit) {
+  const bolge = kayit ? iller.find((il) => il.plaka === kayit.konum).bolge : 'marmara';
+  const sinifSirasi = Object.keys(siniflar);
+  if (kayit) {
+    const digerleri = sinifSirasi.filter((s) => s !== kayit.oyuncu.sinif);
+    sinifSirasi.splice(0, 3, digerleri[0], kayit.oyuncu.sinif, digerleri[1]);
+  }
+  return `<div class="baslik-sahnesi" aria-hidden="true">${bolgeArkaPlani(bolge)}
+    <div class="baslik-kahramanlar${kayit ? ' kayitli' : ''}">${
+      sinifSirasi.map((s) => `<span class="baslik-kahramani">${sinifCizimi(s)}</span>`).join('')}</div>
+  </div>`;
+}
+
 function baslikEkrani(kayit) {
   const B = metinler.baslik;
+  const sahne = baslikSahnesi(kayit);
   const butonlar = kayit
     ? `
         <p class="kayit-ozeti">${kacis(sablon(B.kayitOzeti, {
@@ -64,16 +83,19 @@ function baslikEkrani(kayit) {
         </div>`
     : `<button class="buton buton-ana" data-eylem="yeni-onay">${B.yeniOyun}</button>`;
   return `
-    <main class="ekran baslik-ekrani">
-      <div class="cerceve">
-        ${yildiz('yildiz yildiz-buyuk')}
-        <h1>${metinler.oyunAdi}</h1>
-        <p class="alt-baslik">${metinler.altBaslik}</p>
-        <div class="ayrac" aria-hidden="true">${yildiz('yildiz')}</div>
-        <p class="giris-metni">${metinler.giris}</p>
-        ${butonlar}
-      </div>
-    </main>`;
+    <div class="baslik-zemini">
+      <main class="ekran baslik-ekrani">
+        ${sahne}
+        <div class="cerceve">
+          ${yildiz('yildiz yildiz-buyuk')}
+          <h1>${metinler.oyunAdi}</h1>
+          <p class="alt-baslik">${metinler.altBaslik}</p>
+          <div class="ayrac" aria-hidden="true">${yildiz('yildiz')}</div>
+          <p class="giris-metni">${metinler.giris}</p>
+          ${butonlar}
+        </div>
+      </main>
+    </div>`;
 }
 
 // ── Ekran yönetimi ──

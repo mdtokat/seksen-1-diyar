@@ -130,6 +130,7 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 - Savaş arka planlarında ibadethane silueti ve tanrı heykeli ya da put bulunmaz.
 - **Işık ve gölge (grafik geliştirmesi):** ışık sol üstten gelir; kumaş ve gövdeler hacim gradyanıyla, yüz ve kalkan gibi yuvarlak yüzeyler küre parlaklığıyla, kılıç ve miğfer metal bantlarıyla boyanır; gölgeler sağ alta düşer. Çizimler gradyanlara `url(#@<tür><renk>)` diye başvurur, `ortak.js` → `svgSar()` bunları tanımlar ve kimliklere her SVG'ye özgü ön ek verir (sayfadaki çizimlerin kimlikleri çakışmaz).
 - Sihirli varlıkların gözleri ve büyüleri ışıldar (ışıltı gradyanı); cin, hortlak, ifrit ve albastı havada süzülür, boss halesi yavaşça döner. `prefers-reduced-motion` açıkken bu hareketler durur.
+- **Arayüz cilası:** sayfa zemini soluk bir Selçuklu yıldızı desenidir; başlık çubuklarının altında çini şerit, kartların köşelerinde altın-turkuaz süsler vardır. Kartlar parşömen, ana butonlar lacivert kumaş gibi gradyanla boyanır; butonlar basılınca çöker, çubuklar parlak dolguludur. Ortak değerler `ana.css` başındaki değişkenlerdedir (`--parsomen`, `--lacivert-yuzey`, `--golge-1…3`, `--desen`, `--cini-serit`, `--koseler`). Başlık ekranında kayıtlı ilin bölge manzarası ve üç yol (sınıf) görünür.
 - İl haritasında zemin, yol, su ve meydan desen dolgulu tek birer yoldur; kıyı köpüğü ve yol kenarları da tek yoldur. Böylece en büyük il (Konya, 69×69) bile hafif kalır. Ağaçlar konumlarına göre (her açılışta aynı) boy ve tonca hafifçe değişir.
 
 ---
