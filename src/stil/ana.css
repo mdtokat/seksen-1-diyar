@@ -1034,6 +1034,27 @@ h3 {
   opacity: 0.6;
 }
 
+.pasif-karti p {
+  margin: 0.3rem 0 0;
+}
+
+.sinif-pasif-aciklama {
+  display: block;
+  font-weight: 400;
+  color: #5a5348;
+}
+
+.pasif-etkin {
+  color: var(--mercan);
+}
+
+.sinif-pasif {
+  grid-column: 1 / -1;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--turkuaz-koyu);
+}
+
 .yetenek-menzili {
   display: inline-block;
   margin-right: 0.5rem;
@@ -3321,6 +3342,14 @@ h3 {
 
 .durum-gostergesi .etki-zayiflatma {
   background: rgba(217, 72, 59, 0.45);
+}
+
+.durum-gostergesi .etki-gozu_pek {
+  background: rgba(240, 138, 36, 0.55);
+}
+
+.durum-gostergesi .etki-cosku {
+  background: rgba(217, 72, 59, 0.35);
 }
 
 .durum-gostergesi .etki-sofra {

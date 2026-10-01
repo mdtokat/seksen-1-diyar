@@ -214,11 +214,11 @@ Her seviyede sınıfa özgü otomatik stat artışı gelir. Ayrıca oyuncuya da�
 
 ### Yetenekler
 
-| Sınıf | Sv 1 | Sv 5 | Sv 12 | Sv 20 | Sv 32 |
-|---|---|---|---|---|---|
-| Akıncı | Kılıç Darbesi | Kalkan Duruşu | Akın Hamlesi | Yiğit Nârası | Tufan Kılıcı |
-| Kemankeş | Nişan Oku | Çifte Ok | Ok Yağmuru | Kartal Gözü | Menzil Atışı |
-| Alperen | Asa Darbesi | Şifa Nefesi | Hikmet Kalkanı | Arınma Işığı | Gönül Dirliği |
+| Sınıf | Sv 1 | Sv 5 | Sv 12 | Sv 20 | Sv 32 | Sv 38 | Sv 45 |
+|---|---|---|---|---|---|---|---|
+| Akıncı | Kılıç Darbesi | Kalkan Duruşu | Akın Hamlesi | Yiğit Nârası | Tufan Kılıcı | Kalkan Savuruşu | Akın Coşkusu |
+| Kemankeş | Nişan Oku | Çifte Ok | Ok Yağmuru | Kartal Gözü | Menzil Atışı | Yaylım Ateşi | Delici Ok |
+| Alperen | Asa Darbesi | Şifa Nefesi | Hikmet Kalkanı | Arınma Işığı | Gönül Dirliği | Işık Çemberi | Çınar Sükûneti |
 
 Arınma Işığı, cin ve ifrit türü düşmanlara ekstra hasar verir.
 
@@ -761,6 +761,22 @@ Yiğidin çizimi kuşandıklarını gösterir (`cizimler/karakterler.js`). Kayı
 - **Renk ayrışması:** eşya rengi kaftana çok yakınsa (`renkFarki` < 90) koyulaşır (ör. Akdeniz kırmızısı Akıncı'nın kaftanında).
 - **Efsanevi hale:** en az bir efsanevi eşya kuşanan yiğidin ardında ılık bir ışıltı.
 - Karakter ekranındaki portre büyütüldü (6,5rem) ki ayrıntılar seçilsin.
+
+### Ek — Geç seviye yetenekleri ve sınıf özellikleri
+32. seviyeden sonra yeni bir şey açılmıyordu; son bölge ise 42–50 seviyesindedir. Her sınıfa 38 ve 45. seviyede birer yetenek ve baştan açık bir pasif özellik eklendi. Kayıt şeması değişmedi.
+- **Yeni yetenekler (`siniflar.js`):**
+
+  | Sınıf | Sv 38 | Sv 45 |
+  |---|---|---|
+  | Akıncı | Kalkan Savuruşu: ×1,6, yiğidin 1 karo çevresine ×1,6, vurduğunu 5 tık sersemletir (22 nefes) | Akın Coşkusu: sonraki 4 saldırıda verilen hasarın %35'i kadar can (`cosku` etkisi, 24 nefes) |
+  | Kemankeş | Yaylım Ateşi: ×1,8, hedefin 2 karo çevresine ×1,4 (22 nefes) | Delici Ok: ×2,8, menzil 6, savunmayı yok sayar (`zirhDelme: 1`, 28 nefes) |
+  | Alperen | Işık Çemberi: ×1,8, yiğidin 2 karo çevresine ×1,5, cin/ifrite ×1,5 (24 nefes) | Çınar Sükûneti: 4 hamle %60 korunma + canın %30'u hemen (`ekSifa`, 28 nefes) |
+- **Yeni alanlar:** `zirhDelme` (savunmanın yok sayılan oranı), `ekSifa` (etki yeteneğinin hemen yenilediği can oranı), `cosku` etkisi (hamle başına bir azalır; hamlenin bütün vuruşlarının toplam hasarı üzerinden can yeniler, `{ tip: 'canlanma' }` olayı).
+- **Sınıf özellikleri (`pasif`):**
+  - Akıncı **Gözü Pek** (`can_esigi`): canı %35'in altındayken güç +%20 (`canEsigiEtkinMi`). Etkinken can göstergesinde 🔥 ve karakter ekranında "Şu an etkin" görünür. (İlk tasarım %40 / +%25 idi; gezgin boss dengesinde Akıncı'yı "zorlu" bosslara karşı %95'in üstüne taşıdığı için yumuşatıldı.)
+  - Kemankeş **Uzak Nişan** (`uzak_nisan`): hedef en az 3 karo ötedeyse vuruşlar (alan vuruşları dahil) ×1,15 (`uzakNisanCarpani`). Uzaklığı `catisma.js` yiğidin konumundan ölçer; uzaklık verilmeyen hamlede (sıra tabanlı simülasyonlar) etkisizdir.
+  - Alperen **Gönül Gücü** (`zafer_nefesi`): düşen her düşmanla en yüksek nefesin %10'u yenilenir (`catisma.js → oyuncuVurur`, `{ tip: 'pasif' }` olayı).
+- Yeni oyun ekranındaki sınıf kartları ve karakter ekranı sınıf özelliğini gösterir; karakter ekranında geç yeteneklerin etiketleri (🗡️ zırh deler, 💚 can yeniler, ❤️ vurdukça can) görünür.
 
 ---
 

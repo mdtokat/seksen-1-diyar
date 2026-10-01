@@ -17,7 +17,7 @@
 // Gezinti kaydındaki düşmanların çatışma alanları: bekleme (vuruşa kalan tık), kizgin
 // (oyuncu ona vurdu), vurdu (oyuncuya en az bir kez isabet ettirdi), sersem (yürüyemeyeceği
 // ve vuramayacağı tık sayısı).
-import { dusmanMenzili, oyuncuHamlesi, yetenekBul, sersemSuresi, dusmanHamlesi, dusmanToparlan, TOPLU_HASAR_CARPANI, EN_COK_SALDIRGAN } from './savas.js';
+import { dusmanMenzili, oyuncuHamlesi, yetenekBul, sersemSuresi, pasifOzellik, savasci, dusmanHamlesi, dusmanToparlan, TOPLU_HASAR_CARPANI, EN_COK_SALDIRGAN } from './savas.js';
 import { menzildeMi, meydandaMi, mesafe, yolBul } from './gezinti.js';
 
 // Tık cinsinden: iki vuruş arası (oyuncu ve düşman) ve menzile yeni giren düşmanın hazırlığı.
@@ -58,6 +58,8 @@ export function alandakiler(dusmanlar, merkez, yaricap, { haric = null, vurulama
 // `oyuncu`: yiğidin konumu (yiğit merkezli alan ve Yiğit Nârası için gerekir);
 // `vurulamaz(d)`: alanda olsa da vurulmayacak düşmanlar (ör. mühürlü boss).
 // Olaylar, ilgili düşmanın kaydını `id` ile gösterir. Yapılamayan hamlede olay listesi boştur.
+// Uzak Nişan için hedefin uzaklığı `oyuncu`dan ölçülür; Gönül Gücü düşen her düşmanla nefes
+// yeniler ({ tip: 'pasif', yenilenen: 'nefes', miktar }).
 // Sonuç: { durum, dusmanlar, etkiler, olaylar, dusenler (yenilen düşman kayıtları) }.
 export function oyuncuVurur(durum, dusmanlar, eylem, rng, { hedef = null, etkiler = [], oyuncu = null, vurulamaz = () => false } = {}) {
   const yetenek = eylem?.tur === 'yetenek' ? yetenekBul(durum.oyuncu.sinif, eylem.anahtar) : null;
@@ -65,7 +67,8 @@ export function oyuncuVurur(durum, dusmanlar, eylem, rng, { hedef = null, etkile
   const ekler = hedef && yetenek?.alan && merkez
     ? alandakiler(dusmanlar, merkez, yetenek.alan, { haric: hedef.id, vurulamaz })
     : [];
-  const r = oyuncuHamlesi(durum, eylem, rng, { hedef: hedef?.dusman ?? null, ekHedefler: ekler.map((d) => d.dusman), etkiler });
+  const uzaklik = hedef && oyuncu ? mesafe(oyuncu, hedef) : null;
+  const r = oyuncuHamlesi(durum, eylem, rng, { hedef: hedef?.dusman ?? null, ekHedefler: ekler.map((d) => d.dusman), etkiler, uzaklik });
   const olaylar = r.olaylar.map((o) => {
     if (o.ek !== undefined) {
       const { ek, ...kalan } = o;
@@ -97,6 +100,17 @@ export function oyuncuVurur(durum, dusmanlar, eylem, rng, { hedef = null, etkile
 
   if (!yeniler.size) return sonuc;
   const dusenler = [...yeniler.values()].filter((d) => d.dusman.can <= 0);
+
+  // Gönül Gücü: yenilen her düşmanla nefes yenilenir
+  const pasif = pasifOzellik(durum.oyuncu.sinif);
+  if (pasif?.tur === 'zafer_nefesi' && dusenler.length) {
+    const s = savasci(sonuc.durum);
+    const miktar = Math.min(s.nefesEnCok - s.nefes, Math.round(s.nefesEnCok * pasif.nefes * dusenler.length));
+    if (miktar > 0) {
+      sonuc.durum = { ...sonuc.durum, oyuncu: { ...sonuc.durum.oyuncu, nefes: s.nefes + miktar } };
+      olaylar.push({ tip: 'pasif', kim: 'oyuncu', pasif: pasif.anahtar, yenilenen: 'nefes', miktar });
+    }
+  }
   return {
     ...sonuc,
     dusmanlar: dusmanlar.filter((d) => !dusenler.includes(yeniler.get(d.id))).map((d) => yeniler.get(d.id) ?? d),

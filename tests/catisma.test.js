@@ -373,3 +373,42 @@ describe('alan vuruşları ve sersemletme', () => {
     expect({ x: k.x, y: k.y }).toEqual({ x: 14, y: 10 });
   });
 });
+
+describe('sınıf özellikleri haritada', () => {
+  const ayi = (id, x, y, ek = {}) => kayit(id, x, y, ek, dusmanOlustur('boz_ayi', 12));
+  const zayif = (id, x, y) => ayi(id, x, y, { dusman: { ...dusmanOlustur('boz_ayi', 12), can: 1 } });
+
+  it('Uzak Nişan: Kemankeş uzaklığı yiğidin konumundan ölçer', () => {
+    const hedef = ayi(1, 10, 10);
+    const yakindan = oyuncuVurur(durum('kemankes', 12), [hedef], { tur: 'saldir' }, sabit(0.99), { hedef, oyuncu: { x: 9, y: 10 } });
+    const uzaktan = oyuncuVurur(durum('kemankes', 12), [hedef], { tur: 'saldir' }, sabit(0.99), { hedef, oyuncu: { x: 5, y: 10 } });
+    expect(uzaktan.olaylar[0].hasar).toBeGreaterThan(yakindan.olaylar[0].hasar);
+  });
+
+  it('Gönül Gücü: Alperen yendiği her düşmanla nefes kazanır; düşen yoksa kazanmaz', () => {
+    const d = durum('alperen', 38);
+    const az = { ...d, oyuncu: { ...d.oyuncu, nefes: 30 } };
+    const r = oyuncuVurur(az, [zayif(1, 10, 10), zayif(2, 11, 10)], { tur: 'yetenek', anahtar: 'isik_cemberi' }, sabit(0.99), { hedef: zayif(1, 10, 10), oyuncu: { x: 10, y: 11 } });
+    expect(r.dusenler).toHaveLength(2);
+    const pasif = r.olaylar.find((o) => o.tip === 'pasif');
+    expect(pasif).toMatchObject({ kim: 'oyuncu', pasif: 'gonul_gucu', yenilenen: 'nefes' });
+    const harcanan = 30 - 24;
+    expect(r.durum.oyuncu.nefes).toBe(harcanan + pasif.miktar);
+    const saglam = ayi(1, 10, 10);
+    const s = oyuncuVurur(az, [saglam], { tur: 'saldir' }, sabit(0.99), { hedef: saglam, oyuncu: { x: 10, y: 11 } });
+    expect(s.olaylar.some((o) => o.tip === 'pasif')).toBe(false);
+    const akinci = oyuncuVurur(durum('akinci', 12), [zayif(1, 10, 10)], { tur: 'saldir' }, sabit(0.99), { hedef: zayif(1, 10, 10), oyuncu: { x: 10, y: 11 } });
+    expect(akinci.olaylar.some((o) => o.tip === 'pasif')).toBe(false);
+  });
+
+  it('Işık Çemberi yiğidin iki karo çevresine iner; Yaylım Ateşi hedefin iki karo çevresine', () => {
+    const oyuncu = { x: 10, y: 10 };
+    const hedef = ayi(1, 11, 10);
+    const iki = ayi(2, 8, 10);
+    const uc = ayi(3, 7, 10);
+    const c = oyuncuVurur(durum('alperen', 38), [hedef, iki, uc], { tur: 'yetenek', anahtar: 'isik_cemberi' }, sabit(0.99), { hedef, oyuncu });
+    expect(new Set(c.olaylar.filter((o) => o.hasar !== undefined).map((o) => o.id))).toEqual(new Set([1, 2]));
+    const y = oyuncuVurur(durum('kemankes', 38), [hedef, ayi(4, 13, 10), ayi(5, 14, 10)], { tur: 'yetenek', anahtar: 'yaylim_atesi' }, sabit(0.99), { hedef, oyuncu: { x: 6, y: 10 } });
+    expect(new Set(y.olaylar.filter((o) => o.hasar !== undefined).map((o) => o.id))).toEqual(new Set([1, 4]));
+  });
+});

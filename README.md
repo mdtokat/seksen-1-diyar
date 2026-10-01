@@ -21,9 +21,9 @@ Telefonda dikey ekranda rahat oynanır; masaüstünde de çalışır. İlerleme 
 ### Başlangıç
 Adını gir ve üç yoldan birini seç:
 
-- **Akıncı:** kılıçlı öncü süvari, **yakından** (bitişik karodan) vurur. Canı ve savunması yüksektir; *Akın Hamlesi* ile üç karo öteden düşmanın yanına atılıp onu sersemletir, *Yiğit Nârası* ile gücünü artırıp çevresindeki düşmanları duraksatır, *Tufan Kılıcı* yanı başındaki bütün düşmanlara iner.
-- **Kemankeş:** Osmanlı okçusu, **beş karo öteden** ok atar (*Menzil Atışı* yedi karo). Çevik ve isabetlidir, kritik vuruşları güçlüdür; *Çifte Ok* iki ayrı ok atar, *Ok Yağmuru* hedefin çevresine de yağar, *Menzil Atışı* vurduğunu yerine çiviler. Canı azdır, düşmanı yanına yaklaştırma.
-- **Alperen:** gazi-derviş geleneğinden gelir; uzun asası ve manevi gücüyle **iki karo öteye** erişir. Nefesi boldur, kendini iyileştirir; *Arınma Işığı* dört karo öteye uzanıp hedefin çevresine yayılır, cinlere ve ifritlere ek hasar verir; *Gönül Dirliği* ürküntüyü de giderir.
+- **Akıncı:** kılıçlı öncü süvari, **yakından** (bitişik karodan) vurur. Canı ve savunması yüksektir; *Akın Hamlesi* ile üç karo öteden düşmanın yanına atılıp onu sersemletir, *Yiğit Nârası* ile gücünü artırıp çevresindeki düşmanları duraksatır, *Tufan Kılıcı* yanı başındaki bütün düşmanlara iner. Sınıf özelliği **Gözü Pek**: canı %35'in altına düşünce gücü %20 artar.
+- **Kemankeş:** Osmanlı okçusu, **beş karo öteden** ok atar (*Menzil Atışı* yedi karo). Çevik ve isabetlidir, kritik vuruşları güçlüdür; *Çifte Ok* iki ayrı ok atar, *Ok Yağmuru* hedefin çevresine de yağar, *Menzil Atışı* vurduğunu yerine çiviler. Canı azdır, düşmanı yanına yaklaştırma. Sınıf özelliği **Uzak Nişan**: üç karo ve daha uzağa attığı oklar %15 daha ağır iner.
+- **Alperen:** gazi-derviş geleneğinden gelir; uzun asası ve manevi gücüyle **iki karo öteye** erişir. Nefesi boldur, kendini iyileştirir; *Arınma Işığı* dört karo öteye uzanıp hedefin çevresine yayılır, cinlere ve ifritlere ek hasar verir; *Gönül Dirliği* ürküntüyü de giderir. Sınıf özelliği **Gönül Gücü**: yendiği her düşmanla nefesinin %10'u yenilenir.
 
 Her yeni yolculuk **başka bir bölgeden** başlar: Marmara'dan hiç başlanmaz, kalan altı bölgenin hepsinden birer kez başlanmadan da aynı bölge tekrarlanmaz. Başlangıç ili, o bölgenin nüfusça **en küçük illerinden** biridir (ör. Bayburt, Kilis, Tunceli, Ardahan, Çankırı, Burdur, Uşak). Başlangıçta yalnızca o bölge açıktır; heybende başlangıç ilinin yöresel yemeği ve bölgeden bir azık bulunur.
 
@@ -56,7 +56,8 @@ Savaş ayrı bir ekranda değil, **il haritasında, gerçek zamanlı** geçer.
 - Bayılırsan en son dinlendiğin kervansarayda (hiç dinlenmediysen bulunduğun ilin meydanında) kendine gelirsin ve akçenin %10'unu kaybedersin.
 
 ### Seviye ve ekipman
-- Her seviyede statların kendiliğinden artar ve **3 stat puanı** dağıtırsın (👤 karakter ekranı). Yeni yetenekler 5, 12, 20 ve 32. seviyelerde açılır.
+- Her seviyede statların kendiliğinden artar ve **3 stat puanı** dağıtırsın (👤 karakter ekranı). Yeni yetenekler 5, 12, 20, 32, 38 ve 45. seviyelerde açılır. Son ikisi her sınıfın ustalık yetenekleridir: Akıncı'da *Kalkan Savuruşu* (çevresini vurup sersemletir) ve *Akın Coşkusu* (vurdukça can kazandırır), Kemankeş'te *Yaylım Ateşi* (iki karo çevreye ok yağdırır) ve *Delici Ok* (zırhı deler), Alperen'de *Işık Çemberi* (iki karo çevresine ışık yayar) ve *Çınar Sükûneti* (korunur ve canını yeniler).
+- Her sınıfın baştan açık bir **sınıf özelliği** vardır; yeni oyun ve karakter ekranlarında görünür. Gözü Pek etkinken can göstergesinin altında 🔥 belirir.
 - **Çeviklik** kritik vuruş ve sıyrılma şansı verir. Kritik şansı 37,5 çeviklikte %30 tavanına varır; ötesindeki çeviklik boşa gitmez, **kritik vuruşlarını güçlendirir** (×1,5'ten ×2'ye dek). Karakter ekranı kritik şansını, kritik hasarını ve sıyrılma şansını gösterir.
 - **Yetenek özellikleri:** kimi yetenek birden çok vurur (🏹), kimi hedefin ya da senin çevrene iner (💥), kimi düşmanı **sersemletir** (💫: birkaç an ne yürür ne vurur; bosslarda yarı süre). Karakter ekranında her yeteneğin altında bu etiketler görünür.
 - **Ahi esnafı** bölgenin sıradan ve nadir silah, zırh ve kuşaklarından altısını sergiler; eşyalarını yarı fiyatına geri alır. Tezgâh her 4 zaferde başka mallarla dolar ve aynı bölgedeki her dükkânın tezgâhı ayrıdır; her sınıf için silah ve bir zırh ya da kuşak her zaman bulunur. **Efsanevi** eşyaları bosslar düşürür.

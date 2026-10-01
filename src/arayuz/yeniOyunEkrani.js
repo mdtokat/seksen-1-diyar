@@ -17,6 +17,8 @@ function sinifKarti(anahtar, sinif) {
       <span class="sinif-ikon">${sinifCizimi(anahtar)}</span>
       <span class="sinif-ad">${kacis(sinif.ad)}</span>
       <span class="sinif-tarif">${kacis(sinif.tarif)}</span>
+      <span class="sinif-pasif">✦ ${kacis(sablon(M.pasif, { ad: sinif.pasif.ad }))}
+        <span class="sinif-pasif-aciklama">${kacis(sinif.pasif.aciklama)}</span></span>
       <dl class="stat-tablosu">${statSatirlari}</dl>
     </button>`;
 }
