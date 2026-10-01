@@ -10,7 +10,7 @@ import { metinler } from '../veri/metinler.js';
 import { arinmaYuzdesi } from '../oyun/ilerleme.js';
 import { hayirPuani, itibarKademesi } from '../oyun/itibar.js';
 import { kacis, sablon } from './bilesenler.js';
-import { sinifCizimi } from './cizimler/karakterler.js';
+import { oyuncuCizimi } from './cizimler/karakterler.js';
 
 const M = metinler.bitis;
 
@@ -56,7 +56,7 @@ export function bitisEkrani(kap, depo, { devam } = {}) {
     <div class="sayfa-ekrani bitis-ekrani">
       <main class="sayfa-icerik">
         <section class="kart bitis-karti">
-          <span class="bitis-ikon">${sinifCizimi(o.sinif)}</span>
+          <span class="bitis-ikon">${oyuncuCizimi(o)}</span>
           <h1>${M.baslik}</h1>
           ${M.hikaye.map((p) => `<p>${kacis(sablon(p, { ad: o.ad }))}</p>`).join('')}
         </section>

@@ -62,6 +62,7 @@ Savaş ayrı bir ekranda değil, **il haritasında, gerçek zamanlı** geçer.
 - **Ahi esnafı** bölgenin sıradan ve nadir silah, zırh ve kuşaklarından altısını sergiler; eşyalarını yarı fiyatına geri alır. Tezgâh her 4 zaferde başka mallarla dolar ve aynı bölgedeki her dükkânın tezgâhı ayrıdır; her sınıf için silah ve bir zırh ya da kuşak her zaman bulunur. **Efsanevi** eşyaları bosslar düşürür.
 - **Seyyar tüccar** yollarda dolaşır: ile girerken haritada bekliyor olabilir ya da yürürken yakınlarda belirir (🛍️). Sınıfına uygun **güçlü** mallar satar — bölgenin efsanevi eşyaları ve yolculuğundaki bir sonraki bölgenin eşyaları — ama yol masrafı yüzünden %50 pahalıdır; bir süre sonra yoluna devam eder.
 - Eşyaların gücü, fiyatı ve kuşanma seviyesi bölgenin yolculuktaki sırasına göredir: ilk açılan bölgenin eşyaları seviye 1'den kuşanılır.
+- **Kuşandıkların üstünde görünür:** silahın nadirliğine göre süslenir (nadir kılıcın kabzasında taş, laklı ve altın işlemeli yay, taşlı asa; efsanevi silahlar ışıl ışıl parlar). Zırh kaftanının üstüne yelek olarak giyilir: sıradan keçe, nadir sırma işlemeli, efsanevi pul pul altın. Kuşak, geldiği bölgenin rengini alır. Efsanevi eşya kuşanan yiğidin ardında ılık bir ışık belirir. Haritada, karakter ekranında ve üst çubukta aynı görünüş kullanılır.
 
 ### Yemekler
 Her ilin meşhur yemeği ya **canı** (ana yemekler) ya da **nefesi** (tatlılar, içecekler, meyveler, bal) yeniler. Yolculukta sonraki bölgelerin yemekleri daha güçlüdür (ilk bölgede ×1, son bölgede ×6). Heybe 20 yuvadır; aynı yemekten bir yuvada 10 tane durur.

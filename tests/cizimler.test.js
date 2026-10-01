@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { sinifCizimi, SINIF_CIZIMLERI, halkCizimi, tuccarCizimi } from '../src/arayuz/cizimler/karakterler.js';
-import { karistir, acik, koyu, svgSar, hacim } from '../src/arayuz/cizimler/ortak.js';
+import { sinifCizimi, oyuncuCizimi, ekipmanGorunumu, SINIF_CIZIMLERI, halkCizimi, tuccarCizimi } from '../src/arayuz/cizimler/karakterler.js';
+import { karistir, acik, koyu, renkFarki, svgSar, hacim } from '../src/arayuz/cizimler/ortak.js';
+import { esyalar } from '../src/veri/esyalar.js';
 import { haritaKatmani } from '../src/arayuz/cizimler/karolar.js';
 import { ilHaritasiUret } from '../src/oyun/gezinti.js';
 import { dusmanCizimi, DUSMAN_CIZIMLERI } from '../src/arayuz/cizimler/dusmanlar.js';
@@ -171,5 +172,76 @@ describe('il sınırları (OpenStreetMap)', () => {
       }
     }
     expect(icerde).toBeGreaterThanOrEqual(79);
+  });
+});
+
+describe('kuşanılan eşyalar figürde görünür', () => {
+  // Kimlik ön ekleri her çizimde değiştiği için karşılaştırmada atılır.
+  const yalin = (svg) => svg.replace(/c[0-9a-z]+-/g, '');
+  const tum = (nadirlik, renk = '#3b7dc4') => ({
+    silah: { nadirlik, renk }, zirh: { nadirlik, renk }, aksesuar: { nadirlik, renk },
+  });
+  const EFSANE_HALESI = 'rx="46" ry="54"';
+
+  it('ekipmanın görünüşü: her yuvada nadirlik ve bölgenin rengi; boş ve bilinmeyen yuvalar null', () => {
+    expect(ekipmanGorunumu({ silah: 'edirne_kilici', zirh: 'ejder_pulu_zirh', aksesuar: null })).toEqual({
+      silah: { nadirlik: 'siradan', renk: bolgeler.find((b) => b.anahtar === 'marmara').renk },
+      zirh: { nadirlik: 'efsanevi', renk: bolgeler.find((b) => b.anahtar === 'marmara').renk },
+      aksesuar: null,
+    });
+    expect(ekipmanGorunumu({ silah: 'yok_boyle_esya' })).toEqual({ silah: null, zirh: null, aksesuar: null });
+    expect(ekipmanGorunumu(undefined)).toEqual({ silah: null, zirh: null, aksesuar: null });
+  });
+
+  it('eşyasız yiğit yalın sınıf çizimiyle aynıdır', () => {
+    for (const s of Object.keys(siniflar)) {
+      const o = { sinif: s, kusanilan: { silah: null, zirh: null, aksesuar: null } };
+      expect(yalin(oyuncuCizimi(o)), s).toBe(yalin(sinifCizimi(s)));
+    }
+  });
+
+  it('her sınıf, her nadirlikte ve her gerçek eşyayla düzgün çizilir', () => {
+    for (const s of Object.keys(siniflar)) {
+      for (const n of ['siradan', 'nadir', 'efsanevi']) {
+        const svg = sinifCizimi(s, { ekipman: tum(n) });
+        expect(svg, `${s} ${n}`).not.toMatch(/undefined|NaN/);
+        boyalarCozulmus(svg, `${s} ${n}`);
+      }
+      for (const [anahtar, e] of Object.entries(esyalar)) {
+        if (e.sinif && e.sinif !== s) continue;
+        const svg = oyuncuCizimi({ sinif: s, kusanilan: { [e.yuva]: anahtar } });
+        expect(svg, `${s} ${anahtar}`).not.toMatch(/undefined|NaN/);
+        boyalarCozulmus(svg, `${s} ${anahtar}`);
+      }
+    }
+  });
+
+  it('her yuva ve her nadirlik figürü değiştirir; nadirlikler birbirinden ayrışır', () => {
+    for (const s of Object.keys(siniflar)) {
+      const bos = yalin(sinifCizimi(s));
+      const cizimler = ['siradan', 'nadir', 'efsanevi'].map((n) => yalin(sinifCizimi(s, { ekipman: tum(n) })));
+      expect(new Set([bos, ...cizimler]).size, s).toBe(4);
+      for (const yuva of ['silah', 'zirh', 'aksesuar']) {
+        const tek = yalin(sinifCizimi(s, { ekipman: { [yuva]: { nadirlik: 'nadir', renk: '#6a4c93' } } }));
+        expect(tek, `${s} ${yuva}`).not.toBe(bos);
+      }
+    }
+  });
+
+  it('kuşak eşyanın bölge rengini alır; kaftana çok yakın renk koyulaşır', () => {
+    const mor = sinifCizimi('kemankes', { ekipman: { aksesuar: { nadirlik: 'nadir', renk: '#6a4c93' } } });
+    expect(mor).toContain('6a4c93');
+    // Akıncı'nın kaftanı Akdeniz kırmızısıyla aynı: kuşak koyulaşır
+    expect(renkFarki('#d9483b', '#d9483b')).toBe(0);
+    const kirmizi = sinifCizimi('akinci', { ekipman: { aksesuar: { nadirlik: 'nadir', renk: '#d9483b' } } });
+    expect(kirmizi).toContain(koyu('#d9483b', 0.5).slice(1));
+  });
+
+  it('yalnızca efsanevi eşya kuşanan yiğit parlar', () => {
+    for (const s of Object.keys(siniflar)) {
+      expect(sinifCizimi(s), s).not.toContain(EFSANE_HALESI);
+      expect(sinifCizimi(s, { ekipman: tum('nadir') }), s).not.toContain(EFSANE_HALESI);
+      expect(sinifCizimi(s, { ekipman: { zirh: { nadirlik: 'efsanevi', renk: '#d4a537' } } }), s).toContain(EFSANE_HALESI);
+    }
   });
 });
