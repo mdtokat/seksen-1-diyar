@@ -26,7 +26,8 @@
 // pasif: sınıfın her zaman açık özelliği (savas.js, catisma.js). tur:
 //   'can_esigi'    → canı `esik` oranının altındayken güç `guc` oranı kadar artar,
 //   'uzak_nisan'   → en az `uzaklik` karo öteye vurduğu her vuruş `hasar` oranı kadar ağır iner,
-//   'zafer_nefesi' → yendiği her düşmanla en yüksek nefesinin `nefes` oranı kadar nefes yenilenir.
+//   'zafer_nefesi' → yendiği her düşmanla en yüksek nefesinin `nefes` oranı kadar nefes yenilenir,
+//   'yemek_bereketi' → yediği yemekler `yemek` oranı kadar daha çok yeniler (envanter.js).
 // Savaş il haritasında, gezinti ekranında geçer (savas.js, catisma.js). Sınıfın
 // `menzil` değeri vuruş erimidir: 1 yakın dövüştür (yalnızca bitişik karo), büyük
 // değerler uzaktan vurur; arada ağaç, kaya ya da ev varsa görüş kapanır.
@@ -117,6 +118,30 @@ export const siniflar = {
       { anahtar: 'gonul_dirligi', ad: 'Gönül Dirliği', seviye: 32, nefes: 25, etki: 'sifa', deger: 0.7, arindirir: true, aciklama: 'Gönül huzuruyla toparlanır; canının büyük kısmını yeniler, ürküntüsünü de giderir.' },
       { anahtar: 'isik_cemberi', ad: 'Işık Çemberi', seviye: 38, nefes: 24, etki: 'hasar', carpan: 1.8, alan: 2, alanMerkezi: 'oyuncu', alanCarpani: 1.5, ekHasarTurleri: ['cin', 'ifrit'], ekHasarCarpani: 1.5, aciklama: 'Çevresine aydınlıktan bir çember yayar; iki karo içindeki bütün düşmanları sarsar, cinlere ve ifritlere ek hasar verir.' },
       { anahtar: 'cinar_sukuneti', ad: 'Çınar Sükûneti', seviye: 45, nefes: 28, etki: 'savunma', deger: 0.6, sure: 4, ekSifa: 0.3, aciklama: 'Ulu bir çınar gibi kök salar; canının bir kısmını hemen yeniler, düşmanın sonraki dört hamlesinde alınan hasar çok azalır.' },
+    ],
+  },
+  baci: {
+    ad: 'Bacı',
+    ikon: '🪢',
+    varsayilanAd: 'Fatma', // ad boş bırakılırsa (Fatma Bacı'nın anısına)
+    tarif: 'Bacıyân-ı Rûm\'dan, Ahi ocağında yetişmiş bir yiğit kadın. Sapanıyla üç karo öteyi vurur, düşmanı sersemletir; azığını iyi bilir.',
+    menzil: 3,
+    mermi: 'tas',
+    dallar: {
+      sapanci: { ad: 'Sapancı', ikon: '🪨', tarif: 'Taşı kıl payı şaşmaz; Bacıyân\'ın en keskin gözlüsü.', statlar: { guc: 0.1, ceviklik: 0.1 }, kritikHasari: 0.2 },
+      sifaci: { ad: 'Şifacı', ikon: '🌼', tarif: 'Otları, merhemleri, şifalı aşları bilir; kendine de yoldaşına da derman olur.', statlar: { can: 0.15 }, sifaCarpani: 0.3, pasif: { yemek: 0.6 } },
+    },
+    pasif: { anahtar: 'bereket', ad: 'Bereket', tur: 'yemek_bereketi', yemek: 0.3, aciklama: 'Ahi ocağında yetişmiştir; yediği her yemek %30 daha çok yeniler.' },
+    baslangic: { can: 100, nefes: 50, guc: 10, savunma: 8, ceviklik: 10 },
+    seviyeArtisi: { can: 10, nefes: 5, guc: 2, savunma: 1, ceviklik: 2 },
+    yetenekler: [
+      { anahtar: 'tas_atisi', ad: 'Taş Atışı', seviye: 1, nefes: 5, etki: 'hasar', carpan: 1.4, aciklama: 'Sapanını döndürüp sert bir taş savurur.' },
+      { anahtar: 'sersemleten_tas', ad: 'Sersemleten Taş', seviye: 5, nefes: 8, etki: 'hasar', carpan: 1.2, sersem: 5, aciklama: 'Taşı alnın ortasına isabet ettirir; düşman bir an sersemler.' },
+      { anahtar: 'uclu_tas', ad: 'Üçlü Taş', seviye: 12, nefes: 13, etki: 'hasar', carpan: 0.65, vurus: 3, aciklama: 'Sapana üç taş birden koyar; her taş ayrı vurur.' },
+      { anahtar: 'ocak_sicakligi', ad: 'Ocak Sıcaklığı', seviye: 20, nefes: 15, etki: 'sifa', deger: 0.3, arindirir: true, aciklama: 'Ocak başındaki sıcaklığı hatırlar; canının bir kısmını yeniler, ürküntüsünü giderir.' },
+      { anahtar: 'kement', ad: 'Kement', seviye: 32, nefes: 22, etki: 'hasar', carpan: 1.6, menzil: 4, sersem: 10, aciklama: 'Kementini dört karo öteye fırlatır; dolanan düşman uzun süre yerinden kıpırdayamaz.' },
+      { anahtar: 'tas_firtinasi', ad: 'Taş Fırtınası', seviye: 38, nefes: 22, etki: 'hasar', carpan: 1.8, alan: 2, alanCarpani: 1.4, sersem: 3, aciklama: 'Taşları dolu gibi yağdırır; hedefin iki karo çevresindekiler de vurulup bir an sersemler.' },
+      { anahtar: 'bacilarin_sancagi', ad: 'Bacıların Sancağı', seviye: 45, nefes: 26, etki: 'guclenme', deger: 0.35, sure: 4, ekSifa: 0.2, aciklama: 'Bacıyân sancağını açar; canının bir kısmı yerine gelir, sonraki dört saldırısında gücü artar.' },
     ],
   },
 };

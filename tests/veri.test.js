@@ -271,10 +271,12 @@ describe('düşmanlar', () => {
 });
 
 describe('sınıflar', () => {
-  it('3 sınıf plandaki başlangıç statlarıyla tanımlı', () => {
+  it('4 sınıf başlangıç statlarıyla tanımlı', () => {
+    expect(Object.keys(siniflar)).toEqual(['akinci', 'kemankes', 'alperen', 'baci']);
     expect(siniflar.akinci.baslangic).toEqual({ can: 120, nefes: 30, guc: 12, savunma: 10, ceviklik: 6 });
     expect(siniflar.kemankes.baslangic).toEqual({ can: 90, nefes: 40, guc: 11, savunma: 6, ceviklik: 12 });
     expect(siniflar.alperen.baslangic).toEqual({ can: 85, nefes: 70, guc: 9, savunma: 7, ceviklik: 8 });
+    expect(siniflar.baci.baslangic).toEqual({ can: 100, nefes: 50, guc: 10, savunma: 8, ceviklik: 10 });
   });
 
   it('her sınıfın 7 yeteneği 1, 5, 12, 20, 32, 38, 45. seviyelerde açılıyor', () => {
@@ -282,6 +284,7 @@ describe('sınıflar', () => {
       akinci: ['Kılıç Darbesi', 'Kalkan Duruşu', 'Akın Hamlesi', 'Yiğit Nârası', 'Tufan Kılıcı', 'Kalkan Savuruşu', 'Akın Coşkusu'],
       kemankes: ['Nişan Oku', 'Çifte Ok', 'Ok Yağmuru', 'Kartal Gözü', 'Menzil Atışı', 'Yaylım Ateşi', 'Delici Ok'],
       alperen: ['Asa Darbesi', 'Şifa Nefesi', 'Hikmet Kalkanı', 'Arınma Işığı', 'Gönül Dirliği', 'Işık Çemberi', 'Çınar Sükûneti'],
+      baci: ['Taş Atışı', 'Sersemleten Taş', 'Üçlü Taş', 'Ocak Sıcaklığı', 'Kement', 'Taş Fırtınası', 'Bacıların Sancağı'],
     };
     for (const [anahtar, sinif] of Object.entries(siniflar)) {
       expect(sinif.yetenekler.map((y) => y.seviye)).toEqual([1, 5, 12, 20, 32, 38, 45]);
@@ -302,7 +305,7 @@ describe('sınıflar', () => {
 
 
   it('her sınıfın bilinen türde, açıklamalı bir pasif özelliği var', () => {
-    const turler = { can_esigi: ['esik', 'guc'], uzak_nisan: ['uzaklik', 'hasar'], zafer_nefesi: ['nefes'] };
+    const turler = { can_esigi: ['esik', 'guc'], uzak_nisan: ['uzaklik', 'hasar'], zafer_nefesi: ['nefes'], yemek_bereketi: ['yemek'] };
     const gorulen = new Set();
     for (const [anahtar, sinif] of Object.entries(siniflar)) {
       const p = sinif.pasif;
@@ -311,7 +314,7 @@ describe('sınıflar', () => {
       for (const alan of turler[p.tur]) expect(p[alan], `${anahtar}.${alan}`).toBeGreaterThan(0);
       gorulen.add(p.tur);
     }
-    expect(gorulen.size).toBe(3);
+    expect(gorulen.size).toBe(4);
   });
   it('her stat için stat puanı değeri tanımlı', () => {
     for (const stat of ['can', 'nefes', 'guc', 'savunma', 'ceviklik']) {

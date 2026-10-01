@@ -498,7 +498,7 @@ export const metinler = {
     baslik: 'Yeni Oyun',
     geri: 'Başlık ekranına dön',
     adEtiketi: 'Yiğidin adı',
-    adIpucu: 'Boş bırakırsan adın Alp olur.',
+    adIpucu: 'Boş bırakırsan adın {ad} olur.',
     sinifBasligi: 'Yolunu seç',
     sinifSec: '{sinif} sınıfını seç',
     secimYok: 'Yola çıkmak için bir sınıf seç.',

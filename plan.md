@@ -794,6 +794,16 @@ Yiğidin çizimi kuşandıklarını gösterir (`cizimler/karakterler.js`). Kayı
 - **Arayüz:** karakter ekranında "Uzmanlık" bölümü. Seviyesi yetmeyene iki yol önizlenir; seviyesi yetene seçim sunulur (seçim ikinci bir "Onayla" ile kesinleşir); seçilmişse yalnızca seçilen yol görünür. Dalın getirdikleri veriden üretilir. Karakter özetinde sınıfın yanında dalın adı yazar; karakter düğmesindeki işaret seçilmemiş dalı da gösterir; 20. seviyeye ulaşınca bildirim çıkar.
 - **Denge:** dallar yalnızca seçen oyuncuyu etkiler; boss, gezgin boss ve kalabalık simülasyonları dalsız yiğitle ölçülür ve değişmedi.
 
+### Ek — Dördüncü sınıf: Bacı (Bacıyân-ı Rûm)
+Ahi teşkilatının kadın kolu Bacıyân-ı Rûm'dan bir yiğit kadın. Ahi esnafı ve kervansaraylarla aynı dünyadan gelir; edepli çizilir (oyalı yazma, entari, şalvar).
+- **Sınıf (`siniflar.js → baci`):** menzil 3, mermi `tas` (sapan taşı; `.mermi-tas`). Başlangıç can 100, nefes 50, güç 10, savunma 8, çeviklik 10; seviye başı +10 / +5 / +2 / +1 / +2. Boş adda varsayılan ad `varsayilanAd: 'Fatma'` (`karakter.js → varsayilanAd`; yeni oyun ekranının ipucu ve yer tutucusu seçilen sınıfa göre değişir).
+- **Yetenekler:** Taş Atışı (Sv 1, ×1,4) · Sersemleten Taş (5, ×1,2, sersem 5) · Üçlü Taş (12, 3 × 0,65) · Ocak Sıcaklığı (20, %30 şifa, arındırır) · Kement (32, ×1,6, menzil 4, sersem 10) · Taş Fırtınası (38, ×1,8, hedefin 2 karo çevresine ×1,4, sersem 3) · Bacıların Sancağı (45, %35 güç × 4, %20 ek şifa). Kimliği: kalabalığı sersemletip kontrol etmek.
+- **Sınıf özelliği Bereket (`yemek_bereketi`):** yenen yemek %30 daha çok yeniler (`karakter.js → yemekBereketi`, `envanter.js → oyuncuYemekGucu / yemekEtkisi`). Heybe, arasta ve il ekranı yemeğin etkisini bu artışla gösterir.
+- **Uzmanlık:** Sapancı (güç +%10, çeviklik +%10, kritik çarpanı +0,2) · Şifacı (can +%15, şifa ×1,3, Bereket %60).
+- **Eşyalar:** her bölgede bir sıradan, bir nadir ve bir efsanevi sapan (21 eşya; ikon 🪢). Güç, çeviklik, fiyat ve kuşanma seviyesi aynı bölgenin yaylarıyla birebir aynıdır (sapan da yay gibi uzaktan vuran çevik bir silah). Ahi tezgâhı her sınıfa (artık dört) silah garantisini korur (6 mal: 4 silah + zırh/kuşak).
+- **Çizim (`cizimler/karakterler.js → baci`):** erik rengi entari, turuncu kuşak, kuşakta taş kesesi, kaldırılmış elde dönen sapan (dönüş izi kesik çizgi). Ekipman: sapan ipi nadirde bölge renginde, efsanevide altın ve ışıltılı; taş efsanevide parlar. Yelek, kuşak ve efsanevi hale ortak ekipman katmanlarıyla gelir.
+- **Denge:** Aç Kurt (Sv 1), gezgin boss ("zorlu" bazen yenilir, "kesilemez" yenilmez) ve Zülmet (Sv 48, Doğu Anadolu nadir ekipmanı, %60+ zafer, 8–25 hamle) simülasyonlarına Bacı eklendi; hepsi geçer.
+
 ---
 
 ## 10. Sonraki Fikirler (Kapsam Dışı)

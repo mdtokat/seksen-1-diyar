@@ -121,8 +121,9 @@ describe('üç evreli final savaşı', () => {
       akinci: ['erzurum_celigi_kilic', 'erzurum_deri_zirh', 'van_kilimi_kusak'],
       kemankes: ['kars_boynuz_yayi', 'erzurum_deri_zirh', 'van_kilimi_kusak'],
       alperen: ['oltu_tasi_basli_asa', 'erzurum_deri_zirh', 'van_kilimi_kusak'],
+      baci: ['kars_kecesi_sapan', 'erzurum_deri_zirh', 'van_kilimi_kusak'],
     };
-    const AI = { akinci: ['yigit_narasi', 'guclenme', 'tufan_kilici'], kemankes: ['kartal_gozu', 'kritik', 'menzil_atisi'], alperen: ['hikmet_kalkani', 'savunma', 'arinma_isigi'] };
+    const AI = { akinci: ['yigit_narasi', 'guclenme', 'tufan_kilici'], kemankes: ['kartal_gozu', 'kritik', 'menzil_atisi'], alperen: ['hikmet_kalkani', 'savunma', 'arinma_isigi'], baci: ['bacilarin_sancagi', 'guclenme', 'kement'] };
     for (const sinif of Object.keys(EKIP)) {
       let zafer = 0;
       let tur = 0;
