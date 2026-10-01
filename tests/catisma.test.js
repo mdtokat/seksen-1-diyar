@@ -94,10 +94,10 @@ describe('oyuncu vurur', () => {
     const r = oyuncuVurur(d, [kurt, kayit(2, 9, 9)], { tur: 'saldir' }, sabit(0.99), { hedef: kurt });
     expect(r.dusmanlar[0]).toMatchObject({ id: 1, kizgin: true, kovaliyor: true });
     expect(r.dusmanlar[0].dusman.can).toBeLessThan(kurt.dusman.can);
-    expect(r.dusen).toBeNull();
+    expect(r.dusenler).toEqual([]);
     const zayif = { ...kurt, dusman: { ...kurt.dusman, can: 1 } };
     const z = oyuncuVurur(d, [zayif, kayit(2, 9, 9)], { tur: 'saldir' }, sabit(0.99), { hedef: zayif });
-    expect(z.dusen).toMatchObject({ id: 1, dusman: { can: 0 } });
+    expect(z.dusenler).toMatchObject([{ id: 1, dusman: { can: 0 } }]);
     expect(z.dusmanlar.map((x) => x.id)).toEqual([2]);
   });
 
@@ -263,7 +263,7 @@ describe('sınıfa göre çatışma (simülasyon)', () => {
         ds = r.dusmanlar;
         bekleme = BEKLEME.oyuncu;
         if (!isabetAldi) ilkIsabettenOnce++;
-        if (r.dusen) return { kazandi: true, ilkIsabettenOnce, can: d.oyuncu.can };
+        if (r.dusenler.length) return { kazandi: true, ilkIsabettenOnce, can: d.oyuncu.can };
       }
     }
     return { kazandi: false, ilkIsabettenOnce };
@@ -284,5 +284,92 @@ describe('sınıfa göre çatışma (simülasyon)', () => {
     }
     expect(kemankes / 30).toBeGreaterThanOrEqual(1);
     expect(kemankes).toBeGreaterThan(akinci);
+  });
+});
+
+describe('alan vuruşları ve sersemletme', () => {
+  const h = acikHarita();
+  const ayi = (id, x, y, ek = {}) => kayit(id, x, y, ek, dusmanOlustur('boz_ayi', 12));
+  const yetenek = (anahtar) => ({ tur: 'yetenek', anahtar });
+
+  it('Ok Yağmuru hedefin bir karo çevresindekilere de iner; olaylar düşmanın kimliğini taşır', () => {
+    const hedef = ayi(1, 10, 10);
+    const yan = ayi(2, 11, 10);
+    const alt = ayi(3, 10, 11, { dusman: { ...dusmanOlustur('boz_ayi', 12), can: 1 } });
+    const uzak = ayi(4, 12, 10);
+    const r = oyuncuVurur(durum('kemankes', 12), [hedef, yan, alt, uzak], yetenek('ok_yagmuru'), sabit(0.99), { hedef, oyuncu: { x: 5, y: 10 } });
+    expect(new Set(r.olaylar.filter((o) => o.hasar !== undefined).map((o) => o.id))).toEqual(new Set([1, 2, 3]));
+    expect(r.olaylar.every((o) => o.ek === undefined)).toBe(true);
+    expect(r.dusmanlar.find((d) => d.id === 2)).toMatchObject({ kizgin: true, kovaliyor: true });
+    expect(r.dusmanlar.find((d) => d.id === 2).dusman.can).toBeLessThan(yan.dusman.can);
+    expect(r.dusmanlar.find((d) => d.id === 4)).toBe(uzak);
+    expect(r.dusenler.map((d) => d.id)).toEqual([3]);
+    expect(r.dusmanlar.map((d) => d.id)).toEqual([1, 2, 4]);
+  });
+
+  it('alanda olsa da vurulamayan düşmana (mühürlü boss) inmez', () => {
+    const hedef = ayi(1, 10, 10);
+    const muhurlu = ayi(2, 11, 10);
+    const r = oyuncuVurur(durum('kemankes', 12), [hedef, muhurlu], yetenek('ok_yagmuru'), sabit(0.99), {
+      hedef, vurulamaz: (d) => d.id === 2,
+    });
+    expect(r.dusmanlar[1]).toBe(muhurlu);
+  });
+
+  it('bir alan vuruşu birden çok düşmanı düşürebilir', () => {
+    const zayif = (id, x, y) => ayi(id, x, y, { dusman: { ...dusmanOlustur('boz_ayi', 12), can: 1 } });
+    const r = oyuncuVurur(durum('kemankes', 12), [zayif(1, 10, 10), zayif(2, 11, 10), zayif(3, 9, 10)], yetenek('ok_yagmuru'), sabit(0.99), { hedef: zayif(1, 10, 10) });
+    expect(r.dusenler.map((d) => d.id).sort()).toEqual([1, 2, 3]);
+    expect(r.dusmanlar).toEqual([]);
+  });
+
+  it('Tufan Kılıcı yiğidin yanı başındaki düşmanlara iner, hedefin ötesindekine inmez', () => {
+    const oyuncu = { x: 10, y: 10 };
+    const hedef = ayi(1, 11, 10);
+    const sol = ayi(2, 9, 10);
+    const ust = ayi(3, 10, 9);
+    const oteki = ayi(4, 12, 10);
+    const r = oyuncuVurur(durum('akinci', 32), [hedef, sol, ust, oteki], yetenek('tufan_kilici'), sabit(0.99), { hedef, oyuncu });
+    const vurulanlar = new Set(r.olaylar.filter((o) => o.hasar !== undefined).map((o) => o.id));
+    expect(vurulanlar).toEqual(new Set([1, 2, 3]));
+    expect(r.dusmanlar.find((d) => d.id === 4)).toBe(oteki);
+  });
+
+  it('Akın Hamlesi vurduğu düşmanı sersemletir', () => {
+    const hedef = ayi(1, 12, 10);
+    const r = oyuncuVurur(durum('akinci', 12), [hedef], yetenek('akin_hamlesi'), sabit(0.99), { hedef, oyuncu: { x: 10, y: 10 } });
+    expect(r.dusmanlar[0].sersem).toBe(6);
+    expect(r.olaylar[0]).toMatchObject({ id: 1, sersem: 6 });
+  });
+
+  it('Yiğit Nârası iki karo çevredeki düşmanları sersemletir (boss yarı süre); uzaktakine dokunmaz', () => {
+    const oyuncu = { x: 10, y: 10 };
+    const yakin = ayi(1, 11, 11);
+    const boss = kayit(2, 9, 10, { sabit: true }, dusmanOlustur('bogaz_ejderi', 20));
+    const uzak = ayi(3, 14, 10);
+    const r = oyuncuVurur(durum('akinci', 20), [yakin, boss, uzak], yetenek('yigit_narasi'), sabit(0.99), { oyuncu });
+    expect(r.dusmanlar.map((d) => d.sersem)).toEqual([4, 2, undefined]);
+    expect(r.dusmanlar[2]).toBe(uzak);
+    expect(r.olaylar.filter((o) => o.tip === 'sersem').map((o) => o.id)).toEqual([1, 2]);
+    expect(r.etkiler).toEqual([{ etki: 'guclenme', deger: 0.3, kalan: 3 }]);
+    expect(r.dusmanlar[0].kizgin).toBeUndefined();
+  });
+
+  it('sersemleyen düşman vurmaz, yürümez; sersemliği geçince önce hazırlanır', () => {
+    const oyuncu = { x: 10, y: 10 };
+    let ds = [kayit(1, 10, 11, { kovaliyor: true, bekleme: 0, sersem: 2 })];
+    const d = durum('akinci', 10);
+    const anlar = [];
+    for (let i = 0; i < 6; i++) {
+      const r = dusmanlarVurur(h, d, ds, oyuncu, sabit(0.99));
+      ds = r.dusmanlar;
+      if (r.olaylar.length) anlar.push(i);
+    }
+    expect(anlar[0]).toBe(2 + BEKLEME.hazirlik - 1);
+    expect(ds[0].sersem).toBe(0);
+
+    const kurt = kayit(1, 14, 10, { kovaliyor: true, birikim: 1, sersem: 3 });
+    const [k] = dusmanlariYurut(h, [kurt], oyuncu, sabit(0.5));
+    expect({ x: k.x, y: k.y }).toEqual({ x: 14, y: 10 });
   });
 });

@@ -1035,6 +1035,8 @@ h3 {
 }
 
 .yetenek-menzili {
+  display: inline-block;
+  margin-right: 0.5rem;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--turkuaz-koyu);
@@ -1812,6 +1814,16 @@ h3 {
 
 @keyframes dokunulmaz {
   50% { opacity: 0.45; }
+}
+
+/* Sersemleyen düşman: soluk durur, nefes alıp vermesi bile kesilir; başında yıldızlar döner */
+.dusman-figuru.sersem .figur-ic {
+  animation-play-state: paused;
+  filter: saturate(0.55) brightness(0.92);
+}
+
+.dusman-figuru.sersem .figur-rozeti::after {
+  content: ' 💫';
 }
 
 .figur-rozeti {

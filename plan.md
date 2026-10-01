@@ -229,7 +229,7 @@ Bu formüller ilk sürüm içindir. Faz 3'te dengelendi; hesaplar `src/oyun/kara
 - **Seviye atlama:** sınıfın otomatik stat artışı + 3 stat puanı gelir, can ve nefes tamamen dolar.
 - **Stat puanı değeri:** 1 puan = +5 can, +3 nefes, +1 güç, +1 savunma ya da +1 çeviklik.
 - **Hasar:** `max(1, round(güç × yetenekÇarpanı × rnd(0.9–1.1) − savunma × 0.5))`
-- **Kritik şansı:** `min(30%, çeviklik × 0.8%)` (+ Kartal Gözü bonusu). Kritik vuruş ×1.5 hasar verir.
+- **Kritik şansı:** `min(30%, çeviklik × 0.8%)` (+ Kartal Gözü bonusu). Kritik vuruş ×1.5 hasar verir. Yiğidin kritik çarpanı çevikliğiyle artar: `1.5 + min(0.5, max(0, çeviklik − 37.5) × 0.006)` (bkz. "Ek — Yetenek etkileri ve çeviklik tavanı"); düşmanlarınki hep ×1.5.
 - **Kaçınma şansı:** `min(20%, çeviklik × 0.5%)` — saldırılan taraf hamleden sıyrılır, hasar almaz.
 - **Kaçma şansı:** `max(0%, min(70%, 35% + (oyuncuÇev − düşmanÇev) × 2%) − takipçi cezası)`. Peşine takılan (takipçi) düşmanlarda ceza %15'tir. Bosslardan kaçılamaz.
 - **Düşman statları:** seviye ve tür çarpanıyla ölçeklenir:
@@ -730,6 +730,27 @@ Ayrı, sıra tabanlı savaş ekranı kaldırıldı; savaş il haritasında (gezi
 - **Bayılma (`kesif.js → yenilgiUygula`):** can biterse yiğit bayılır; son kervansarayda ya da ilin meydanında kendine gelir, akçenin %10'unu kaybeder, istatistiğe işlenir. Ona isabet ettirmiş yankesiciler (`vurdu`) kesenin %8'ini aşırır; peşini bıraktırılan ama ona isabet ettirmiş yankesici de aşırır (`yankesiciCalmasi`).
 - **Görsel:** uzaktan vuruşlar mermiyle (Kemankeş'te ok, Alperen'de ışık; cin ve bosslarda sihir, ifritte alev), yakın vuruşlar hamleyle gösterilir; hedefte halka ve can çubuğu, yaralı düşmanlarda can çubuğu görünür. `prefers-reduced-motion` açıkken mermi ve hamle görünmez.
 - **Kaldırılanlar:** `savasEkrani.js`, sıra tabanlı motor (`savasBaslat`, `oyuncuEylemi`, `hedefSec`, kaçma şansı), `saldiriGrubu` ve `temasEdenDusman`. Bölge arka planları zafer kartında kullanılır.
+
+### Ek — Yetenek etkileri ve çeviklik tavanı
+Yeteneklerin çoğu yalnızca çarpanıyla ayrışıyordu; kalabalık saldırıya ve haritadaki savaşa uygun yeni etkiler eklendi. Yetenek anahtarları, açılış seviyeleri ve nefes bedelleri değişmedi (kayıt ve kısayollar etkilenmez).
+- **Yeni yetenek alanları (`siniflar.js`):** `vurus` (art arda ayrı vuruş), `alan` / `alanCarpani` / `alanMerkezi` (alan vuruşu; merkez hedef ya da yiğit), `sersem` (vurduğunu N tık sersemletir), `sersemAlan` (hedefsiz yetenekte yiğidin çevresini sersemletir), `arindirir` (şifa ürkmeyi de giderir).
+- **Değişen yetenekler:**
+
+  | Yetenek | Önce | Şimdi |
+  |---|---|---|
+  | Akın Hamlesi | ×2,0, atılma | + vurduğunu 6 tık sersemletir |
+  | Yiğit Nârası | %30 güç × 3 | + 2 karo çevredeki düşmanları 4 tık sersemletir |
+  | Tufan Kılıcı | ×3,0 | + yiğidin 1 karo çevresindeki öteki düşmanlara ×1,8 |
+  | Çifte Ok | ×1,8 | 2 ayrı ok, her biri ×1,0 (ayrı sıyrılma ve kritik) |
+  | Ok Yağmuru | ×2,2 | ×2,0 + hedefin 1 karo çevresine ×1,2 |
+  | Menzil Atışı | ×3,0, menzil 7 | + vurduğunu 8 tık sersemletir |
+  | Arınma Işığı | ×2,2, cin/ifrite ×1,5 | + hedefin 1 karo çevresine ×1,1 (ek hasar burada da geçerli) |
+  | Gönül Dirliği | %70 şifa | + ürkmeyi (zayıflatma) giderir |
+- **Hamle başına etki:** güçlenme, keskin göz ve ürkme hamle başına bir kez azalır; çok vuruşlu ve alan yeteneklerinde her vuruşa uygulanır. İlk ok hedefi düşürürse ikinci ok atılmaz.
+- **Sersemleme (`catisma.js`, `gezinti.js`):** sersemleyen düşman (`kayit.sersem`) yürümez, vurmaz, kalabalık sayısına girmez; sersemliği her tıkta bir azalır, geçince önce hazırlanır. Bölge bossu, mini boss, Zülmet ve gezgin bosslarda süre yarıdır (yukarı yuvarlanır). Haritada soluk görünür, rozetinde 💫 belirir.
+- **Alan (`catisma.js → oyuncuVurur`):** ek hedefler merkezin `alan` karo (karo yolu) çevresindeki öteki düşmanlardır; mühürlü boss vurulmaz. Alanın görüş şartı yoktur. Vurulan her düşman kızar; bir hamle birden çok düşman düşürebilir (`dusenler`), kartlı zaferler sırayla açılır.
+- **Çeviklik tavanı (`savas.js → kritikCarpani`):** kritik şansı 37,5 çeviklikte, sıyrılma 40'ta tavana varıyordu; Kemankeş buna ~14. seviyede ulaşıp sonraki bütün çevikliği boşa harcıyordu. Artık 37,5'in üstündeki her çeviklik puanı yiğidin kritik çarpanına 0,006 ekler (en çok ×2,0; ör. Sv 50 Kemankeş ≈ ×1,94, Akıncı ≈ ×1,6). Düşmanlar ×1,5 ile vurmayı sürdürür. Karakter ekranı kritik şansını, çarpanını ve sıyrılma şansını gösterir.
+- **Denge:** tek hedefe vuruş çarpanları (Tufan Kılıcı, Menzil Atışı, Arınma Işığı) korunduğundan boss dengesi değişmedi; Zülmet simülasyonu ve kalabalık testleri geçer.
 
 ---
 

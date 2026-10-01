@@ -2,6 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
   hasarHesapla,
   kritikSansi,
+  kritikCarpani,
+  sersemSuresi,
+  KRITIK_CARPANI,
+  KRITIK_TAVAN_CEVIKLIGI,
   kacinmaSansi,
   dusmanStatlari,
   dusmanOlustur,
@@ -178,7 +182,7 @@ describe('oyuncunun hamlesi', () => {
     const d = durum();
     const hedef = kurt();
     expect(eylemKontrol(d, { tur: 'yetenek', anahtar: 'tufan_kilici' })).toEqual({ olur: false, neden: 'kilitli_yetenek' });
-    expect(oyuncuHamlesi(d, { tur: 'yetenek', anahtar: 'tufan_kilici' }, sabit(0.99), { hedef })).toEqual({ durum: d, hedef, etkiler: [], olaylar: [] });
+    expect(oyuncuHamlesi(d, { tur: 'yetenek', anahtar: 'tufan_kilici' }, sabit(0.99), { hedef })).toEqual({ durum: d, hedef, ekHedefler: [], etkiler: [], olaylar: [] });
     const yorgun = durum('akinci', 1, { nefes: 4 });
     expect(eylemKontrol(yorgun, { tur: 'yetenek', anahtar: 'kilic_darbesi' })).toEqual({ olur: false, neden: 'nefes_yetersiz' });
     expect(oyuncuHamlesi(yorgun, { tur: 'yetenek', anahtar: 'kilic_darbesi' }, sabit(0.99), { hedef }).olaylar).toEqual([]);
@@ -363,5 +367,109 @@ describe('düello (sabit tohum, vuruş vuruşa)', () => {
       for (let t = 1; t <= 100; t++) if (duello(t, sinif).kazandi) zafer++;
       expect(zafer, sinif).toBeGreaterThanOrEqual(95);
     }
+  });
+});
+
+// Sırayla verilen değerleri döndüren sahte üreteç (sonra başa döner)
+const sirali = (...xs) => {
+  let i = 0;
+  return () => xs[i++ % xs.length];
+};
+
+describe('çeviklik tavanı: fazlası kritik hasarına gider', () => {
+  it('kritik şansı 37,5 çeviklikte tavana varır; ötesindeki çeviklik kritik çarpanını büyütür', () => {
+    expect(KRITIK_TAVAN_CEVIKLIGI).toBe(37.5);
+    expect(kritikSansi(KRITIK_TAVAN_CEVIKLIGI)).toBeCloseTo(0.3);
+    expect(kritikCarpani(10)).toBe(KRITIK_CARPANI);
+    expect(kritikCarpani(KRITIK_TAVAN_CEVIKLIGI)).toBe(KRITIK_CARPANI);
+    expect(kritikCarpani(60)).toBeCloseTo(1.5 + 22.5 * 0.006);
+    expect(kritikCarpani(1000)).toBe(2);
+  });
+
+  it('hasar formülü verilen kritik çarpanını kullanır', () => {
+    expect(hasarHesapla({ guc: 20, savunma: 0, kritik: true, kritikCarpi: 2 })).toBe(40);
+    expect(hasarHesapla({ guc: 20, savunma: 0, kritik: false, kritikCarpi: 2 })).toBe(20);
+  });
+
+  it('çevik yiğidin kritik vuruşu daha ağır iner; düşmanlar ×1,5 ile vurur', () => {
+    const d = durum('kemankes', 30);
+    const s = statlar(d.oyuncu);
+    expect(s.ceviklik).toBeGreaterThan(KRITIK_TAVAN_CEVIKLIGI);
+    const ayi = dusmanOlustur('boz_ayi', 30);
+    // 0.99 → sıyrılma yok · 0 → kritik · 0.5 → rnd = 1
+    const r = oyuncuHamlesi(d, { tur: 'saldir' }, sirali(0.99, 0, 0.5), { hedef: ayi });
+    expect(r.olaylar[0]).toMatchObject({ kritik: true });
+    expect(r.olaylar[0].hasar).toBe(hasarHesapla({ guc: s.guc, savunma: ayi.savunma, kritik: true, kritikCarpi: kritikCarpani(s.ceviklik) }));
+    expect(r.olaylar[0].hasar).toBeGreaterThan(hasarHesapla({ guc: s.guc, savunma: ayi.savunma, kritik: true }));
+    const cevik = { ...dusmanOlustur('boz_ayi', 50) };
+    expect(cevik.ceviklik).toBeGreaterThan(KRITIK_TAVAN_CEVIKLIGI);
+    const v = dusmanHamlesi(d, cevik, sirali(0.99, 0.99, 0, 0.5));
+    expect(v.olay.kritik).toBe(true);
+    expect(v.olay.hasar).toBe(hasarHesapla({ guc: cevik.guc, savunma: s.savunma, kritik: true }));
+  });
+});
+
+describe('yetenek etkileri: çoklu vuruş, alan, sersemletme, arınma', () => {
+  const ayi = (seviye) => dusmanOlustur('boz_ayi', seviye);
+
+  it('Çifte Ok hedefe iki ayrı ok atar; güçlenme etkileri hamle başına bir kez azalır', () => {
+    const d = durum('kemankes', 5);
+    const hedef = ayi(5);
+    const etkiler = [{ etki: 'kritik', deger: 0, kalan: 3 }];
+    const r = oyuncuHamlesi(d, { tur: 'yetenek', anahtar: 'cifte_ok' }, sabit(0.99), { hedef, etkiler });
+    const oklar = r.olaylar.filter((o) => o.yetenek === 'cifte_ok');
+    expect(oklar).toHaveLength(2);
+    expect(hedef.can - r.hedef.can).toBe(oklar[0].hasar + oklar[1].hasar);
+    expect(r.etkiler).toEqual([{ etki: 'kritik', deger: 0, kalan: 2 }]);
+    expect(r.durum.oyuncu.nefes).toBe(d.oyuncu.nefes - 9);
+  });
+
+  it('Çifte Ok\'un ilk oku düşürdüyse ikinci ok atılmaz', () => {
+    const r = oyuncuHamlesi(durum('kemankes', 5), { tur: 'yetenek', anahtar: 'cifte_ok' }, sabit(0.99), { hedef: { ...ayi(5), can: 1 } });
+    expect(r.olaylar.filter((o) => o.hasar !== undefined)).toHaveLength(1);
+    expect(r.olaylar.at(-1)).toEqual({ tip: 'dustu', kim: 'dusman' });
+  });
+
+  it('Ok Yağmuru ek hedeflere alan çarpanıyla vurur; düşmüş ek hedefe vurulmaz', () => {
+    const d = durum('kemankes', 12);
+    const s = statlar(d.oyuncu);
+    const yan = ayi(12);
+    const r = oyuncuHamlesi(d, { tur: 'yetenek', anahtar: 'ok_yagmuru' }, sabit(0.99), {
+      hedef: ayi(12), ekHedefler: [yan, { ...yan, can: 0 }, { ...yan, can: 1 }],
+    });
+    const ek0 = r.olaylar.find((o) => o.ek === 0 && o.hasar !== undefined);
+    expect(ek0.hasar).toBe(hasarHesapla({ guc: s.guc, savunma: yan.savunma, rnd: 0.9 + 0.99 * 0.2, carpan: 1.2 }));
+    expect(r.olaylar.some((o) => o.ek === 1)).toBe(false);
+    expect(r.olaylar).toContainEqual({ tip: 'dustu', kim: 'dusman', ek: 2 });
+    expect(r.ekHedefler.map((h) => h.can)).toEqual([yan.can - ek0.hasar, 0, 0]);
+  });
+
+  it('alanı olmayan vuruşta ek hedeflere dokunulmaz', () => {
+    const ekHedefler = [ayi(3)];
+    const r = oyuncuHamlesi(durum(), { tur: 'saldir' }, sabit(0.99), { hedef: ayi(3), ekHedefler });
+    expect(r.ekHedefler).toBe(ekHedefler);
+    expect(r.olaylar.some((o) => o.ek !== undefined)).toBe(false);
+  });
+
+  it('Akın Hamlesi vurduğunu sersemletir; bosslarda yarı süre; düşen sersemlemez', () => {
+    const d = durum('akinci', 12);
+    const eylem = { tur: 'yetenek', anahtar: 'akin_hamlesi' };
+    expect(oyuncuHamlesi(d, eylem, sabit(0.99), { hedef: ayi(12) }).olaylar[0].sersem).toBe(6);
+    const boss = dusmanOlustur('bogaz_ejderi', 12);
+    expect(sersemSuresi(boss, 6)).toBe(3);
+    expect(oyuncuHamlesi(d, eylem, sabit(0.99), { hedef: boss }).olaylar[0].sersem).toBe(3);
+    expect(oyuncuHamlesi(d, eylem, sabit(0.99), { hedef: { ...ayi(12), can: 1 } }).olaylar[0].sersem).toBeUndefined();
+    expect(oyuncuHamlesi(d, eylem, sabit(0), { hedef: ayi(12) }).olaylar[0]).toMatchObject({ kacindi: true });
+    expect(oyuncuHamlesi(d, eylem, sabit(0), { hedef: ayi(12) }).olaylar[0].sersem).toBeUndefined();
+  });
+
+  it('Gönül Dirliği ürküntüyü giderir; Şifa Nefesi gidermez', () => {
+    const etkiler = [{ etki: 'zayiflatma', deger: 0.2, kalan: 2 }, { etki: 'savunma', deger: 0.5, kalan: 1 }];
+    const g = oyuncuHamlesi(durum('alperen', 32, { can: 20 }), { tur: 'yetenek', anahtar: 'gonul_dirligi' }, sabit(0.99), { etkiler });
+    expect(g.etkiler).toEqual([{ etki: 'savunma', deger: 0.5, kalan: 1 }]);
+    expect(g.olaylar[0]).toMatchObject({ etki: 'sifa', arindi: true });
+    const s = oyuncuHamlesi(durum('alperen', 32, { can: 20 }), { tur: 'yetenek', anahtar: 'sifa_nefesi' }, sabit(0.99), { etkiler });
+    expect(s.etkiler).toBe(etkiler);
+    expect(s.olaylar[0].arindi).toBeUndefined();
   });
 });
