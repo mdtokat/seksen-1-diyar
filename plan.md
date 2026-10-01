@@ -128,6 +128,9 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 - Başlıklarda Türkçe karakter destekli bir serif font, metinlerde okunaklı bir sans-serif font kullanılır.
 - Karakter ve düşmanlar koddan üretilen stilize SVG çizimlerle temsil edilir (Faz 5; `src/arayuz/cizimler/`). Emojiler yalnızca yemek ve arayüz simgelerinde kullanılır. İnsan figürleri edepli ve stilize olur.
 - Savaş arka planlarında ibadethane silueti ve tanrı heykeli ya da put bulunmaz.
+- **Işık ve gölge (grafik geliştirmesi):** ışık sol üstten gelir; kumaş ve gövdeler hacim gradyanıyla, yüz ve kalkan gibi yuvarlak yüzeyler küre parlaklığıyla, kılıç ve miğfer metal bantlarıyla boyanır; gölgeler sağ alta düşer. Çizimler gradyanlara `url(#@<tür><renk>)` diye başvurur, `ortak.js` → `svgSar()` bunları tanımlar ve kimliklere her SVG'ye özgü ön ek verir (sayfadaki çizimlerin kimlikleri çakışmaz).
+- Sihirli varlıkların gözleri ve büyüleri ışıldar (ışıltı gradyanı); cin, hortlak, ifrit ve albastı havada süzülür, boss halesi yavaşça döner. `prefers-reduced-motion` açıkken bu hareketler durur.
+- İl haritasında zemin, yol, su ve meydan desen dolgulu tek birer yoldur; kıyı köpüğü ve yol kenarları da tek yoldur. Böylece en büyük il (Konya, 69×69) bile hafif kalır. Ağaçlar konumlarına göre (her açılışta aynı) boy ve tonca hafifçe değişir.
 
 ---
 

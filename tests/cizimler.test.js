@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { sinifCizimi, SINIF_CIZIMLERI } from '../src/arayuz/cizimler/karakterler.js';
+import { sinifCizimi, SINIF_CIZIMLERI, halkCizimi, tuccarCizimi } from '../src/arayuz/cizimler/karakterler.js';
+import { karistir, acik, koyu, svgSar, hacim } from '../src/arayuz/cizimler/ortak.js';
+import { haritaKatmani } from '../src/arayuz/cizimler/karolar.js';
+import { ilHaritasiUret } from '../src/oyun/gezinti.js';
 import { dusmanCizimi, DUSMAN_CIZIMLERI } from '../src/arayuz/cizimler/dusmanlar.js';
 import { bolgeArkaPlani, ARKA_PLAN_BOLGELERI } from '../src/arayuz/cizimler/arkaplanlar.js';
 import { ilSinirlari } from '../src/veri/ilSinirlari.js';
@@ -11,6 +14,37 @@ import { iller } from '../src/veri/iller.js';
 
 const EMOJI = /\p{Extended_Pictographic}/u;
 
+// SVG'deki her `url(#…)` başvurusu aynı metin içinde tanımlı bir kimliğe gitmeli ve
+// çözülmemiş `@` yer tutucusu kalmamalı.
+function boyalarCozulmus(svg, ad) {
+  const kimlikler = new Set([...svg.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
+  const basvurular = [...svg.matchAll(/url\(#([^)]+)\)/g)].map((m) => m[1]);
+  for (const b of basvurular) expect(kimlikler.has(b), `${ad}: #${b}`).toBe(true);
+  expect(svg, ad).not.toContain('#@');
+  expect(svg, ad).not.toContain('id="@');
+  return { kimlikler, basvurular };
+}
+
+describe('ortak çizim araçları', () => {
+  it('renkleri karıştırır, açar ve koyulaştırır', () => {
+    expect(karistir('#000000', '#ffffff', 0.5)).toBe('#808080');
+    expect(karistir('#fff', '#000', 0)).toBe('#ffffff');
+    expect(acik('#d9483b', 0)).toBe('#d9483b');
+    const kirmizi = (r) => parseInt(r.slice(1, 3), 16);
+    expect(kirmizi(acik('#d9483b', 0.5))).toBeGreaterThan(0xd9);
+    expect(kirmizi(koyu('#d9483b', 0.5))).toBeLessThan(0xd9);
+  });
+
+  it('her çizim gradyanlarını kendi tanımlar; kimlikler çizimler arasında çakışmaz', () => {
+    const a = svgSar(`<rect fill="${hacim('#d9483b')}"/>`);
+    const b = svgSar(`<rect fill="${hacim('#d9483b')}"/>`);
+    const ka = boyalarCozulmus(a, 'a').kimlikler;
+    const kb = boyalarCozulmus(b, 'b').kimlikler;
+    expect(ka.size).toBe(1);
+    expect([...ka].some((k) => kb.has(k))).toBe(false);
+  });
+});
+
 describe('savaşçı çizimleri', () => {
   it('her sınıfın emojisiz bir SVG çizimi var', () => {
     expect([...SINIF_CIZIMLERI].sort()).toEqual(Object.keys(siniflar).sort());
@@ -19,7 +53,13 @@ describe('savaşçı çizimleri', () => {
       expect(svg, s).toMatch(/^<svg[^>]*viewBox="0 0 120 120"/);
       expect(svg, s).not.toMatch(EMOJI);
       expect(svg, s).not.toMatch(/undefined|NaN/);
+      boyalarCozulmus(svg, s);
     }
+  });
+
+  it('halk ve seyyar tüccar çizimlerinin boyaları çözülmüş', () => {
+    for (let t = 0; t < 6; t++) boyalarCozulmus(halkCizimi(t), `halk ${t}`);
+    boyalarCozulmus(tuccarCizimi(), 'tüccar');
   });
 
   it('her düşmanın (bosslar ve Zülmet dahil) emojisiz bir SVG çizimi var', () => {
@@ -29,6 +69,7 @@ describe('savaşçı çizimleri', () => {
       expect(svg, a).toMatch(/^<svg/);
       expect(svg, a).not.toMatch(EMOJI);
       expect(svg, a).not.toMatch(/undefined|NaN/);
+      boyalarCozulmus(svg, a);
     }
   });
 
@@ -51,9 +92,27 @@ describe('bölge arka planları', () => {
     for (const b of bolgeler) {
       const svg = bolgeArkaPlani(b.anahtar);
       expect(svg, b.ad).toMatch(/^<svg class="arka-plan"/);
-      expect(svg, b.ad).toContain(`gok-${b.anahtar}`);
+      expect(svg, b.ad).toContain(`id="ap-${b.anahtar}-gok"`);
+      boyalarCozulmus(svg, b.ad);
       expect(svg, b.ad).not.toMatch(/undefined|NaN/);
     }
+  });
+});
+
+describe('il haritası karoları', () => {
+  it('her bölgenin haritası çizilir; desen ve gradyan başvuruları çözülmüş', () => {
+    for (const b of bolgeler) {
+      const il = iller.find((i) => i.bolge === b.anahtar);
+      const svg = haritaKatmani(ilHaritasiUret(il.plaka));
+      expect(svg, il.ad).not.toMatch(/undefined|NaN/);
+      const { kimlikler } = boyalarCozulmus(svg, il.ad);
+      expect([...kimlikler].some((k) => k.endsWith('cim')), il.ad).toBe(true);
+    }
+  });
+
+  it('aynı il her açılışta aynı çizilir (kimlik ön ekleri dışında)', () => {
+    const sade = (s) => s.replace(/c[0-9a-z]+-/g, '');
+    expect(sade(haritaKatmani(ilHaritasiUret(6)))).toBe(sade(haritaKatmani(ilHaritasiUret(6))));
   });
 });
 
