@@ -12,7 +12,7 @@ import { iller } from '../veri/iller.js';
 import { bolgeler, final } from '../veri/bolgeler.js';
 import { ilSinirlari } from '../veri/ilSinirlari.js';
 import { karsilasmaUret } from './kesif.js';
-import { dusmanOlustur, EN_COK_SALDIRGAN } from './savas.js';
+import { dusmanOlustur, dusmanMenzili } from './savas.js';
 import { bossDurumu, miniBossVarMi, finalDurumu } from './ilerleme.js';
 import { rastgeleUreteci, tamSayi, sans } from './rastgele.js';
 import { gezginBossUret, GEZGIN_BOSS } from './gezginBoss.js';
@@ -52,6 +52,9 @@ export const KARO = {
 
 const OYUNCU_YURUR = new Set([KARO.CIM, KARO.YOL, KARO.YABANI, KARO.MEYDAN, KARO.KAPI]);
 const DUSMAN_YURUR = new Set([KARO.CIM, KARO.YOL, KARO.YABANI]); // meydan ve çıkışlar güvenli
+// Uzaktan vuruşlar (ok, ışık, sihir) bu karoların üstünden geçer; ağaç, kaya, ev ve
+// meydandaki yapılar görüşü kapatır.
+const GORUS_GECER = new Set([KARO.CIM, KARO.YOL, KARO.YABANI, KARO.SU, KARO.MEYDAN, KARO.KAPI]);
 
 // Bölgeye göre doğa: kaç öbek ağaç, kaya, çalılık, su ve kaç ev.
 // Kenar: haritayı çevreleyen engel türü.
@@ -76,7 +79,8 @@ const DOLASMA_YARICAPI = 3;
 // yakına gelince saldırır; kayıtsızlar (hortlaklar, akrepler, taş devler…) peşe hiç düşmez.
 // Gezgin bosslar (gezginBoss.js) ağır adımlıdır ama gözleri keskindir. Yankesiciler
 // (yankesici.js) oyuncuyu gözüne kestirip çıkar, çevik koşar; meydana ya da uzağa kaçana
-// dek bırakmaz.
+// dek bırakmaz. Oyuncunun vurduğu yaratık kızar (`kizgin`): peşini bırakana dek kovalar;
+// kayıtsızlar da kızınca bekçi gibi davranır.
 export const DAVRANIS = {
   bekci: { gorus: 4, birakma: 7, hiz: 0.55 },
   takipci: { gorus: 6, birakma: 13, hiz: 0.85 },
@@ -516,7 +520,7 @@ const inBosslari = (dusmanlar) => dusmanlar.filter((d) => d.sabit).map((d) => d.
 
 // Sürü: kurt, çakal gibi takipçi yaratıklar bazen tek başına değil, 2–3'lü sürü hâlinde
 // doğar. Sürü üyeleri aynı türdendir ve öncünün 1–2 karo çevresinde durur; oyuncuyu birlikte
-// kovalar, temas edince aynı savaşa girerler.
+// kovalar ve birlikte saldırırlar.
 export const SURU = {
   sansi: 0.4, // doğan takipçinin sürüyle gelme şansı
   ucluSansi: 0.25, // sürünün 2 yerine 3 yaratık olma şansı
@@ -564,7 +568,34 @@ export const yankesiciMi = (d) => d.dusman?.sinif === 'yankesici';
 export function davranisi(d) {
   if (d.dusman?.gezgin) return DAVRANIS.gezgin;
   if (yankesiciMi(d)) return DAVRANIS.yankesici;
-  return DAVRANIS[d.dusman?.takip] ?? (d.dusman?.takipci ? DAVRANIS.takipci : DAVRANIS.bekci);
+  const dav = DAVRANIS[d.dusman?.takip] ?? (d.dusman?.takipci ? DAVRANIS.takipci : DAVRANIS.bekci);
+  return d.kizgin && dav.hiz === 0 ? DAVRANIS.bekci : dav;
+}
+
+// ── Görüş ve menzil ──────────────────────────────────────
+
+// İki karo arasında görüş açık mı? Aradaki karolar (iki uç hariç) Bresenham çizgisiyle
+// taranır; ağaç, kaya, ev ya da yapı varsa görüş kapalıdır.
+export function gorusAcikMi(harita, a, b) {
+  const dx = Math.abs(b.x - a.x);
+  const dy = -Math.abs(b.y - a.y);
+  const sx = a.x < b.x ? 1 : -1;
+  const sy = a.y < b.y ? 1 : -1;
+  let hata = dx + dy;
+  let x = a.x;
+  let y = a.y;
+  for (;;) {
+    if (x === b.x && y === b.y) return true;
+    if ((x !== a.x || y !== a.y) && !GORUS_GECER.has(karo(harita, x, y))) return false;
+    const e2 = 2 * hata;
+    if (e2 >= dy) { hata += dy; x += sx; }
+    if (e2 <= dx) { hata += dx; y += sy; }
+  }
+}
+
+// `b`, `a`'nın `menzil` karo erimi içinde (karo yolu uzaklığıyla) ve görüşünde mi?
+export function menzildeMi(harita, a, b, menzil) {
+  return mesafe(a, b) <= menzil && gorusAcikMi(harita, a, b);
 }
 
 // ── Sürpriz baskın ───────────────────────────────────────
@@ -590,7 +621,9 @@ export function surprizBaskin(harita, { dusmanlar, oyuncu, adim, id }, rng) {
 
 // Düşmanların bir tıkı. Oyuncu görüş uzaklığına girince düşman peşine düşer ve
 // hemen bir adım atılır; oyuncu bırakma uzaklığından öteye kaçana, meydana girene
-// ya da dokunulmaz olana dek kovalar. Kovalamayan düşman yuvasına döner ve çevresinde
+// ya da dokunulmaz olana dek kovalar (bırakınca kızgınlığı da geçer). Kovalarken oyuncu
+// vuruş menziline girdiyse durup vurur: uzaktan vuranlar (cinler, ifritler) yaklaşmaz.
+// Kovalamayan düşman yuvasına döner ve çevresinde
 // gezinir; gezinirken oyuncunun yanı başına sokulmaz (kayıtsız yaratıklarla ancak
 // oyuncu üstlerine varırsa dövüşülür). Hız, tık başına biriken adım payıyla uygulanır. Meydana ve çıkışlara
 // girmez, birbirinin ve oyuncunun üstüne basmaz; `engeller` (ör. seyyar tüccar) de
@@ -608,9 +641,14 @@ export function dusmanlariYurut(harita, dusmanlar, oyuncu, rng, { dokunulmaz = f
     const uzaklik = mesafe(d, oyuncu);
     if (guvende || uzaklik > dav.birakma) {
       d.kovaliyor = false;
-    } else if (!d.kovaliyor && uzaklik <= dav.gorus) {
+      d.kizgin = false;
+    } else if (!d.kovaliyor && (uzaklik <= dav.gorus || d.kizgin)) {
       d.kovaliyor = true;
       d.birikim = Math.max(d.birikim ?? 0, 1); // fark edince atılır
+    }
+    if (d.kovaliyor && menzildeMi(harita, d, oyuncu, dusmanMenzili(d.dusman))) {
+      d.yon = Math.sign(oyuncu.x - d.x) || d.yon || -1;
+      continue; // menzilde: yerinde durup vurur (catisma.js)
     }
     d.birikim = (d.birikim ?? 0) + (d.kovaliyor ? dav.hiz : DOLASMA_HIZI);
     if (d.birikim < 1) continue;
@@ -642,30 +680,6 @@ export function dusmanlariYurut(harita, dusmanlar, oyuncu, rng, { dokunulmaz = f
 export function yeniKovalayanlar(onceki, sonraki) {
   const eski = new Map(onceki.map((d) => [d.id, d]));
   return sonraki.filter((d) => d.kovaliyor && !eski.get(d.id)?.kovaliyor);
-}
-
-// Kalabalık saldırı: oyuncuya değen düşmana (`ilk`), peşinde koşan ve yakınındaki ya da hemen
-// yanındaki sıradan düşmanlar katılır (en çok EN_COK_SALDIRGAN yaratık, en yakınlar öncelikli).
-// Bosslar, mini bosslar ve gezgin bosslar hep tek başına çıkar. Yankesiciler yaratıklarla
-// birlik olmaz, yalnızca birbirlerine katılır. Sonuç: [ilk, ...katılanlar].
-export const TOPLU_SALDIRI = { yaricap: 5, yanindaYaricap: 2 };
-export function saldiriGrubu(dusmanlar, oyuncu, ilk) {
-  const tek = (d) => d.sabit || d.dusman.gezgin;
-  if (tek(ilk)) return [ilk];
-  const katilanlar = dusmanlar
-    .filter((d) => d.id !== ilk.id && !tek(d) && yankesiciMi(d) === yankesiciMi(ilk))
-    .map((d) => ({ d, u: mesafe(d, oyuncu) }))
-    .filter(({ d, u }) => (d.kovaliyor && u <= TOPLU_SALDIRI.yaricap) || u <= TOPLU_SALDIRI.yanindaYaricap)
-    .sort((a, b) => a.u - b.u)
-    .slice(0, EN_COK_SALDIRGAN - 1)
-    .map(({ d }) => d);
-  return [ilk, ...katilanlar];
-}
-
-// Oyuncuya değen (aynı ya da bitişik karodaki) ilk düşman. Meydanda temas olmaz.
-export function temasEdenDusman(harita, dusmanlar, oyuncu) {
-  if (meydandaMi(harita, oyuncu)) return null;
-  return dusmanlar.find((d) => mesafe(d, oyuncu) <= 1) ?? null;
 }
 
 // ── Halk ─────────────────────────────────────────────────
@@ -731,6 +745,7 @@ export function halkiYurut(harita, halk, oyuncu, dusmanlar, rng) {
 }
 
 // ── Boss ve mini boss inleri (plan.md Faz 7) ─────────────
+// İnlerdeki bosslar yerinden ayrılmaz ama menziline giren oyuncuya vurur.
 
 // Bu ilin ininde bekleyen boss, mini boss ya da Zülmet (sabit düşman kaydı), yoksa boş dizi.
 // Bölge bossu, yenilene dek (mühürlü olsa da) bossun ilinde görünür; mini boss ise
@@ -753,6 +768,17 @@ export function ozelDusmanlar(harita, durum) {
     return [kayit('mini', bolge.miniBoss, ilSeviyesi(harita.plaka, durumRotasi(durum))[1] + 1, 'mini')];
   }
   return [];
+}
+
+// Haritadaki düşmanların inlerdekileri güncel duruma göre yenilenir (mini boss belirmiş,
+// boss yenilmiş olabilir). Hâlâ inde bekleyen bossun kaydı (canı ve evresi) korunur.
+export function ozelDusmanlariGuncelle(harita, dusmanlar, durum) {
+  const eskiler = new Map(dusmanlar.filter((d) => d.sabit).map((d) => [d.id, d]));
+  const yeniler = ozelDusmanlar(harita, durum).map((d) => {
+    const eski = eskiler.get(d.id);
+    return eski && eski.dusman.anahtar === d.dusman.anahtar ? eski : d;
+  });
+  return [...dusmanlar.filter((d) => !d.sabit), ...yeniler];
 }
 
 // İlin yaratık sayısı (inlerdeki bosslar ve yoldan geçen yankesiciler sayılmaz).

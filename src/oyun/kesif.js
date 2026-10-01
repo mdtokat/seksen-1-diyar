@@ -1,9 +1,11 @@
 // Keşif, karşılaşma üretimi, arınma ve ganimet. Saf oyun mantığı — DOM'a dokunmaz.
 import { iller } from '../veri/iller.js';
 import { dusmanlar, SINIF_XP_CARPANI } from '../veri/dusmanlar.js';
-import { dusmanOlustur, savasSonucunuUygula } from './savas.js';
+import { dusmanOlustur, dusmanXp, bayilmaUygula } from './savas.js';
 import { yemekEkle } from './envanter.js';
-import { bossYenildi, zulmetYenildi, MINI_BOSS_ARINMA_ESIGI } from './ilerleme.js';
+import { xpEkle } from './karakter.js';
+import { yeniYetenekleriYerlestir } from './kisayollar.js';
+import { bossYenildi, zulmetYenildi, sofraTuket, MINI_BOSS_ARINMA_ESIGI } from './ilerleme.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { esyalar } from '../veri/esyalar.js';
 import { HAYIR } from '../veri/itibar.js';
@@ -16,8 +18,8 @@ import { ilSeviyesi } from './rota.js';
 
 export const ARINMA_ARTISI = [12, 18]; // zafer başına % (iki uç dahil)
 export const YEMEK_DUSME_SANSI = 0.3;
-// Yankesiciler (yankesici.js): yenilince kesesindeki akçe bu kadar kat bol çıkar; oyuncu
-// kaçar ya da bayılırsa her yankesici kesesinden bu oranda akçe aşırır.
+// Yankesiciler (yankesici.js): yenilince kesesindeki akçe bu kadar kat bol çıkar; oyuncuya
+// vurmuş bir yankesici, oyuncu bayılırsa ya da elinden kaçarsa kesesinden bu oranda akçe aşırır.
 export const YANKESICI_AKCE_CARPANI = 2;
 export const YANKESICI_CALMA = 0.08;
 
@@ -25,7 +27,7 @@ const yankesiciMi = (d) => d.sinif === 'yankesici';
 
 const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
 
-// Savaş sonucu istatistiklere işlenir: zafer ve bayılma sayıları; bayılmalar
+// Savaşın sonucu istatistiklere işlenir: zafer (yenilen düşman) ve bayılma sayıları; bayılmalar
 // bölge bölge de tutulur ("Yiğit" başarımı için).
 export function istatistikYaz(durum, sonuc, bolge) {
   const i = durum.istatistik ?? { zafer: 0, bayilma: 0, bolgeBayilma: {} };
@@ -86,35 +88,32 @@ export function bossGanimeti(durum, bolge, nadirlik, rng) {
   return adaylar.length ? sec(rng, adaylar) : null;
 }
 
-// Keşif savaşının sonucunu uygular: savaş sonucu (XP, seviye, bayılma) +
-// zaferde arınma artışı, akçe, yemek, Hayır puanı ve görev ilerlemesi. Sonuç: { durum, ozet }.
-// Kalabalık savaşta (savas.grup) düşürülen her yaratık, tek başına yenilmiş gibi arınma,
-// akçe, yemek ve görev ilerlemesi getirir; XP toplamı savaş motorunda hesaplanmıştır.
-// ozet, savasSonucunuUygula özetine ek olarak:
-//   { arinmaArtisi, arinma, arindi, akce, yemek, yemekSigmadi, yemekler ([{ yemek, sigmadi }]),
-//     bossYenildi (bölge anahtarı | null), acilanBolge, miniBossYenildi, miniBossBelirdi,
-//     esya (düşen eşyanın anahtarı | null), hayir (kazanılan Hayır puanı),
-//     gorevIlerlemesi ([{ anahtar, mevcut, hedef }]), hazirOlanGorevler ([anahtar]),
-//     zulmetYenildi, gezginBoss ('zorlu' | 'kesilemez' | null),
-//     calinanAkce (kaçışta ya da bayılınca yankesicinin aşırdığı akçe) }
-// Yankesiciler ilin arınmasına sayılmaz; yenilince yalnızca XP ve akçe getirirler.
+// Haritada bir düşman yenilince: XP (seviye atlama ve yeni yetenekler dahil), zafer
+// sofrasından bir zafer düşer, ilin arınması artar, akçe ve belli bir şansla yöresel yemek
+// düşer, boss ilerlemesi, Hayır puanı ve görev ilerlemesi işlenir. Sonuç: { durum, ozet }.
+// ozet: { sonuc: 'zafer', xp, seviyeler, yeniYetenekler, arinmaArtisi, arinma, arindi, akce,
+//   yemek, yemekSigmadi, bossYenildi (bölge anahtarı | null), acilanBolge, miniBossYenildi,
+//   miniBossBelirdi, esya (düşen eşyanın anahtarı | null), hayir (kazanılan Hayır puanı),
+//   gorevIlerlemesi ([{ anahtar, mevcut, hedef }]), hazirOlanGorevler ([anahtar]),
+//   zulmetYenildi, gezginBoss ('zorlu' | 'kesilemez' | null) }
+// Yankesiciler ilin arınmasına sayılmaz; yenilince yalnızca XP ve (bol) akçe getirirler.
 // Gezgin bosslar (gezginBoss.js) ilerlemeyi etkilemez: yenilmeleri bölge bossunu ya da
 // mini bossu yenilmiş saydırmaz. Zorlu olanlar bazen bölgenin nadir eşyalarından birini,
 // kesilemez olanlar (yenilebilirse) efsanevi bir eşyayı düşürür.
-// İstatistikler (zafer ve bayılma sayıları, bölge bölge bayılmalar) de burada tutulur.
-export function kesifSonucunuUygula(durum, savas, plaka, rng) {
-  const r = savasSonucunuUygula(durum, savas);
-  if (!r.ozet) return r;
-  let yeni = istatistikYaz(r.durum, savas.sonuc, ilHaritasi.get(plaka).bolge);
+export function zaferUygula(durum, dusman, plaka, rng) {
+  const onceHazir = new Set(hazirGorevler(durum));
+  let yeni = istatistikYaz(sofraTuket(durum), 'zafer', ilHaritasi.get(plaka).bolge);
   const ozet = {
-    ...r.ozet,
+    sonuc: 'zafer',
+    xp: dusmanXp(dusman),
+    seviyeler: [],
+    yeniYetenekler: [],
     arinmaArtisi: 0,
     arinma: yeni.arinma[plaka] ?? 0,
     arindi: false,
     akce: 0,
     yemek: null,
     yemekSigmadi: false,
-    yemekler: [],
     bossYenildi: null,
     acilanBolge: null,
     miniBossYenildi: false,
@@ -124,51 +123,39 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
     gorevIlerlemesi: [],
     hazirOlanGorevler: [],
     zulmetYenildi: false,
-    gezginBoss: savas.dusman.gezgin ? savas.dusman.tehlike : null,
-    calinanAkce: 0,
+    gezginBoss: dusman.gezgin ? dusman.tehlike : null,
   };
-  if (savas.sonuc !== 'zafer') {
-    // Kaçan ya da bayılan yiğidin kesesinden yankesiciler akçe aşırır
-    const yankesiciler = (savas.grup ?? [savas.dusman]).filter(yankesiciMi).length;
-    if (yankesiciler && ['kacis', 'yenilgi'].includes(savas.sonuc)) {
-      const calinan = Math.min(yeni.akce ?? 0, Math.round((yeni.akce ?? 0) * YANKESICI_CALMA * yankesiciler));
-      yeni = { ...yeni, akce: (yeni.akce ?? 0) - calinan };
-      ozet.calinanAkce = calinan;
-    }
-    return { durum: yeni, ozet };
+
+  const x = xpEkle(yeni.oyuncu, ozet.xp);
+  yeni = { ...yeni, oyuncu: x.oyuncu };
+  // Yeni açılan yetenekler boş kısayol yuvalarına yerleşir
+  if (x.yeniYetenekler.length && yeni.kisayollar) {
+    yeni.kisayollar = yeniYetenekleriYerlestir(yeni.kisayollar, x.yeniYetenekler);
   }
-  const onceHazir = new Set(hazirGorevler(durum));
+  Object.assign(ozet, { seviyeler: x.seviyeler, yeniYetenekler: x.yeniYetenekler });
+
   const onceArinma = yeni.arinma[plaka] ?? 0;
-
-  const yaratiklar = savas.grup ?? [savas.dusman];
-  let arinmaArtisi = 0;
-  let arindi = false;
-  for (const d of yaratiklar) {
-    if (!yankesiciMi(d)) {
-      const a = arinmaArtir(yeni, plaka, rng);
-      yeni = a.durum;
-      arinmaArtisi += a.artis;
-      arindi ||= a.arindi;
-    }
-
-    const g = ganimetUret(d, plaka, rng);
-    yeni = { ...yeni, akce: (yeni.akce ?? 0) + g.akce };
-    ozet.akce += g.akce;
-    if (g.yemek) {
-      const e = yemekEkle(yeni.heybe, g.yemek);
-      yeni = { ...yeni, heybe: e.heybe };
-      ozet.yemekler.push({ yemek: g.yemek, sigmadi: e.eklenen === 0 });
-    }
+  if (!yankesiciMi(dusman)) {
+    const a = arinmaArtir(yeni, plaka, rng);
+    yeni = a.durum;
+    Object.assign(ozet, { arinmaArtisi: a.artis, arinma: a.yuzde, arindi: a.arindi });
   }
-  Object.assign(ozet, { arinmaArtisi, arinma: yeni.arinma[plaka] ?? 0, arindi });
-  if (ozet.yemekler.length) Object.assign(ozet, { yemek: ozet.yemekler[0].yemek, yemekSigmadi: ozet.yemekler[0].sigmadi });
 
-  const gezgin = Boolean(savas.dusman.gezgin);
-  const sinif = gezgin ? 'gezgin' : dusmanlar[savas.dusman.anahtar].sinif;
-  if (gezgin) {
-    const kesilemez = savas.dusman.tehlike === 'kesilemez';
+  const g = ganimetUret(dusman, plaka, rng);
+  yeni = { ...yeni, akce: (yeni.akce ?? 0) + g.akce };
+  ozet.akce = g.akce;
+  if (g.yemek) {
+    const e = yemekEkle(yeni.heybe, g.yemek);
+    yeni = { ...yeni, heybe: e.heybe };
+    Object.assign(ozet, { yemek: g.yemek, yemekSigmadi: e.eklenen === 0 });
+  }
+
+  const veri = dusmanlar[dusman.anahtar];
+  const sinif = dusman.gezgin ? 'gezgin' : veri.sinif;
+  if (dusman.gezgin) {
+    const kesilemez = dusman.tehlike === 'kesilemez';
     if (kesilemez || sans(rng, GEZGIN_BOSS.esyaSansi)) {
-      const esya = bossGanimeti(yeni, dusmanlar[savas.dusman.anahtar].bolge, kesilemez ? 'efsanevi' : 'nadir', rng);
+      const esya = bossGanimeti(yeni, veri.bolge, kesilemez ? 'efsanevi' : 'nadir', rng);
       if (esya) {
         yeni = { ...yeni, esyalar: [...(yeni.esyalar ?? []), esya] };
         ozet.esya = esya;
@@ -176,16 +163,16 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
     }
   }
   if (sinif === 'bolge_bossu' || sinif === 'mini_boss') {
-    const esya = bossGanimeti(yeni, dusmanlar[savas.dusman.anahtar].bolge, sinif === 'bolge_bossu' ? 'efsanevi' : 'nadir', rng);
+    const esya = bossGanimeti(yeni, veri.bolge, sinif === 'bolge_bossu' ? 'efsanevi' : 'nadir', rng);
     if (esya) {
       yeni = { ...yeni, esyalar: [...(yeni.esyalar ?? []), esya] };
       ozet.esya = esya;
     }
   }
   if (sinif === 'bolge_bossu') {
-    const b = bossYenildi(yeni, dusmanlar[savas.dusman.anahtar].bolge);
+    const b = bossYenildi(yeni, veri.bolge);
     yeni = b.durum;
-    ozet.bossYenildi = dusmanlar[savas.dusman.anahtar].bolge;
+    ozet.bossYenildi = veri.bolge;
     ozet.acilanBolge = b.acilanBolge;
   } else if (sinif === 'mini_boss') {
     yeni = { ...yeni, yenilenMiniBosslar: [...new Set([...(yeni.yenilenMiniBosslar ?? []), plaka])] };
@@ -209,14 +196,29 @@ export function kesifSonucunuUygula(durum, savas, plaka, rng) {
     + (sinif === 'final' ? HAYIR.final : 0);
   yeni = hayirEkle(yeni, ozet.hayir);
 
-  const ilerleyenler = new Set();
-  for (const d of yaratiklar) {
-    const z = zaferIlerlemesi(yeni, d.anahtar);
-    yeni = z.durum;
-    z.ilerleyenler.forEach((a) => ilerleyenler.add(a));
-  }
-  ozet.gorevIlerlemesi = [...ilerleyenler].map((anahtar) => ({ anahtar, ...gorevIlerlemesi(yeni, anahtar) }));
+  const z = zaferIlerlemesi(yeni, dusman.anahtar);
+  yeni = z.durum;
+  ozet.gorevIlerlemesi = z.ilerleyenler.map((anahtar) => ({ anahtar, ...gorevIlerlemesi(yeni, anahtar) }));
   // Ulaştırma görevleri heybeye bağlıdır; savaşta bulunan yemek onları "hazır" saydırmasın
   ozet.hazirOlanGorevler = hazirGorevler(yeni).filter((a) => !onceHazir.has(a) && gorevler[a].tur !== 'ulastir');
   return { durum: yeni, ozet };
+}
+
+// Oyuncuya vurmuş `sayi` yankesici kesesinden akçe aşırır. Sonuç: { durum, calinan }.
+export function yankesiciCalmasi(durum, sayi) {
+  const akce = durum.akce ?? 0;
+  const calinan = sayi > 0 ? Math.min(akce, Math.round(akce * YANKESICI_CALMA * sayi)) : 0;
+  return { durum: calinan ? { ...durum, akce: akce - calinan } : durum, calinan };
+}
+
+// Oyuncu bayılınca: bayılma (savas.js → bayilmaUygula) istatistiklere işlenir; ona vurmuş
+// yankesiciler de kesesinden akçe aşırır. Sonuç: { durum, ozet }.
+// ozet: { sonuc: 'yenilgi', akceKaybi, donulenIl, kervansarayda, calinanAkce }
+export function yenilgiUygula(durum, plaka, { yankesiciler = 0 } = {}) {
+  const b = bayilmaUygula(istatistikYaz(durum, 'yenilgi', ilHaritasi.get(plaka).bolge));
+  const c = yankesiciCalmasi(b.durum, yankesiciler);
+  return {
+    durum: c.durum,
+    ozet: { sonuc: 'yenilgi', akceKaybi: b.akceKaybi, donulenIl: b.donulenIl, kervansarayda: b.kervansarayda, calinanAkce: c.calinan },
+  };
 }

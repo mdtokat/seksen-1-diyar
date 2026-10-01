@@ -9,8 +9,8 @@ import { HAYIR } from '../src/veri/itibar.js';
 import { yeniOyunDurumu, durumDeposu } from '../src/oyun/durum.js';
 import { yeniKarakter, xpEkle, gerekenXp, statPuaniDagit, statlar } from '../src/oyun/karakter.js';
 import { finalKosullari, finalDurumu, seyahatKontrol } from '../src/oyun/ilerleme.js';
-import { dusmanOlustur, savasBaslat, oyuncuEylemi, eylemKontrol, ozelHamleler } from '../src/oyun/savas.js';
-import { kesifSonucunuUygula, istatistikYaz, karsilasmaUret } from '../src/oyun/kesif.js';
+import { dusmanOlustur, oyuncuHamlesi, dusmanHamlesi, eylemKontrol, ozelHamleler, savasci } from '../src/oyun/savas.js';
+import { zaferUygula, istatistikYaz, karsilasmaUret } from '../src/oyun/kesif.js';
 import { ilHaritasiUret, ozelDusmanlar } from '../src/oyun/gezinti.js';
 import { KOSULLAR, oyunDurumunuIsle, yeniBasarimlar, yemekDefteriniGuncelle, basarimlariDenetle } from '../src/oyun/basarimlar.js';
 import { goc, yukle, kaydet, durumGecerliMi, KAYIT_ANAHTARI, KAYIT_SURUMU } from '../src/oyun/kayit.js';
@@ -72,10 +72,8 @@ describe('Ağrı Dağı\'ndaki kale', () => {
 
 describe('üç evreli final savaşı', () => {
   const zulmet = () => dusmanOlustur('zulmet', final.dusmanSeviyesi);
-  const savas = (can) => {
-    const s = savasBaslat(seviyeli('akinci', 48), zulmet());
-    return { ...s, dusman: { ...s.dusman, can } };
-  };
+  const yigit = () => ({ ...yeniOyunDurumu({ ad: 'A', sinif: 'akinci' }), oyuncu: seviyeli('akinci', 48) });
+  const vur = (hedef, rng = sabit(0.99)) => oyuncuHamlesi(yigit(), { tur: 'saldir' }, rng, { hedef });
 
   it('Zülmet\'in iki evre geçişi var; evreler güçlenerek ilerler', () => {
     const ev = dusmanlar.zulmet.evreler;
@@ -88,38 +86,37 @@ describe('üç evreli final savaşı', () => {
   });
 
   it('canı eşiklerin altına düştükçe 2. ve 3. evreye geçer, gücü artar', () => {
-    const s0 = savas(zulmet().canEnCok * 0.7);
-    expect(s0.evreNo).toBe(1);
-    const s1 = oyuncuEylemi({ ...s0, dusman: { ...s0.dusman, can: Math.floor(s0.dusman.canEnCok * 0.6) } }, { tur: 'saldir' }, sabit(0.99));
-    expect(s1.evreNo).toBe(2);
-    expect(s1.gunluk).toContainEqual({ tip: 'evre', kim: 'dusman', no: 2 });
-    expect(s1.dusman.guc).toBe(Math.round(s0.dusman.guc * dusmanlar.zulmet.evreler[0].guc));
-    const s2 = oyuncuEylemi({ ...s1, dusman: { ...s1.dusman, can: Math.floor(s1.dusman.canEnCok * 0.3) } }, { tur: 'saldir' }, sabit(0.99));
-    expect(s2.evreNo).toBe(3);
-    expect(s2.gunluk.filter((o) => o.tip === 'evre')).toHaveLength(2);
+    const z = zulmet();
+    const s1 = vur({ ...z, can: Math.floor(z.canEnCok * 0.6) });
+    expect(s1.hedef.evreNo).toBe(2);
+    expect(s1.olaylar).toContainEqual({ tip: 'evre', kim: 'dusman', no: 2 });
+    expect(s1.hedef.guc).toBe(Math.round(z.guc * dusmanlar.zulmet.evreler[0].guc));
+    const s2 = vur({ ...s1.hedef, can: Math.floor(z.canEnCok * 0.3) });
+    expect(s2.hedef.evreNo).toBe(3);
+    expect(s2.olaylar).toContainEqual({ tip: 'evre', kim: 'dusman', no: 3 });
     // Aynı evreye bir daha geçilmez
-    const s3 = oyuncuEylemi(s2, { tur: 'saldir' }, sabit(0.99));
-    expect(s3.gunluk.filter((o) => o.tip === 'evre')).toHaveLength(2);
+    const s3 = vur(s2.hedef);
+    expect(s3.olaylar.some((o) => o.tip === 'evre')).toBe(false);
+    expect(s3.hedef.evreNo).toBe(3);
   });
 
   it('tek vuruşta iki eşik birden geçilirse doğrudan 3. evreye geçilir', () => {
-    const s = oyuncuEylemi(savas(Math.floor(zulmet().canEnCok * 0.2)), { tur: 'saldir' }, sabit(0.99));
-    expect(s.evreNo).toBe(3);
+    const s = vur({ ...zulmet(), can: Math.floor(zulmet().canEnCok * 0.2) });
+    expect(s.hedef.evreNo).toBe(3);
     const ev = dusmanlar.zulmet.evreler;
-    expect(s.dusman.guc).toBe(Math.round(Math.round(zulmet().guc * ev[0].guc) * ev[1].guc));
+    expect(s.hedef.guc).toBe(Math.round(Math.round(zulmet().guc * ev[0].guc) * ev[1].guc));
   });
 
-  it('her evrede kendi özel hamlelerini kullanır; Zülmet\'ten kaçılamaz', () => {
+  it('her evrede kendi özel hamlelerini kullanır', () => {
     expect(ozelHamleler(zulmet(), 1)).toEqual(dusmanlar.zulmet.ozelHamleler);
     expect(ozelHamleler(zulmet(), 3)).toEqual(dusmanlar.zulmet.evreler[1].ozelHamleler);
-    const s = savas(zulmet().canEnCok * 0.2);
-    const sonra = oyuncuEylemi({ ...s, evreNo: 3, evre: true }, { tur: 'saldir' }, sabit(0.01));
-    const ozel = sonra.gunluk.find((o) => o.tip === 'ozel_hamle');
-    expect(dusmanlar.zulmet.evreler[1].ozelHamleler.map((h) => h.ad)).toContain(ozel.hamle);
-    expect(eylemKontrol(s, { tur: 'kac' })).toEqual({ olur: false, neden: 'kacilamaz' });
+    expect(ozelHamleler({ ...zulmet(), evreNo: 3 })).toEqual(dusmanlar.zulmet.evreler[1].ozelHamleler);
+    const r = dusmanHamlesi(yigit(), { ...zulmet(), evreNo: 3, evre: true }, sabit(0.01));
+    expect(dusmanlar.zulmet.evreler[1].ozelHamleler.map((h) => h.ad)).toContain(r.olay.hamle);
   });
 
-  it('dengeleme: Sv 48, Doğu Anadolu nadir ekipmanıyla Zülmet\'i çoğunlukla 8–25 turda yenilir', () => {
+  // Yiğit ve Zülmet sırayla hamle eder (yiğidin her hamlesine Zülmet'in bir hamlesi).
+  it('dengeleme: Sv 48, Doğu Anadolu nadir ekipmanıyla Zülmet\'i çoğunlukla 8–25 hamlede yenilir', () => {
     const EKIP = {
       akinci: ['erzurum_celigi_kilic', 'erzurum_deri_zirh', 'van_kilimi_kusak'],
       kemankes: ['kars_boynuz_yayi', 'erzurum_deri_zirh', 'van_kilimi_kusak'],
@@ -139,22 +136,29 @@ describe('üç evreli final savaşı', () => {
         o = { ...o, can: statlar(o).can, nefes: statlar(o).nefes };
         let heybe = yemekEkle([], 'otlu_peynir', 10).heybe;
         heybe = yemekEkle(heybe, 'bingol_bali', 5).heybe;
-        let s = savasBaslat(o, zulmet(), heybe);
+        let d = { ...yeniOyunDurumu({ ad: 'A', sinif }), oyuncu: o, heybe };
+        let hedef = zulmet();
+        let etkiler = [];
+        let hamle = 0;
         const [destek, etki, vurus] = AI[sinif];
-        while (!s.sonuc && s.tur < 200) {
-          const p = s.oyuncu;
-          const olur = (a) => eylemKontrol(s, { tur: 'yetenek', anahtar: a }).olur;
+        while (hedef.can > 0 && d.oyuncu.can > 0 && hamle < 200) {
+          const p = savasci(d);
+          const olur = (eylem) => eylemKontrol(d, eylem).olur;
+          const yetenek = (a) => ({ tur: 'yetenek', anahtar: a });
           let eylem = { tur: 'saldir' };
-          if (sinif === 'alperen' && p.can < p.canEnCok * 0.5 && olur('gonul_dirligi')) eylem = { tur: 'yetenek', anahtar: 'gonul_dirligi' };
-          else if (p.can < p.canEnCok * 0.4 && s.heybe.some((h) => h.anahtar === 'otlu_peynir')) eylem = { tur: 'yemek', anahtar: 'otlu_peynir' };
-          else if (!s.etkiler.some((e) => e.etki === etki) && olur(destek)) eylem = { tur: 'yetenek', anahtar: destek };
-          else if (olur(vurus) && (sinif !== 'alperen' || p.nefes > 60)) eylem = { tur: 'yetenek', anahtar: vurus };
-          else if (p.nefes < 25 && s.heybe.some((h) => h.anahtar === 'bingol_bali')) eylem = { tur: 'yemek', anahtar: 'bingol_bali' };
-          s = oyuncuEylemi(s, eylem, rng);
+          if (sinif === 'alperen' && p.can < p.canEnCok * 0.5 && olur(yetenek('gonul_dirligi'))) eylem = yetenek('gonul_dirligi');
+          else if (p.can < p.canEnCok * 0.4 && olur({ tur: 'yemek', anahtar: 'otlu_peynir' })) eylem = { tur: 'yemek', anahtar: 'otlu_peynir' };
+          else if (!etkiler.some((e) => e.etki === etki) && olur(yetenek(destek))) eylem = yetenek(destek);
+          else if (olur(yetenek(vurus)) && (sinif !== 'alperen' || p.nefes > 60)) eylem = yetenek(vurus);
+          else if (p.nefes < 25 && olur({ tur: 'yemek', anahtar: 'bingol_bali' })) eylem = { tur: 'yemek', anahtar: 'bingol_bali' };
+          const r = oyuncuHamlesi(d, eylem, rng, { hedef, etkiler });
+          ({ durum: d, hedef, etkiler } = r);
+          hamle++;
+          if (hedef.can > 0) ({ durum: d, etkiler } = dusmanHamlesi(d, hedef, rng, { etkiler }));
         }
-        if (s.sonuc === 'zafer') {
+        if (hedef.can <= 0) {
           zafer++;
-          tur += s.tur - 1;
+          tur += hamle;
         }
       }
       expect(zafer / N, `${sinif} zafer oranı`).toBeGreaterThanOrEqual(0.6);
@@ -165,11 +169,7 @@ describe('üç evreli final savaşı', () => {
 });
 
 describe('final zaferi ve oyun sonrası', () => {
-  function zulmetiYen(d) {
-    const s = savasBaslat(d.oyuncu, dusmanOlustur('zulmet', final.dusmanSeviyesi), d.heybe);
-    const z = oyuncuEylemi({ ...s, dusman: { ...s.dusman, can: 1 } }, { tur: 'saldir' }, sabit(0.99));
-    return kesifSonucunuUygula(d, z, AGRI, sabit(0.5));
-  }
+  const zulmetiYen = (d) => zaferUygula(d, dusmanOlustur('zulmet', final.dusmanSeviyesi), AGRI, sabit(0.5));
 
   it('Zülmet yenilince oyun bitmiş sayılır, Hayır kazanılır, can ve nefes dolar', () => {
     const d = sonDurum();
@@ -185,10 +185,7 @@ describe('final zaferi ve oyun sonrası', () => {
     const r = zulmetiYen(sonDurum());
     const d = { ...r.durum, konum: 36, arinma: { 36: 40 } };
     expect(seyahatKontrol(r.durum, 36).olur).toBe(true);
-    const dusman = karsilasmaUret(36, rastgeleUreteci(3));
-    const s = savasBaslat(d.oyuncu, dusman, d.heybe);
-    const z = oyuncuEylemi({ ...s, dusman: { ...s.dusman, can: 1 } }, { tur: 'saldir' }, sabit(0.99));
-    const r2 = kesifSonucunuUygula(d, z, 36, sabit(0.5));
+    const r2 = zaferUygula(d, karsilasmaUret(36, rastgeleUreteci(3)), 36, sabit(0.5));
     expect(r2.durum.arinma[36]).toBeGreaterThan(40);
     expect(r2.durum.zulmetYenildi).toBe(true);
   });

@@ -63,6 +63,7 @@ function icerik(durum, secilenYuva = null) {
   const s = statlar(o);
   const gereken = gerekenXp(o.seviye);
   const puanVar = o.statPuani > 0;
+  const menzilMetni = (menzil) => sablon(menzil === 1 ? metinler.savas.menzilDegeri[1] : metinler.savas.menzilDegeri.diger, { menzil });
 
   const statSatirlari = STATLAR.map((stat) => {
     const ad = metinler.statAdlari[stat];
@@ -89,6 +90,7 @@ function icerik(durum, secilenYuva = null) {
           <span class="yetenek-bedel">${acik ? sablon(M.yetenekNefes, { nefes: y.nefes }) : sablon(M.yetenekKilitli, { seviye: y.seviye })}</span>
         </div>
         <p>${kacis(y.aciklama)}</p>
+        ${y.etki === 'hasar' && y.menzil && y.menzil !== sinif.menzil ? `<small class="yetenek-menzili">🎯 ${menzilMetni(y.menzil)}</small>` : ''}
       </li>`;
   }).join('');
 
@@ -116,6 +118,7 @@ function icerik(durum, secilenYuva = null) {
         ${puanVar ? sablon(M.statPuani, { puan: o.statPuani }) : M.statPuaniYok}
       </p>
       <ul class="stat-listesi">${statSatirlari}</ul>
+      <p class="kart-not">🎯 ${metinler.savas.menzil}: ${menzilMetni(sinif.menzil)}</p>
     </section>
     ${ekipmanBolumu(durum)}
     <section class="kart">

@@ -20,7 +20,7 @@ export function yeniOyunDurumu({ ad, sinif, rota = KLASIK_ROTA } = {}) {
     heybe,
     yenilenBosslar: [], // bölge anahtarları
     yenilenMiniBosslar: [], // il plakaları
-    sofra: null, // { bolge, kalan } — zafer sofrasının kalan savaş sayısı
+    sofra: null, // { bolge, kalan } — zafer sofrasının kalan zafer sayısı
     esyalar: [], // sahip olunan eşyalar (esyalar.js anahtarları)
     sonKervansaray: null, // en son dinlenilen kervansarayın ili; bayılınca buraya dönülür
     gorevler: {}, // { anahtar: { durum: 'aktif', sayac } | { durum: 'tamam' } }
@@ -31,7 +31,7 @@ export function yeniOyunDurumu({ ad, sinif, rota = KLASIK_ROTA } = {}) {
     toplananYemekler: heybe.map((y) => y.anahtar), // en az bir kez sahip olunan yemekler
     istatistik: { zafer: 0, bayilma: 0, bolgeBayilma: {} },
   };
-  // Savaş kısayol yuvaları (1–4 tuşları): kisayollar.js
+  // Savaş kısayol yuvaları (gezintide 1–4 tuşları): kisayollar.js
   return { ...durum, kisayollar: varsayilanKisayollar(durum) };
 }
 

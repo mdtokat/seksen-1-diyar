@@ -1,15 +1,15 @@
-// Savaş kısayol yuvaları: savaşta sıra oyuncudayken 1–4 tuşlarıyla (ya da yuvaya
-// dokunarak) kullanılan dört yuva. Saf oyun mantığı — DOM'a dokunmaz.
+// Savaş kısayol yuvaları: gezintide 1–4 tuşlarıyla (ya da yuvaya dokunarak) kullanılan
+// dört yuva. Saf oyun mantığı — DOM'a dokunmaz.
 //
-// Yuva içeriği: null | { tur: 'saldir' } | { tur: 'kac' }
-//             | { tur: 'yetenek', anahtar } | { tur: 'yemek', anahtar }
+// Yuva içeriği: null | { tur: 'saldir' } | { tur: 'yetenek', anahtar } | { tur: 'yemek', anahtar }
+// (Savaş haritada geçtiği için "Kaç" yuvası yoktur: düşmandan uzaklaşmak kaçmaktır.)
 // Yemek yuvası heybede o yemek kalmasa da durur; yemek yeniden bulununca kullanılır.
 import { siniflar } from '../veri/siniflar.js';
 import { yemekler } from '../veri/yemekler.js';
 import { acikYetenekler } from './karakter.js';
 
 export const KISAYOL_YUVA = 4;
-export const KISAYOL_TURLERI = ['saldir', 'kac', 'yetenek', 'yemek'];
+export const KISAYOL_TURLERI = ['saldir', 'yetenek', 'yemek'];
 
 export function bosKisayollar() {
   return Array(KISAYOL_YUVA).fill(null);
@@ -24,7 +24,6 @@ export function kisayolGecerliMi(icerik, sinif = null) {
   if (!icerik || typeof icerik !== 'object') return false;
   switch (icerik.tur) {
     case 'saldir':
-    case 'kac':
       return true;
     case 'yetenek':
       return typeof icerik.anahtar === 'string' && (sinif
@@ -76,7 +75,7 @@ export function yeniYetenekleriYerlestir(kisayollar, yeniYetenekler) {
   return yuvalar;
 }
 
-// Yuva içeriğinin savaş eylemi (savas.js → oyuncuEylemi). Boş yuva → null.
+// Yuva içeriğinin savaş eylemi (savas.js → oyuncuHamlesi). Boş yuva → null.
 export function kisayolEylemi(icerik) {
   if (!icerik) return null;
   if (icerik.tur === 'yetenek' || icerik.tur === 'yemek') return { tur: icerik.tur, anahtar: icerik.anahtar };

@@ -4,7 +4,7 @@
 // Ahi dükkânı yalnızca bölgenin sıradan ve nadir eşyalarını satar. Seyyar tüccar ise
 // uzak diyarlardan getirdiği, oyuncunun sınıfına uygun güçlü malları satar: bulunduğu
 // bölgenin efsanevi eşyaları ve bir sonraki bölgenin eşyaları. Yol masrafı yüzünden
-// fiyatları Ahi'den yüksektir. Tüccar zararsızdır (savaşa girilmez), yolun kenarında bir
+// fiyatları Ahi'den yüksektir. Tüccar zararsızdır (ona vurulmaz), yolun kenarında bir
 // süre bekler, sonra yoluna devam eder.
 //
 // Karşılaşma iki yolla olur: ile girildiğinde haritada bekliyor olabilir ya da oyuncu

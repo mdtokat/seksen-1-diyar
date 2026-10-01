@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { GEZGIN_BOSS, TEHLIKE, bossYaratiklari, gezginBossOlustur, gezginBossUret } from '../src/oyun/gezginBoss.js';
-import { savasBaslat, oyuncuEylemi, yetenekBul, kacilabilirMi, eylemKontrol, xpOdulu, dusmanStatlari } from '../src/oyun/savas.js';
-import { kesifSonucunuUygula } from '../src/oyun/kesif.js';
+import { oyuncuHamlesi, dusmanHamlesi, savasci, yetenekBul, xpOdulu, dusmanXp, dusmanStatlari } from '../src/oyun/savas.js';
+import { zaferUygula } from '../src/oyun/kesif.js';
 import {
   DAVRANIS,
   davranisi,
@@ -30,28 +30,38 @@ function seviyeli(sinif, seviye) {
   let o = yeniKarakter('A', sinif);
   while (o.seviye < seviye) o = xpEkle(o, gerekenXp(o.seviye)).oyuncu;
   const s = statlar(o);
-  return { ...o, can: s.can, nefes: s.nefes };
+  return { ...yeniOyunDurumu({ ad: 'A', sinif }), oyuncu: { ...o, can: s.can, nefes: s.nefes }, heybe: [] };
 }
 
 // Yeteneklerini kullanan, yemek yemeyen basit bir oyuncu: canı azalınca iyileşir,
 // yoksa en sert vuruşunu yapar.
-function eylemSec(s) {
-  const o = s.oyuncu;
+const saldiri = () => ({ tur: 'saldir' });
+function eylemSec(d) {
+  const o = savasci(d);
   const ys = o.yetenekler.map((a) => yetenekBul(o.sinif, a));
   const sifa = ys.find((y) => y.etki === 'sifa' && o.nefes >= y.nefes);
   if (sifa && o.can < o.canEnCok * 0.4) return { tur: 'yetenek', anahtar: sifa.anahtar };
   const hasar = ys.filter((y) => y.etki === 'hasar' && o.nefes >= y.nefes).sort((a, b) => b.carpan - a.carpan)[0];
-  return hasar ? { tur: 'yetenek', anahtar: hasar.anahtar } : { tur: 'saldir' };
+  return hasar ? { tur: 'yetenek', anahtar: hasar.anahtar } : saldiri();
+}
+
+// Yiğit ve boss sırayla hamle eder. Sonuç: { kazandi, hamle (yiğidin hamle sayısı) }.
+function duello(d, hedef, rng, sec = eylemSec) {
+  let hamle = 0;
+  while (hedef.can > 0 && d.oyuncu.can > 0 && hamle < 200) {
+    const r = oyuncuHamlesi(d, sec(d), rng, { hedef });
+    ({ durum: d, hedef } = r);
+    hamle++;
+    if (hedef.can > 0) d = dusmanHamlesi(d, hedef, rng).durum;
+  }
+  return { kazandi: hedef.can <= 0, hamle };
 }
 
 // `seviye` seviyesindeki oyuncunun, `plaka` ilinde çıkan gezgin bosslara karşı kazanma oranı.
 function kazanmaOrani(sinif, seviye, plaka, tehlike, rng, n = 150) {
   let zafer = 0;
   for (let i = 0; i < n; i++) {
-    const o = seviyeli(sinif, seviye);
-    let s = savasBaslat(o, gezginBossUret(plaka, rng, { tehlike }));
-    for (let tur = 0; !s.sonuc && tur < 200; tur++) s = oyuncuEylemi(s, eylemSec(s), rng);
-    if (s.sonuc === 'zafer') zafer++;
+    if (duello(seviyeli(sinif, seviye), gezginBossUret(plaka, rng, { tehlike }), rng).kazandi) zafer++;
   }
   return zafer / n;
 }
@@ -143,43 +153,33 @@ describe('gezgin boss savaşı', () => {
     expect(kazanmaOrani('akinci', ilHaritasi.get(ISTANBUL).seviye[1] + 30, ISTANBUL, 'kesilemez', rng, 60)).toBeGreaterThan(0.8);
   });
 
-  it('kesilemez boss ilin seviyesindeki yiğide kaçmak için birkaç tur tanır', () => {
+  it('kesilemez boss ilin seviyesindeki yiğidi hemen deviremez: uzaklaşıp kaçmaya zaman kalır', () => {
     const rng = rastgeleUreteci(7);
-    let turlar = 0;
+    let hamleler = 0;
     for (let i = 0; i < 100; i++) {
-      const o = seviyeli('kemankes', ilHaritasi.get(35).seviye[1]);
-      let s = savasBaslat(o, gezginBossUret(35, rng, { tehlike: 'kesilemez' }));
-      while (!s.sonuc) s = oyuncuEylemi(s, { tur: 'saldir' }, rng);
-      turlar += s.tur - 1;
+      hamleler += duello(seviyeli('kemankes', ilHaritasi.get(35).seviye[1]), gezginBossUret(35, rng, { tehlike: 'kesilemez' }), rng, saldiri).hamle;
     }
-    expect(turlar / 100).toBeGreaterThanOrEqual(4);
+    expect(hamleler / 100).toBeGreaterThanOrEqual(4);
   });
 
-  it('bölge bossu türünden olsa da gezgin bosstan kaçılabilir ve güçlenme evresine girmez', () => {
-    const o = seviyeli('akinci', 10);
+  it('bölge bossu türünden olsa da gezgin boss güçlenme evresine girmez; peşini bırakır', () => {
     const d = gezginBossOlustur('bogaz_ejderi', ISTANBUL, sabit(0.5), { tehlike: 'zorlu' });
     expect(d.tur).toBe('boss');
-    expect(kacilabilirMi(d)).toBe(true);
-    const s0 = savasBaslat(o, d);
-    expect(eylemKontrol(s0, { tur: 'kac' }).olur).toBe(true);
-    const s = oyuncuEylemi({ ...s0, dusman: { ...s0.dusman, can: Math.floor(d.canEnCok / 2) } }, { tur: 'saldir' }, sabit(0.99));
-    expect(s.evre).toBe(false);
+    const r = oyuncuHamlesi(seviyeli('akinci', 10), saldiri(), sabit(0.99), { hedef: { ...d, can: Math.floor(d.canEnCok / 2) } });
+    expect(r.hedef.evre).toBeFalsy();
+    expect(DAVRANIS.gezgin.birakma).toBeLessThan(Infinity);
+    expect(DAVRANIS.gezgin.hiz).toBeLessThan(1);
   });
 
-  it('savaş günlüğü tehlikeyi bildirir, XP gezgin çarpanıyla verilir', () => {
-    const o = seviyeli('akinci', 10);
+  it('XP gezgin çarpanıyla verilir', () => {
     const d = gezginBossOlustur('bogaz_ejderi', ISTANBUL, sabit(0.5), { tehlike: 'kesilemez' });
-    const s = savasBaslat(o, d);
-    expect(s.gunluk).toEqual([{ tip: 'baslangic' }, { tip: 'gezgin', tehlike: 'kesilemez' }]);
-    expect(s.xpOdulu).toBe(xpOdulu('bogaz_ejderi', d.seviye, SINIF_XP_CARPANI.gezgin));
+    expect(dusmanXp(d)).toBe(xpOdulu('bogaz_ejderi', d.seviye, SINIF_XP_CARPANI.gezgin));
   });
 
   it('zaferi ilerlemeyi etkilemez: bölge bossu yenilmiş sayılmaz', () => {
     const d = { ...yeniOyunDurumu({ ad: 'A', sinif: 'akinci' }), konum: ISTANBUL };
     const boss = gezginBossOlustur('bogaz_ejderi', ISTANBUL, sabit(0.5), { tehlike: 'zorlu' });
-    const s0 = savasBaslat(d.oyuncu, boss, d.heybe);
-    const s = oyuncuEylemi({ ...s0, dusman: { ...s0.dusman, can: 1 } }, { tur: 'saldir' }, sabit(0.99));
-    const { durum, ozet } = kesifSonucunuUygula(d, s, ISTANBUL, sabit(0.9));
+    const { durum, ozet } = zaferUygula(d, boss, ISTANBUL, sabit(0.9));
     expect(ozet).toMatchObject({ sonuc: 'zafer', gezginBoss: 'zorlu', bossYenildi: null, miniBossYenildi: false, hayir: 0 });
     expect(durum.yenilenBosslar).toEqual([]);
     expect(durum.acikBolgeler).toEqual(['marmara']);
@@ -189,9 +189,7 @@ describe('gezgin boss savaşı', () => {
   it('kesilemez boss yenilirse bölgenin efsanevi eşyalarından biri düşer', () => {
     const d = { ...yeniOyunDurumu({ ad: 'A', sinif: 'akinci' }), konum: ISTANBUL };
     const boss = gezginBossOlustur('gulyabani', ISTANBUL, sabit(0.5), { tehlike: 'kesilemez' });
-    const s0 = savasBaslat(d.oyuncu, boss, d.heybe);
-    const s = oyuncuEylemi({ ...s0, dusman: { ...s0.dusman, can: 1 } }, { tur: 'saldir' }, sabit(0.99));
-    const { durum, ozet } = kesifSonucunuUygula(d, s, ISTANBUL, sabit(0.5));
+    const { durum, ozet } = zaferUygula(d, boss, ISTANBUL, sabit(0.5));
     expect(esyalar[ozet.esya]).toMatchObject({ bolge: 'marmara', nadirlik: 'efsanevi' });
     expect(durum.esyalar).toContain(ozet.esya);
     expect(durum.yenilenMiniBosslar).toEqual([]);

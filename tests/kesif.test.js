@@ -2,12 +2,15 @@ import { describe, it, expect } from 'vitest';
 import {
   arinmaArtir,
   ganimetUret,
-  kesifSonucunuUygula,
+  zaferUygula,
+  yenilgiUygula,
   karsilasmaUret,
   YEMEK_DUSME_SANSI,
 } from '../src/oyun/kesif.js';
-import { dusmanOlustur, savasBaslat, oyuncuEylemi } from '../src/oyun/savas.js';
+import { dusmanOlustur } from '../src/oyun/savas.js';
 import { yeniOyunDurumu } from '../src/oyun/durum.js';
+import { gerekenXp, xpEkle, yeniKarakter } from '../src/oyun/karakter.js';
+import { SOFRA } from '../src/oyun/ilerleme.js';
 import { ilDurumu } from '../src/oyun/ilerleme.js';
 import { yemekAdedi, HEYBE_YUVA } from '../src/oyun/envanter.js';
 import { rastgeleUreteci } from '../src/oyun/rastgele.js';
@@ -15,10 +18,7 @@ import { rastgeleUreteci } from '../src/oyun/rastgele.js';
 const KOCAELI = 41;
 const sabit = (x) => () => x;
 
-function kazanilmisSavas(durum, dusman = dusmanOlustur('cakal_surusu', 4)) {
-  const s0 = savasBaslat(durum.oyuncu, dusman, durum.heybe);
-  return oyuncuEylemi({ ...s0, dusman: { ...s0.dusman, can: 1 } }, { tur: 'saldir' }, sabit(0.99));
-}
+const cakal = () => dusmanOlustur('cakal_surusu', 4);
 
 describe('arınma', () => {
   it('her zaferde %12–18 artar', () => {
@@ -78,11 +78,10 @@ describe('ganimet', () => {
   });
 });
 
-describe('keşif savaşı sonucu', () => {
+describe('haritada yenilen düşman', () => {
   it('zafer: XP, arınma, akçe ve (şans tutarsa) yemek', () => {
     const d = { ...yeniOyunDurumu({ ad: 'A', sinif: 'akinci' }), konum: KOCAELI };
-    const s = kazanilmisSavas(d);
-    const { durum, ozet } = kesifSonucunuUygula(d, s, KOCAELI, sabit(0)); // her şans tutar
+    const { durum, ozet } = zaferUygula(d, cakal(), KOCAELI, sabit(0)); // her şans tutar
     expect(ozet.sonuc).toBe('zafer');
     expect(ozet.xp).toBe(45);
     expect(ozet.arinmaArtisi).toBe(12);
@@ -91,32 +90,42 @@ describe('keşif savaşı sonucu', () => {
     expect(durum.akce).toBe(ozet.akce);
     expect(ozet.yemek).toBe('pismaniye');
     expect(yemekAdedi(durum.heybe, 'pismaniye')).toBe(1);
+    expect(durum.istatistik.zafer).toBe(1);
+  });
+
+  it('zafer seviye atlatır, yeni yeteneği bildirir ve boş kısayol yuvasına koyar', () => {
+    let o = yeniKarakter('A', 'akinci');
+    while (o.seviye < 4) o = xpEkle(o, gerekenXp(o.seviye)).oyuncu;
+    const d0 = yeniOyunDurumu({ ad: 'A', sinif: 'akinci' });
+    const d = { ...d0, oyuncu: { ...o, xp: gerekenXp(4) - 10 }, kisayollar: [{ tur: 'saldir' }, null, null, null] };
+    const { durum, ozet } = zaferUygula(d, dusmanOlustur('ac_kurt', 3), KOCAELI, sabit(0.5));
+    expect(ozet).toMatchObject({ sonuc: 'zafer', xp: 35, seviyeler: [5] });
+    expect(ozet.yeniYetenekler.map((y) => y.ad)).toEqual(['Kalkan Duruşu']);
+    expect(durum.oyuncu).toMatchObject({ seviye: 5, xp: 25 });
+    expect(durum.kisayollar[1]).toEqual({ tur: 'yetenek', anahtar: 'kalkan_durusu' });
+  });
+
+  it('her zafer sofradan bir zafer düşürür', () => {
+    const d = { ...yeniOyunDurumu({ ad: 'A', sinif: 'akinci' }), sofra: { bolge: 'marmara', kalan: SOFRA.zafer } };
+    expect(zaferUygula(d, cakal(), KOCAELI, sabit(0.5)).durum.sofra.kalan).toBe(SOFRA.zafer - 1);
+    expect(zaferUygula({ ...d, sofra: { bolge: 'marmara', kalan: 1 } }, cakal(), KOCAELI, sabit(0.5)).durum.sofra).toBeNull();
   });
 
   it('heybe doluysa yemek sığmaz ama diğer ganimet alınır', () => {
     const dolu = Array.from({ length: HEYBE_YUVA }, () => ({ anahtar: 'boyoz', adet: 10 }));
     const d = { ...yeniOyunDurumu({ ad: 'A', sinif: 'akinci' }), konum: KOCAELI, heybe: dolu };
-    const { durum, ozet } = kesifSonucunuUygula(d, kazanilmisSavas(d), KOCAELI, sabit(0));
+    const { durum, ozet } = zaferUygula(d, cakal(), KOCAELI, sabit(0));
     expect(ozet.yemekSigmadi).toBe(true);
     expect(yemekAdedi(durum.heybe, 'pismaniye')).toBe(0);
     expect(durum.akce).toBeGreaterThan(0);
   });
 
-  it('yenilgi ve kaçışta arınma ve ganimet yok', () => {
+  it('bayılınca: arınma ve ganimet yok, akçenin %10\'u düşer, istatistiğe işlenir', () => {
     const d = { ...yeniOyunDurumu({ ad: 'A', sinif: 'akinci' }), konum: KOCAELI, akce: 50 };
-    const s0 = savasBaslat(d.oyuncu, dusmanOlustur('ac_kurt', 1), d.heybe);
-    const kacis = oyuncuEylemi(s0, { tur: 'kac' }, sabit(0));
-    const r = kesifSonucunuUygula(d, kacis, KOCAELI, sabit(0));
-    expect(r.ozet).toMatchObject({ sonuc: 'kacis', arinmaArtisi: 0, akce: 0, yemek: null });
-    expect(r.durum.arinma).toEqual({});
-    const yenilgi = oyuncuEylemi(
-      { ...s0, oyuncu: { ...s0.oyuncu, can: 1 }, dusman: { ...s0.dusman, guc: 999 } },
-      { tur: 'saldir' },
-      sabit(0.99),
-    );
-    const y = kesifSonucunuUygula(d, yenilgi, KOCAELI, sabit(0));
-    expect(y.ozet).toMatchObject({ sonuc: 'yenilgi', akceKaybi: 5, arinmaArtisi: 0 });
-    expect(y.durum.akce).toBe(45);
+    const y = yenilgiUygula({ ...d, oyuncu: { ...d.oyuncu, can: 0 } }, KOCAELI);
+    expect(y.ozet).toEqual({ sonuc: 'yenilgi', akceKaybi: 5, donulenIl: KOCAELI, kervansarayda: false, calinanAkce: 0 });
+    expect(y.durum).toMatchObject({ akce: 45, arinma: {}, oyuncu: { can: d.oyuncu.can } });
+    expect(y.durum.istatistik).toMatchObject({ bayilma: 1, bolgeBayilma: { marmara: 1 } });
   });
 
   it('karşılaşma ilin havuzundan gelir', () => {

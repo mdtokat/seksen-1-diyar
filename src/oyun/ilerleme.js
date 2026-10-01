@@ -46,7 +46,7 @@ export function seyahatEt(durum, hedef) {
 
 export const BOSS_ARINMA_ESIGI = 60; // bölge illerinin ortalama arınması (%)
 export const MINI_BOSS_ARINMA_ESIGI = 50; // mini boss, il arınması bunu geçince çıkar
-export const SOFRA = { savas: 10, gucBonusu: 0.1 };
+export const SOFRA = { zafer: 10, gucBonusu: 0.1 };
 
 const bolgeHaritasi = new Map(bolgeVerisi.map((b) => [b.anahtar, b]));
 
@@ -91,7 +91,7 @@ export function yeniAcilanBosslar(onceki, sonraki) {
 }
 
 // Bölge bossu yenilince: boss yenilmiş sayılır, rotadaki sıradaki bölge açılır ve zafer
-// sofrası kurulur (can ve nefes dolar, SOFRA.savas savaş boyunca güç bonusu).
+// sofrası kurulur (can ve nefes dolar, sonraki SOFRA.zafer zafer boyunca güç bonusu).
 // Sonuç: { durum, acilanBolge } — acilanBolge son bölgede null'dır.
 export function bossYenildi(durum, bolgeAnahtari) {
   const sonraki = sonrakiBolge(bolgeAnahtari, durumRotasi(durum));
@@ -103,19 +103,19 @@ export function bossYenildi(durum, bolgeAnahtari) {
       ...durum,
       acikBolgeler,
       yenilenBosslar: [...new Set([...(durum.yenilenBosslar ?? []), bolgeAnahtari])],
-      sofra: { bolge: bolgeAnahtari, kalan: SOFRA.savas },
+      sofra: { bolge: bolgeAnahtari, kalan: SOFRA.zafer },
       oyuncu: tamIyilestir(durum.oyuncu),
     },
     acilanBolge: sonraki,
   };
 }
 
-// Zafer sofrasının savaştaki güç çarpanı.
+// Zafer sofrasının güç çarpanı.
 export function sofraGucCarpani(durum) {
   return durum.sofra?.kalan > 0 ? 1 + SOFRA.gucBonusu : 1;
 }
 
-// Biten her savaş sofranın süresinden bir savaş düşer.
+// Yenilen her düşman sofranın süresinden bir zafer düşürür.
 export function sofraTuket(durum) {
   if (!durum.sofra) return durum;
   const kalan = durum.sofra.kalan - 1;

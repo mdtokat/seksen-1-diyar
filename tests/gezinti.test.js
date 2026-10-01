@@ -22,8 +22,9 @@ import {
   dusmanlariYerlestir,
   dusmanDogur,
   dusmanlariYurut,
-  temasEdenDusman,
 } from '../src/oyun/gezinti.js';
+import { vurabilirMi } from '../src/oyun/catisma.js';
+import { dusmanOlustur } from '../src/oyun/savas.js';
 import { iller } from '../src/veri/iller.js';
 import { rastgeleUreteci } from '../src/oyun/rastgele.js';
 
@@ -234,7 +235,7 @@ describe('haritadaki düşmanlar', () => {
         .filter((p) => dusmanYurunurMu(h, p.x, p.y) && !(p.x === ds[0].x && p.y === ds[0].y));
       if (adaylar.length) oyuncu = adaylar.sort((a, b) => mesafe(b, ds[0]) - mesafe(a, ds[0]))[0];
       ds = dusmanlariYurut(h, ds, oyuncu, rastgeleUreteci(i + 1));
-      if (temasEdenDusman(h, ds, oyuncu)) { yakalandi = true; break; }
+      if (mesafe(ds[0], oyuncu) <= 1) { yakalandi = true; break; }
     }
     return { yakalandi, kovaliyor: ds[0].kovaliyor, uzaklik: mesafe(ds[0], oyuncu) };
   }
@@ -267,12 +268,13 @@ describe('haritadaki düşmanlar', () => {
     expect(mesafe(ds[0], { x: d.evX, y: d.evY })).toBeLessThanOrEqual(Math.min(once, 3));
   });
 
-  it('temas: bitişik düşman savaşı başlatır, meydanda temas olmaz', () => {
-    const d = { id: 1, x: 5, y: 5 };
-    expect(temasEdenDusman(h, [d], { x: 5, y: 6 })).toBe(d);
-    expect(temasEdenDusman(h, [d], { x: 5, y: 7 })).toBeNull();
+  it('meydan güvenlidir: meydana sığınan oyuncunun peşi bırakılır, ona vurulamaz', () => {
     const kenar = { x: h.meydan.x1, y: h.meydan.y1 };
-    expect(temasEdenDusman(h, [{ id: 2, x: kenar.x - 1, y: kenar.y }], kenar)).toBeNull();
+    const d = { id: 2, x: kenar.x - 1, y: kenar.y, evX: kenar.x - 1, evY: kenar.y, dusman: dusmanOlustur('ac_kurt', 3), kovaliyor: true };
+    expect(vurabilirMi(h, d, kenar)).toBe(true);
+    const [sonra] = dusmanlariYurut(h, [d], kenar, rastgeleUreteci(1));
+    expect(sonra.kovaliyor).toBe(false);
+    expect(vurabilirMi(h, sonra, kenar)).toBe(false);
   });
 });
 

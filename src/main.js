@@ -3,8 +3,7 @@ import './stil/ana.css';
 import { metinler } from './veri/metinler.js';
 import { yeniOyunDurumu, durumDeposu } from './oyun/durum.js';
 import { rastgeleUreteci, yeniTohum } from './oyun/rastgele.js';
-import { kesifSonucunuUygula } from './oyun/kesif.js';
-import { ilHaritasiUret, girisNoktasi, dusmanlariYerlestir, ozelDusmanlar, halkiYerlestir } from './oyun/gezinti.js';
+import { ilHaritasiUret, girisNoktasi, dusmanlariYerlestir, ozelDusmanlar, ozelDusmanlariGuncelle, halkiYerlestir } from './oyun/gezinti.js';
 import { arinmaYuzdesi, seyahatEt, yeniAcilanBosslar, finalDurumu } from './oyun/ilerleme.js';
 import { oyunDurumunuIsle, yeniBasarimlar } from './oyun/basarimlar.js';
 import { basarimlar } from './veri/basarimlar.js';
@@ -22,8 +21,7 @@ import { envanterEkrani } from './arayuz/envanterEkrani.js';
 import { kacis, sablon, bildirimGoster } from './arayuz/bilesenler.js';
 import { yeniOyunEkrani } from './arayuz/yeniOyunEkrani.js';
 import { karakterEkrani } from './arayuz/karakterEkrani.js';
-import { savasEkrani } from './arayuz/savasEkrani.js';
-import { gezintiEkrani, YENIDEN_DOGUS_ADIMI } from './arayuz/gezintiEkrani.js';
+import { gezintiEkrani } from './arayuz/gezintiEkrani.js';
 import { arastaEkrani } from './arayuz/arastaEkrani.js';
 import { ahiEkrani } from './arayuz/ahiEkrani.js';
 import { tuccarEkrani } from './arayuz/tuccarEkrani.js';
@@ -82,7 +80,7 @@ const uygulama = document.querySelector('#uygulama');
 const rng = rastgeleUreteci(yeniTohum());
 let temizle = null;
 let depo = null;
-// İl içi gezinti durumu; savaşa, heybeye ya da karaktere girip çıkınca korunur.
+// İl içi gezinti durumu; heybeye ya da karaktere girip çıkınca korunur.
 let gezinti = null;
 let ipucuGosterildi = false;
 // Açık ekranın adı; klavye kısayolları buna göre çalışır.
@@ -98,7 +96,7 @@ function ekranGoster(kur, ad = null) {
   window.scrollTo(0, 0);
 }
 
-// Durum her değiştiğinde (savaş sonu, seyahat, seviye atlama, yemek, stat
+// Durum her değiştiğinde (vuruş, zafer, seyahat, seviye atlama, yemek, stat
 // puanı) otomatik kayıt yapılır. Kayıt yapılamazsa oyuncu bir kez uyarılır.
 function oyunuBaslat(durum) {
   // Seviyeler, yemekler, eşyalar ve yaratıkların gücü yolculuğun rotasına göredir
@@ -198,7 +196,7 @@ function gezintiHazirla() {
   if (gezinti?.plaka === durum.konum) {
     // İnde bekleyen boss ya da mini boss güncel duruma göre yenilenir
     // (mini boss belirmiş, boss yenilmiş olabilir).
-    gezinti.dusmanlar = [...gezinti.dusmanlar.filter((d) => !d.sabit), ...ozelDusmanlar(gezinti.harita, durum)];
+    gezinti.dusmanlar = ozelDusmanlariGuncelle(gezinti.harita, gezinti.dusmanlar, durum);
     return gezinti;
   }
   const harita = ilHaritasiUret(durum.konum);
@@ -235,8 +233,9 @@ function gezintiGoster({ ilGirisi = false } = {}) {
       rng,
       ipucuGoster,
       ilGirisi,
-      savasBaslat: savasGoster,
       kisayollariGoster: klavyePenceresiniAc,
+      bayildi,
+      zulmetYenildi: () => bitisGoster(),
       ileGec: (plaka) => {
         depo.ayarla(seyahatEt(depo.al(), plaka));
         gezintiGoster({ ilGirisi: true });
@@ -320,68 +319,24 @@ function heybeGoster(geri) {
   ekranGoster((kap) => envanterEkrani(kap, depo, { geri }), 'heybe');
 }
 
-// Haritada temas edilen düşmanla (ve ona katılan yoldaşlarıyla) savaş. Sonuca göre gezinti
-// durumu güncellenir: zaferde bütün düşmanlar haritadan kalkar (bir süre sonra yenileri
-// gelir), kaçışta oyuncu kısa süre dokunulmaz olur, bayılınca il meydanında kendine gelir.
-function savasGoster(kayit, yoldaslar = []) {
-  const katilanlar = [kayit, ...yoldaslar];
-  const idler = new Set(katilanlar.map((d) => d.id));
-  const plaka = depo.al().konum;
-  let sonuc = null;
-  let finalBitti = false;
-  let islendi = false;
-  const sonrasi = () => {
-    if (islendi || !sonuc) return;
-    islendi = true;
-    const g = gezinti;
-    // Yankesiciler savaştan sonra haritada kalmaz: yenilen kaçar, kazanan keseyi kapıp gider
-    const yankesici = (d) => d.dusman.sinif === 'yankesici';
-    g.dusmanlar = g.dusmanlar.filter((d) => !(idler.has(d.id) && yankesici(d)));
-    g.yankesiciAdimi = 0;
-    if (sonuc === 'zafer') {
-      g.dusmanlar = g.dusmanlar.filter((d) => !idler.has(d.id));
-      for (const d of katilanlar) if (!d.sabit && !yankesici(d)) g.dogusSayaclari.push(YENIDEN_DOGUS_ADIMI);
-      g.dokunulmaz = 2;
-    } else if (sonuc === 'kacis') {
-      // Kısa bir soluklanma: takipçiler az sonra yeniden peşine düşebilir
-      g.dokunulmaz = 4;
-      g.dusmanlar = g.dusmanlar.map((d) => (idler.has(d.id) ? { ...d, kovaliyor: false, birikim: 0 } : d));
-    } else if (depo.al().konum !== g.plaka) {
-      // Başka ildeki son kervansarayda kendine geldi: o ilin meydanından başlanır
-      gezinti = null;
-    } else {
-      g.oyuncu = { ...g.harita.dogus };
-      g.dokunulmaz = 8;
-    }
-  };
-  ekranGoster((kap) =>
-    savasEkrani(kap, depo, {
-      dusman: kayit.dusman,
-      yoldaslar: yoldaslar.map((y) => y.dusman),
-      rng,
-      sonucuUygula: (durum, savas) => {
-        const r = kesifSonucunuUygula(durum, savas, plaka, rng);
-        sonuc = r.ozet.sonuc;
-        finalBitti = r.ozet.zulmetYenildi;
-        return r;
-      },
-      bitince: () => {
-        sonrasi();
-        if (finalBitti) return bitisGoster();
-        gezintiGoster();
-      },
-      karakterGoster: () => {
-        sonrasi();
-        karakterGoster(gezintiGoster);
-      },
-    }),
-  );
+// Haritadaki savaşta bayılan yiğit kendine gelir: başka ildeki son kervansarayda
+// uyandıysa o ilin meydanından başlanır, aynı ildeyse gezinti ekranı meydanda sürer.
+function bayildi(ozet) {
+  if (depo.al().konum !== gezinti?.plaka) gezinti = null;
+  gezintiGoster({ ilGirisi: !gezinti });
+  const S = metinler.savas.sonuc;
+  const metin = [
+    sablon(ozet.kervansarayda ? S.bayilmaKervansaray : S.bayilma, { il: iller.find((il) => il.plaka === ozet.donulenIl).ad }),
+    ozet.akceKaybi > 0 ? sablon(S.akceKaybi, { akce: ozet.akceKaybi }) : '',
+    ozet.calinanAkce > 0 ? sablon(S.calinanAkce, { akce: ozet.calinanAkce }) : '',
+  ].filter(Boolean).join(' ');
+  bildirimGoster(uygulama.querySelector('.gezinti-ekrani'), metin, { tur: 'uyari', sure: 6000 });
 }
 
 // ── Klavye kısayolları ──
 // Gezintide ve ondan açılan ekranlarda: M harita, B heybe, K karakter, G günlük,
 // L il bilgisi. Açık ekranın tuşuna yeniden basınca gezintiye dönülür; Esc geri
-// götürür; ? kısayol penceresini açar. Savaşın kendi tuşları (1–4) savasEkrani.js'tedir.
+// götürür; ? kısayol penceresini açar. Savaş tuşları (1–4, Boşluk) gezintiEkrani.js'tedir.
 const EKRAN_KISAYOLLARI = {
   m: { ekran: 'harita', dugme: 'harita', ac: () => haritaGoster() },
   b: { ekran: 'heybe', dugme: 'heybe', ac: () => heybeGoster(gezintiGoster) },
@@ -447,8 +402,8 @@ window.addEventListener('keydown', (e) => {
   if (!k) return;
   e.preventDefault();
   if (aktifEkran === k.ekran) return gezintiGoster();
-  // Gezintideyken düğmeye basılmış gibi davranılır (savaşa girilirken ya da il
-  // değişirken girdiyi yok sayan kontroller korunur)
+  // Gezintideyken düğmeye basılmış gibi davranılır (zafer kartı açıkken, bayılırken ya da
+  // il değişirken girdiyi yok sayan kontroller korunur)
   if (aktifEkran === 'gezinti') return uygulama.querySelector(`.gezinti-ekrani [data-eylem="${k.dugme}"]`)?.click();
   k.ac();
 });

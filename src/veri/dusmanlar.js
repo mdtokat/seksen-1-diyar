@@ -33,6 +33,11 @@ export const OZEL_HAMLELER = {
   boss: { ad: 'Zülmet\'in Sihri', etki: 'hasar', carpan: 1.7 },
 };
 
+// Düşmanların vuruş menzili (karo), türe göre: hayvanlar, hortlaklar, devler ve insanlar
+// yakından vurur; cinler kara sihirlerini, ifritler alevlerini uzağa savurur. Bölge
+// bossları ve Zülmet'in sihri de birkaç karo öteye erişir (savas.js → dusmanMenzili).
+export const DUSMAN_MENZILI = { hayvan: 1, cin: 3, ifrit: 2, hortlak: 1, dev: 1, insan: 1, boss: 2 };
+
 // Yenilen düşmanın verdiği XP, düşman sınıfına göre bu çarpanla büyür.
 export const SINIF_XP_CARPANI = {
   siradan: 1,

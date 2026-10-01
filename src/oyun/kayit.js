@@ -14,7 +14,7 @@ import { KISAYOL_YUVA, kisayolGecerliMi, varsayilanKisayollar } from './kisayoll
 import { KLASIK_ROTA, rotaGecerliMi } from './rota.js';
 
 export const KAYIT_ANAHTARI = 'seksen-bir-diyar/kayit';
-export const KAYIT_SURUMU = 7;
+export const KAYIT_SURUMU = 8;
 // Önceki oyunların başladığı bölgeler (bu tur): yeni oyun bunlardan başlamaz (rota.js).
 export const BASLANGIC_ANAHTARI = 'seksen-bir-diyar/baslangic-gecmisi';
 
@@ -88,6 +88,13 @@ function altidanYediye(veri) {
   return { surum: 7, durum: { rota: { bolgeler: [...KLASIK_ROTA.bolgeler], baslangic: KLASIK_ROTA.baslangic }, ...veri.durum } };
 }
 
+// Sürüm 7 → 8: savaş il haritasına taşındı; "Kaç" kısayolu kalktı, o yuvalar boşalır.
+function yedidenSekize(veri) {
+  const d = veri.durum;
+  const kisayollar = Array.isArray(d.kisayollar) ? d.kisayollar.map((k) => (k?.tur === 'kac' ? null : k)) : d.kisayollar;
+  return { surum: 8, durum: { ...d, kisayollar } };
+}
+
 // Eski sürümdeki bir kaydı adım adım güncel şemaya taşır. Tanınmayan sürüm → null.
 export function goc(veri) {
   if (!veri || typeof veri !== 'object' || !veri.durum) return null;
@@ -98,6 +105,7 @@ export function goc(veri) {
   if (v.surum === 4) v = dorttenBese(v);
   if (v.surum === 5) v = bestenAltiya(v);
   if (v.surum === 6) v = altidanYediye(v);
+  if (v.surum === 7) v = yedidenSekize(v);
   return v.surum === KAYIT_SURUMU ? v : null;
 }
 

@@ -19,6 +19,11 @@ export const metinler = {
     },
     surpriz: '⚡ Sürpriz! {dusman} birden önüne çıktı!',
     yenildi: 'Güçlü {dusman} dağılıp gitti!',
+    // Gezgin boss peşine düşünce
+    uyari: {
+      zorlu: '⚔️ {dusman} bu diyarın düşmanlarından çok daha güçlü, ama yenilmez değil. Dikkatli dövüş!',
+      kesilemez: '💀 {dusman} öyle güçlü ki kılıç zırhına zor işliyor! Uzaklaşıp kaçmak en akıllıcası olabilir.',
+    },
   },
 
   boss: {
@@ -26,7 +31,7 @@ export const metinler = {
     acildi: 'Mühür çözüldü! {boss} artık {il} ilindeki ininde seni bekliyor.',
     miniBelirdi: '{boss} ortaya çıktı! Bu ildeki ininde seni bekliyor.',
     miniYenildi: '{boss} dağılıp gitti; bu ilin halkı derin bir nefes aldı.',
-    sofra: 'Zafer sofrası kuruldu: {yemekler}. Canın ve nefesin doldu; {savas} savaş boyunca gücün %10 arttı.',
+    sofra: 'Zafer sofrası kuruldu: {yemekler}. Canın ve nefesin doldu; sonraki {zafer} zafer boyunca gücün %10 arttı.',
     yeniBolge: 'Yeni bölge açıldı: {bolge}. Yolun {il} ilinden geçiyor.',
     rozet: 'Boss',
     miniRozet: 'Mini boss',
@@ -38,7 +43,7 @@ export const metinler = {
       yenildi: 'Yenildi ✓',
     },
     kosul: 'Arınma %{arinma}/%{gerekenArinma} · Sv {seviye}/{gerekenSeviye}',
-    sofraDurumu: 'Zafer sofrası: {kalan} savaş boyunca gücün %10 fazla.',
+    sofraDurumu: 'Zafer sofrası: {kalan} zafer boyunca gücün %10 fazla.',
   },
 
   // Görev verenler ve görevler (plan.md Faz 9).
@@ -138,7 +143,7 @@ export const metinler = {
     acildi: 'Ağrı Dağı\'ndaki kalenin mührü çözüldü! Zülmet seni kalesinde bekliyor.',
     kartBasligi: 'Zülmet\'in kalesi',
     durum: { muhurlu: 'Mühürlü', acik: 'Mührü çözüldü', yenildi: 'Zülmet yenildi ✓' },
-    // Üç evreli savaşın evre geçişleri (günlük satırları)
+    // Üç evreli savaşın evre geçişleri (haritada bildirim olarak)
     evreler: {
       2: '{dusman} kara pelerinini açtı; gölgeler etrafında dönmeye başladı!',
       3: '{dusman} üzerindeki sihir çatırdıyor; son gücüyle saldırıyor!',
@@ -336,7 +341,7 @@ export const metinler = {
 
   gezinti: {
     baslikEkrani: 'Başlık ekranına dön',
-    ipucu: 'Gitmek istediğin yere dokun ya da yön tuşlarını kullan. Düşmanlara yaklaşınca savaş başlar; meydan güvenlidir.',
+    ipucu: 'Gitmek istediğin yere dokun ya da yön tuşlarını kullan. Bir düşmana dokunursan onu hedef alırsın: menziline yürür ve durduğunda vurursun. Uzaklaşmak kaçmaktır; meydan güvenlidir.',
     harita: 'Türkiye haritası',
     heybe: 'Heybe',
     ilBilgisi: 'İl bilgisi',
@@ -349,8 +354,6 @@ export const metinler = {
     cesme: 'Çeşmenin serin suyuyla yüzünü yıkadın.',
     gunluk: 'Görev günlüğü ve başarımlar',
     girisAfisi: '{il}',
-    fark: '{dusman} seni fark etti!',
-    farkKalabalik: '{sayi} yaratık birden saldırıya geçti!',
     alanEtiketi: '{il} il haritası',
     kisayollar: 'Klavye kısayolları',
     takip: '👣 {dusman} peşine takıldı! Kolay kolay bırakmaz; meydana sığın ya da savaş.',
@@ -363,20 +366,18 @@ export const metinler = {
     yankesiciGitti: 'Yankesici izini kaybetti, söylenerek çekip gitti.',
   },
 
-  // Savaş kısayol yuvaları (1–4 tuşları)
+  // Savaş kısayol yuvaları (gezintide 1–4 tuşları)
   kisayol: {
     baslik: 'Savaş Kısayolları',
-    aciklama: 'Savaşta sıra sendeyken 1–4 tuşlarıyla ya da yuvaya dokunarak kullanılır. Bir yuvaya dokunup içine yetenek, yemek, Saldır ya da Kaç koyabilirsin.',
+    aciklama: 'Gezintide 1–4 tuşlarıyla ya da yuvaya dokunarak kullanılır. Saldır ve hasar yetenekleri hedefine (yoksa menzilindeki en yakın düşmana) vurur; diğer yetenekler ve yemekler hemen etki eder. Bir yuvaya dokunup içine yetenek, yemek ya da Saldır koyabilirsin.',
     bos: 'Boş',
     yuvaEtiketi: '{tus}. yuva: {ad}',
     sec: '{tus}. yuvaya ne konsun?',
     bosalt: 'Yuvayı boşalt',
     baskaYuvada: '{tus}. yuvada (buraya taşınır)',
-    duzenle: 'Yuvaları düzenle',
-    duzenleBitti: 'Düzenlemeyi bitir',
-    siraSende: 'Sıra sende · 1–4',
-    bekle: 'Bekle…',
-    kullanilamaz: 'Bu yuva şu an kullanılamaz.',
+    duzenle: 'Yuvaları düzenle (karakter ekranı)',
+    hazir: 'Hazır · 1–4',
+    bekle: 'Soluklan…',
   },
 
   // Klavye kısayolları penceresi
@@ -386,7 +387,7 @@ export const metinler = {
     gruplar: [
       { baslik: 'Gezinti', satirlar: [['W A S D / Oklar', 'Yürü'], ['M', 'Türkiye haritası'], ['B', 'Heybe (çanta)'], ['K', 'Karakter'], ['G', 'Görev günlüğü'], ['L', 'İl bilgisi'], ['?', 'Bu pencere']] },
       { baslik: 'Açık ekranlarda', satirlar: [['Esc', 'Geri dön'], ['Aynı tuş', 'Ekranı kapatıp gezintiye dön']] },
-      { baslik: 'Savaş', satirlar: [['1 2 3 4', 'Kısayol yuvasını kullan (sıra sendeyken)'], ['Esc', 'Alt menüden çık'], ['Enter', 'Seçili düğme']] },
+      { baslik: 'Savaş', satirlar: [['Düşmana dokun', 'Hedef al: menziline yürür, durunca vurursun'], ['Boşluk', 'En yakın düşmanı hedef al'], ['1 2 3 4', 'Kısayol yuvasını kullan'], ['Uzaklaş', 'Kaç (meydan güvenlidir)']] },
     ],
   },
 
@@ -524,25 +525,20 @@ export const metinler = {
   },
 
   savas: {
-    baslik: 'Savaş',
     seviye: 'Sv {seviye}',
     saldir: 'Saldır',
-    yetenek: 'Yetenek',
-    yemek: 'Yemek',
-    kac: 'Kaç',
-    geri: 'Geri',
-    heybeBos: 'Heybende yemek yok.',
-    kacilamaz: 'Bu mahlûktan kaçılamaz.',
     nefesYetersiz: 'Nefesin yetmiyor.',
+    yemekYok: 'Heybende bu yemek kalmadı.',
+    yemekDolu: 'Canın ve nefesin yerinde; şimdi yemeğe gerek yok.',
+    menzilYok: 'Menzilinde düşman yok.',
+    meydanGuvenli: 'Meydan güvenlidir; burada kılıç çekilmez.',
+    menzil: 'Vuruş menzili',
+    menzilDegeri: { 1: 'Yakın dövüş (bitişik karo)', diger: '{menzil} karo öteye kadar' },
     sahne: {
       siyrildi: 'Sıyrıldı',
       guclendi: 'Güçlendi!',
-      dustu: 'Püskürtüldü',
+      ekHasar: 'Sihri sarsıldı!',
     },
-    hedef: 'Hedef',
-    hedefSec: 'Vuracağın yaratığı seç',
-    // Aynı türden birden fazla yaratıkta ad numaralanır: "Aç kurt 2"
-    ve: ' ve ',
     etkiler: {
       sofra: '🍽️ Zafer sofrası ({kalan})',
       savunma: '🛡️ Korunma ({kalan})',
@@ -550,36 +546,9 @@ export const metinler = {
       kritik: '🦅 Keskin göz ({kalan})',
       zayiflatma: '😨 Ürkmüş ({kalan})',
     },
-    gunluk: {
-      baslangic: '{dusman} (Sv {seviye}) yolunu kesti!',
-      baslangicGrup: '{dusmanlar} birlikte saldırıya geçti! Hepsi aynı anda vuruyor; kalabalıktan kaçmak daha zor.',
-      kacisBasarisizGrup: 'Kaçamadın! Yaratıklar yolunu kesti.',
-      grupZafer: 'Saldıran yaratıkların hepsini püskürttün!',
-      saldiri: 'Saldırdın: {hasar} hasar.',
-      yetenekHasar: '{yetenek}: {hasar} hasar.',
-      kritik: 'Kritik vuruş!',
-      ekHasar: 'Sihri sarsıldı!',
-      dusmanKacindi: '{dusman} hamlenden sıyrıldı.',
-      yetenekSifa: '{yetenek}: {miktar} can toparladın.',
-      yetenekSavunma: '{yetenek}: düşmanın sonraki {sure} hamlesinde daha az hasar alacaksın.',
-      yetenekGuclenme: '{yetenek}: sonraki {sure} saldırın daha güçlü olacak.',
-      yetenekKritik: '{yetenek}: sonraki {sure} saldırında kritik vuruş şansın arttı.',
-      yemek: '{yemek} yedin: {miktar} {tur} yeniledin.',
-      dusmanSaldiri: '{dusman} saldırdı: {hasar} hasar aldın.',
-      ozelHamle: '{dusman} — {hamle}! {hasar} hasar aldın.',
-      zayiflatma: '{dusman} — {hamle}! Sonraki {sure} saldırında gücün azalacak.',
-      oyuncuKacindi: '{dusman} saldırdı ama hamleden ustalıkla sıyrıldın.',
-      ozelKacindi: '{dusman} — {hamle}! Ama hamleden ustalıkla sıyrıldın.',
-      korundu: 'Duruşun hasarı azalttı.',
-      kacisBasarili: 'Geri çekilip yoluna devam ettin.',
-      kacisBasarisiz: 'Kaçamadın! {dusman} yolunu kesti.',
-      evre: '{dusman} üzerindeki sihir kabardı; daha da güçlendi!',
-      yenilgi: 'Gözlerin karardı, bayıldın…',
-      gezgin: {
-        zorlu: '{dusman} bu diyarın düşmanlarından çok daha güçlü, ama yenilmez değil. Dikkatli dövüş!',
-        kesilemez: '{dusman} öyle güçlü ki kılıç zırhına zor işliyor! Kaçmak en akıllıcası olabilir.',
-      },
-    },
+    evre: '{dusman} üzerindeki sihir kabardı; daha da güçlendi!',
+    zafer: '{dagilma} +{xp} XP · +{akce} akçe',
+    bayildin: 'Gözlerin karardı, bayıldın…',
     // Yenilen düşmanlar ölmez: kaçar, dağılır ya da sihri bozulur (plan.md Bölüm 2).
     dagilma: {
       hayvan: '{dusman} geri çekilip kaçtı.',
@@ -592,14 +561,11 @@ export const metinler = {
     },
     sonuc: {
       zafer: 'Zafer!',
-      yenilgi: 'Bayıldın',
-      kacis: 'Geri Çekildin',
       xp: '+{xp} XP kazandın.',
       bayilma: '{il} merkezinde kendine geldin. Halk seni misafir etti; canın ve nefesin yerine geldi.',
       bayilmaKervansaray: '{il} kervansarayında kendine geldin. Hancı seni misafir etti; canın ve nefesin yerine geldi.',
       akceKaybi: 'Kesenden {akce} akçe düşmüş.',
       calinanAkce: '🗡️ Yankesici fırsatı kaçırmadı: kesenden {akce} akçe aşırdı.',
-      kacis: 'Canını kurtardın; bu karşılaşmadan ödül yok.',
       seviyeAtladin: '🎉 Seviye atladın! Artık Sv {seviye}.',
       statPuaniKazandin: 'Dağıtılacak {puan} stat puanın var.',
       yeniYetenek: '✨ Yeni yetenek: {yetenek}',
