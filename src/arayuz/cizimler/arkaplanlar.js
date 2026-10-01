@@ -1,4 +1,4 @@
-// Bölgelere özgü, katmanlı savaş arka planları: gökyüzü ve güneş ışıltısı, bulutlar,
+// Bölgelere özgü, katmanlı manzara arka planları (zafer kartında): gökyüzü ve güneş ışıltısı, bulutlar,
 // sisle soluklaşan uzak dağlar, bölgenin simge manzarası, ayrıntılı ön zemin ve kenar
 // gölgesi. Tuval 400×240; zemin çizgisi y ≈ 190. Ekran dar olunca yanlar kırpılır,
 // bu yüzden simge yapılar ortaya (x ≈ 90…310) yerleştirilir.
@@ -339,7 +339,7 @@ const arkaplanlar = {
 
 export const ARKA_PLAN_BOLGELERI = Object.keys(arkaplanlar);
 
-// Bölgenin savaş arka planı (tuvali kaplayacak şekilde kırpılır).
+// Bölgenin manzara arka planı (tuvali kaplayacak şekilde kırpılır).
 export function bolgeArkaPlani(bolge) {
   // Gradyan kimlikleri bölgeye özgü olsun ki sayfadaki başka SVG'lerle çakışmasın.
   const c = boyalariCoz(arkaplanlar[bolge](), `ap-${bolge}-`);

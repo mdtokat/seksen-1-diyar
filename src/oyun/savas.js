@@ -1,9 +1,17 @@
-// Sıra tabanlı savaş motoru. Saf oyun mantığı — DOM'a dokunmaz.
-// Her fonksiyon yeni bir savaş durumu döndürür, verilen durumu değiştirmez.
-// Rastgelelik dışarıdan verilen `rng` (rastgele.js) ile gelir.
+// Savaş motoru. Saf oyun mantığı — DOM'a dokunmaz.
+// Savaş ayrı bir ekranda değil, il haritasında (gezinti ekranında) gerçek zamanlı geçer:
+// oyuncu ve düşmanlar menzillerine girince belli aralıklarla birbirine vurur (kim, ne
+// zaman, kime vurur: catisma.js). Bu dosya tek bir hamlenin sonucunu hesaplar.
+// Her fonksiyon yeni değerler döndürür, verilenleri değiştirmez. Rastgelelik dışarıdan
+// verilen `rng` (rastgele.js) ile gelir.
 //
-// Savaş günlüğü metin değil, olay nesneleridir ({ tip, ... }); arayüz bunları
-// metinler.js'teki kalıplarla Türkçe cümlelere çevirir.
+// Hamlelerin sonucu metin değil, olay nesneleridir ({ tip, ... }); arayüz bunları
+// haritada uçan yazılara ve bildirimlere çevirir.
+//
+// Oyuncunun savaş etkileri (Korunma, güçlenme, Keskin göz, ürkme) oyun durumunda değil,
+// gezintide tutulur ve her hamleye `etkiler` olarak verilir:
+//   [{ etki: 'savunma' | 'guclenme' | 'kritik' | 'zayiflatma', deger, kalan }]
+// 'savunma' düşmanın her vuruş hamlesinde, diğerleri oyuncunun her saldırısında bir azalır.
 import {
   dusmanlar,
   OZEL_HAMLELER,
@@ -12,14 +20,14 @@ import {
   EVRE_OZEL_HAMLE_SANSI,
   EVRE_GUC_CARPANI,
   SINIF_XP_CARPANI,
+  DUSMAN_MENZILI,
 } from '../veri/dusmanlar.js';
 import { siniflar } from '../veri/siniflar.js';
 import { yemekler } from '../veri/yemekler.js';
-import { yemekAdedi, yemekCikar, yemekEtkisi } from './envanter.js';
-import { statlar, acikYetenekler, xpEkle, tamIyilestir } from './karakter.js';
+import { yemekYe, yemekYeKontrol } from './envanter.js';
+import { statlar, acikYetenekler, tamIyilestir } from './karakter.js';
 import { aralik, sans, sec } from './rastgele.js';
-import { sofraTuket } from './ilerleme.js';
-import { yeniYetenekleriYerlestir } from './kisayollar.js';
+import { sofraGucCarpani } from './ilerleme.js';
 import { dusmanCarpanlari } from './rota.js';
 
 // ── Formüller (plan.md Bölüm 5) ──────────────────────────
@@ -27,16 +35,12 @@ import { dusmanCarpanlari } from './rota.js';
 export const KRITIK_CARPANI = 1.5;
 export const BAYILMA_AKCE_KAYBI = 0.1;
 
-// Aynı anda saldıran yaratıkların her birinin vuruş gücü, sayıları arttıkça azalır (kalabalıkta
-// herkes aynı anda tam vuramaz). Savunma her vuruştan ayrıca düşüldüğü için turdaki toplam
-// hasar sayıyla doğru orantılı artmaz; asıl tehlike düşürülecek can havuzunun büyümesi,
-// yani savaşın uzamasıdır. Bir yaratığı düşürmek saldıran sayısını azaltır.
-// Değerler simülasyonla ayarlandı: ilin seviyesindeki, ekipmansız ve yemeksiz bir yiğit iki
-// yaratığı çoğunlukla yener, üçü karşısında ise geç bölgelerde kaçmak akıllıcadır.
+// Aynı anda vuran yaratıkların her birinin vuruş gücü, sayıları arttıkça azalır (kalabalıkta
+// herkes tam vuramaz). Savunma her vuruştan ayrıca düşüldüğü için toplam hasar sayıyla doğru
+// orantılı artmaz; asıl tehlike düşürülecek can havuzunun büyümesidir. Bir yaratığı
+// düşürmek ya da menzilinden çıkmak vuran sayısını azaltır.
 export const TOPLU_HASAR_CARPANI = { 1: 1, 2: 0.55, 3: 0.38 };
 export const EN_COK_SALDIRGAN = 3;
-// Kalabalıktan kaçmak, fazladan her yaratık için bu kadar daha zordur.
-export const TOPLU_KACMA_CEZASI = 0.05;
 
 // max(1, round(güç × çarpan × rnd − savunma × 0.5)); kritik vuruş ×1.5.
 // `ek`: belirli düşman türlerine verilen ek hasar çarpanı.
@@ -57,14 +61,6 @@ export function kacinmaSansi(ceviklik) {
   return Math.min(0.2, ceviklik * 0.005);
 }
 
-// min(%70, %35 + (oyuncuÇev − düşmanÇev) × %2), en az %0. Peşine takılan
-// (takipçi) düşmanlardan kaçmak %15 daha zordur.
-export const TAKIPCI_KACMA_CEZASI = 0.15;
-export function kacmaSansi(oyuncuCev, dusmanCev, { takipci = false } = {}) {
-  const sans = Math.min(0.7, 0.35 + (oyuncuCev - dusmanCev) * 0.02) - (takipci ? TAKIPCI_KACMA_CEZASI : 0);
-  return Math.max(0, sans);
-}
-
 // Düşman statları seviye ve tür çarpanıyla ölçeklenir. Çarpan, yaratığın bölgesinin
 // rotadaki kademesine göredir (rota.js → dusmanCarpanlari; klasik rotada veridekiyle aynı).
 export function dusmanStatlari(anahtar, seviye) {
@@ -83,18 +79,31 @@ export function xpOdulu(anahtar, seviye, carpan = SINIF_XP_CARPANI[dusmanlar[ana
   return Math.round((5 + seviye * 10) * carpan);
 }
 
-// Bosslardan kaçılamaz; haritada dolaşan ya da sürpriz çıkan gezgin bosslardan kaçılır.
-export function kacilabilirMi(dusman) {
-  return Boolean(dusman.gezgin) || dusman.tur !== 'boss';
+// Yenilen bir düşmanın XP'si (gezgin bosslar kendi çarpanıyla).
+export const dusmanXp = (d) => xpOdulu(d.anahtar, d.seviye, d.gezgin ? SINIF_XP_CARPANI.gezgin : undefined);
+
+// ── Menziller ────────────────────────────────────────────
+
+// Düşmanın vuruş menzili (karo): türüne göre (dusmanlar.js → DUSMAN_MENZILI).
+export function dusmanMenzili(dusman) {
+  return dusman.menzil ?? DUSMAN_MENZILI[dusman.tur] ?? 1;
 }
 
-// Savaştaki canlı yaratıklar: hedef (`dusman`) ve yoldaşları, numara sırasıyla.
-export const canlilar = (savas) => [savas.dusman, ...(savas.yoldaslar ?? [])].sort((a, b) => (a.no ?? 0) - (b.no ?? 0));
+export function yetenekBul(sinifAnahtari, yetenekAnahtari) {
+  return siniflar[sinifAnahtari].yetenekler.find((y) => y.anahtar === yetenekAnahtari);
+}
 
-// Savaşta birden fazla yaratık var mı?
-export const kalabalikMi = (savas) => (savas.grup?.length ?? 1) > 1;
+// Eylemin menzili: saldırıda sınıfın vuruş menzili, hasar yeteneğinde yeteneğin kendi
+// menzili (yoksa sınıfınki). Hedef gerektirmeyen eylemlerde (yemek, şifa, güçlenme…) null.
+export function eylemMenzili(sinif, eylem) {
+  if (eylem?.tur === 'saldir') return siniflar[sinif].menzil;
+  if (eylem?.tur !== 'yetenek') return null;
+  const y = yetenekBul(sinif, eylem.anahtar);
+  if (!y || y.etki !== 'hasar') return null;
+  return y.menzil ?? siniflar[sinif].menzil;
+}
 
-// ── Savaş durumu ─────────────────────────────────────────
+// ── Savaşanlar ───────────────────────────────────────────
 
 export function dusmanOlustur(anahtar, seviye) {
   const veri = dusmanlar[anahtar];
@@ -108,6 +117,7 @@ export function dusmanOlustur(anahtar, seviye) {
     sinif: veri.sinif,
     takip: veri.takip ?? 'bekci',
     takipci: veri.takip === 'takipci',
+    menzil: DUSMAN_MENZILI[veri.tur] ?? 1,
     seviye,
     canEnCok: s.can,
     can: s.can,
@@ -117,325 +127,230 @@ export function dusmanOlustur(anahtar, seviye) {
   };
 }
 
-// Oyuncu karakteri ve oluşturulmuş bir düşmanla yeni savaş.
-// `heybe`: savaşta yenebilecek yemekler; savaş sonunda oyun durumuna geri yazılır.
-// `gucCarpani`: savaş boyunca oyuncunun gücüne uygulanan çarpan (ör. zafer sofrası).
-// `yoldaslar`: aynı anda saldıran diğer yaratıklar (en çok EN_COK_SALDIRGAN − 1). Varsa
-// yaratıklar 1'den başlayarak numaralanır (`no`); `dusman` oyuncunun vurduğu hedeftir
-// (hedefSec ile değişir), `yoldaslar` diğer canlılar, `dusenler` düşürülenler, `grup` ise
-// savaşın başındaki bütün yaratıklardır (ödül hesabı için).
-export function savasBaslat(oyuncu, dusman, heybe = [], { gucCarpani = 1, yoldaslar = [] } = {}) {
-  const s = statlar(oyuncu);
-  const hepsi = [dusman, ...yoldaslar].slice(0, EN_COK_SALDIRGAN);
-  const grup = hepsi.length > 1 ? hepsi.map((d, i) => ({ ...d, no: i + 1 })) : [{ ...dusman }];
-  const gezginler = grup.filter((d) => d.gezgin);
+// Oyuncunun savaştaki değerleri: güncel statlar, zafer sofrasının güç çarpanı ve açık yetenekler.
+export function savasci(durum) {
+  const o = durum.oyuncu;
+  const s = statlar(o);
   return {
-    oyuncu: {
-      ad: oyuncu.ad,
-      sinif: oyuncu.sinif,
-      seviye: oyuncu.seviye,
-      canEnCok: s.can,
-      can: Math.min(oyuncu.can, s.can),
-      nefesEnCok: s.nefes,
-      nefes: Math.min(oyuncu.nefes, s.nefes),
-      guc: Math.round(s.guc * gucCarpani),
-      gucCarpani,
-      savunma: s.savunma,
-      ceviklik: s.ceviklik,
-      yetenekler: acikYetenekler(oyuncu).map((y) => y.anahtar),
-    },
-    dusman: { ...grup[0] },
-    yoldaslar: grup.slice(1).map((d) => ({ ...d })),
-    dusenler: [],
-    grup,
-    heybe,
-    etkiler: [], // { hedef: 'oyuncu', etki, deger, kalan }
-    tur: 1,
-    evre: false, // bölge bossu güçlenme evresine girdi mi
-    evreNo: 1, // Zülmet'in üç evreli savaşında bulunulan evre (1–3)
-    // Gezgin bossların tehlikesi savaşın başında söylenir: kesilemezden kaçmak gerekir
-    gunluk: [{ tip: 'baslangic' }, ...(gezginler.length && grup.length === 1 ? [{ tip: 'gezgin', tehlike: dusman.tehlike }] : [])],
-    sonuc: null, // null | 'zafer' | 'yenilgi' | 'kacis'
-    xpOdulu: grup.reduce((t, d) => t + xpOdulu(d.anahtar, d.seviye, d.gezgin ? SINIF_XP_CARPANI.gezgin : undefined), 0),
+    sinif: o.sinif,
+    seviye: o.seviye,
+    canEnCok: s.can,
+    can: Math.min(o.can, s.can),
+    nefesEnCok: s.nefes,
+    nefes: Math.min(o.nefes, s.nefes),
+    guc: Math.round(s.guc * sofraGucCarpani(durum)),
+    savunma: s.savunma,
+    ceviklik: s.ceviklik,
+    yetenekler: acikYetenekler(o).map((y) => y.anahtar),
   };
-}
-
-// Oyuncunun vuracağı hedefi değiştirir (numarası `no` olan canlı yaratık). Sıra harcamaz.
-// Geçersiz numarada aynı savaş durumu döner.
-export function hedefSec(savas, no) {
-  if (savas.sonuc || savas.dusman.no === no) return savas;
-  const yeni = (savas.yoldaslar ?? []).find((d) => d.no === no);
-  if (!yeni) return savas;
-  return {
-    ...savas,
-    dusman: yeni,
-    yoldaslar: [savas.dusman, ...savas.yoldaslar.filter((d) => d !== yeni)].sort((a, b) => a.no - b.no),
-  };
-}
-
-export function yetenekBul(sinifAnahtari, yetenekAnahtari) {
-  return siniflar[sinifAnahtari].yetenekler.find((y) => y.anahtar === yetenekAnahtari);
 }
 
 // Eylem yapılabilir mi? Sonuç: { olur: true } ya da { olur: false, neden }.
-// neden: 'bitti' | 'bilinmeyen_eylem' | 'kilitli_yetenek' | 'nefes_yetersiz'
-//        | 'bilinmeyen_yemek' | 'yemek_yok' | 'kacilamaz'
-export function eylemKontrol(savas, eylem) {
-  if (savas.sonuc) return { olur: false, neden: 'bitti' };
+// neden: 'bilinmeyen_eylem' | 'kilitli_yetenek' | 'nefes_yetersiz' | 'bilinmeyen_yemek'
+//        | 'yemek_yok' | 'dolu' (yemeğin yenileyeceği bir şey yok)
+// Menzil ve hedef burada denetlenmez; haritaya bağlıdır (catisma.js).
+export function eylemKontrol(durum, eylem) {
   switch (eylem?.tur) {
     case 'saldir':
       return { olur: true };
     case 'yetenek': {
-      if (!savas.oyuncu.yetenekler.includes(eylem.anahtar)) return { olur: false, neden: 'kilitli_yetenek' };
-      const y = yetenekBul(savas.oyuncu.sinif, eylem.anahtar);
-      if (savas.oyuncu.nefes < y.nefes) return { olur: false, neden: 'nefes_yetersiz' };
+      const y = yetenekBul(durum.oyuncu.sinif, eylem.anahtar);
+      if (!y || !acikYetenekler(durum.oyuncu).some((a) => a.anahtar === y.anahtar)) return { olur: false, neden: 'kilitli_yetenek' };
+      if (savasci(durum).nefes < y.nefes) return { olur: false, neden: 'nefes_yetersiz' };
       return { olur: true };
     }
-    case 'yemek':
+    case 'yemek': {
       if (!yemekler[eylem.anahtar]) return { olur: false, neden: 'bilinmeyen_yemek' };
-      if (yemekAdedi(savas.heybe, eylem.anahtar) < 1) return { olur: false, neden: 'yemek_yok' };
-      return { olur: true };
-    case 'kac':
-      return canlilar(savas).every(kacilabilirMi) ? { olur: true } : { olur: false, neden: 'kacilamaz' };
+      const k = yemekYeKontrol(durum, eylem.anahtar);
+      return k.olur ? k : { olur: false, neden: k.neden === 'yok' ? 'yemek_yok' : 'dolu' };
+    }
     default:
       return { olur: false, neden: 'bilinmeyen_eylem' };
   }
 }
 
 // ── Etkiler ──────────────────────────────────────────────
-// 'savunma'            → düşmanın her vuruş hamlesinde bir azalır.
-// 'guclenme', 'kritik',
-// 'zayiflatma'         → oyuncunun her saldırısında bir azalır.
 
-function etkiDegeri(s, hedef, etki) {
-  return s.etkiler.find((e) => e.hedef === hedef && e.etki === etki)?.deger ?? 0;
-}
+const etkiDegeri = (etkiler, etki) => etkiler.find((e) => e.etki === etki)?.deger ?? 0;
 
-function etkiEkle(s, hedef, etki, deger, sure) {
-  s.etkiler = [
-    ...s.etkiler.filter((e) => !(e.hedef === hedef && e.etki === etki)),
-    { hedef, etki, deger, kalan: sure },
-  ];
-}
+const etkiEkle = (etkiler, etki, deger, sure) => [
+  ...etkiler.filter((e) => e.etki !== etki),
+  { etki, deger, kalan: sure },
+];
 
-function etkiTuket(s, hedef, etkiAdlari) {
-  s.etkiler = s.etkiler
-    .map((e) => (e.hedef === hedef && etkiAdlari.includes(e.etki) ? { ...e, kalan: e.kalan - 1 } : e))
-    .filter((e) => e.kalan > 0);
-}
+const etkiTuket = (etkiler, etkiAdlari) => etkiler
+  .map((e) => (etkiAdlari.includes(e.etki) ? { ...e, kalan: e.kalan - 1 } : e))
+  .filter((e) => e.kalan > 0);
 
-// ── Hamleler ─────────────────────────────────────────────
+// ── Oyuncunun hamlesi ────────────────────────────────────
 
-// Kalabalık savaşta olaylara yaratığın numarası eklenir; tek yaratıklı savaşta eklenmez.
-const kimlik = (s, d) => (kalabalikMi(s) ? { no: d.no } : {});
+// Oyuncunun hedefe vuruşu (saldırı ya da hasar yeteneği). `o`: savaşçı değerleri.
+// Sonuç: { hedef, etkiler, olay }.
+function oyuncuVurusu(o, hedef, etkiler, rng, { carpan = 1, yetenek = null } = {}) {
+  const guc = o.guc * Math.max(0, 1 + etkiDegeri(etkiler, 'guclenme') - etkiDegeri(etkiler, 'zayiflatma'));
+  const kritikBonusu = etkiDegeri(etkiler, 'kritik');
+  const kalan = etkiTuket(etkiler, ['guclenme', 'kritik', 'zayiflatma']);
 
-function oyuncuVurusu(s, rng, { carpan = 1, yetenek = null } = {}) {
-  const o = s.oyuncu;
-  const d = s.dusman;
-  const guc = o.guc * Math.max(0, 1 + etkiDegeri(s, 'oyuncu', 'guclenme') - etkiDegeri(s, 'oyuncu', 'zayiflatma'));
-  const kritikBonusu = etkiDegeri(s, 'oyuncu', 'kritik');
-  etkiTuket(s, 'oyuncu', ['guclenme', 'kritik', 'zayiflatma']);
-
-  const olay = { tip: yetenek ? 'yetenek' : 'saldiri', kim: 'oyuncu', yetenek: yetenek?.anahtar, ...kimlik(s, d) };
-  if (sans(rng, kacinmaSansi(d.ceviklik))) return { ...olay, kacindi: true, hasar: 0 };
+  const olay = { tip: yetenek ? 'yetenek' : 'saldiri', kim: 'oyuncu', yetenek: yetenek?.anahtar };
+  if (sans(rng, kacinmaSansi(hedef.ceviklik))) return { hedef, etkiler: kalan, olay: { ...olay, kacindi: true, hasar: 0 } };
 
   const kritik = sans(rng, kritikSansi(o.ceviklik, kritikBonusu));
-  const ekHasar = Boolean(yetenek?.ekHasarTurleri?.includes(d.tur));
+  const ekHasar = Boolean(yetenek?.ekHasarTurleri?.includes(hedef.tur));
   const hasar = hasarHesapla({
     guc,
-    savunma: d.savunma,
+    savunma: hedef.savunma,
     rnd: aralik(rng, 0.9, 1.1),
     carpan,
     kritik,
     ek: ekHasar ? yetenek.ekHasarCarpani : 1,
   });
-  d.can = Math.max(0, d.can - hasar);
-  return { ...olay, hasar, kritik, ekHasar };
+  return {
+    hedef: { ...hedef, can: Math.max(0, hedef.can - hasar) },
+    etkiler: kalan,
+    olay: { ...olay, hasar, kritik, ekHasar },
+  };
 }
 
-function yetenekKullan(s, yetenek, rng) {
-  const o = s.oyuncu;
-  o.nefes -= yetenek.nefes;
-  switch (yetenek.etki) {
-    case 'hasar':
-      return oyuncuVurusu(s, rng, { carpan: yetenek.carpan, yetenek });
-    case 'sifa': {
-      const miktar = Math.min(o.canEnCok - o.can, Math.round(o.canEnCok * yetenek.deger));
-      o.can += miktar;
-      return { tip: 'yetenek', kim: 'oyuncu', yetenek: yetenek.anahtar, etki: 'sifa', miktar };
-    }
-    default:
-      etkiEkle(s, 'oyuncu', yetenek.etki, yetenek.deger, yetenek.sure);
-      return { tip: 'yetenek', kim: 'oyuncu', yetenek: yetenek.anahtar, etki: yetenek.etki, sure: yetenek.sure };
+// Bölge bossu canı yarının altına düşünce bir kez güçlenir (gezgin bosslar güçlenmez).
+// Zülmet ise üç evreli savaşır: canı her evre eşiğinin altına düşünce sıradaki evreye geçer.
+// Evre bilgisi düşmanın üzerinde tutulur (evre, evreNo); güçlenmeden önceki gücü de
+// (temelGuc) toparlanınca geri gelsin diye saklanır. Sonuç: { hedef, olay | null }.
+function evreKontrol(d) {
+  if (d.can <= 0) return { hedef: d, olay: null };
+  if (d.sinif === 'final') {
+    const evreler = dusmanlar[d.anahtar].evreler ?? [];
+    const simdiki = d.evreNo ?? 1;
+    const hedefEvre = 1 + evreler.filter((e) => d.can < d.canEnCok * e.can).length;
+    if (hedefEvre <= simdiki) return { hedef: d, olay: null };
+    let guc = d.guc;
+    for (let n = simdiki; n < hedefEvre; n++) guc = Math.round(guc * evreler[n - 1].guc);
+    return {
+      hedef: { ...d, temelGuc: d.temelGuc ?? d.guc, guc, evre: true, evreNo: hedefEvre },
+      olay: { tip: 'evre', kim: 'dusman', no: hedefEvre },
+    };
   }
+  if (d.sinif !== 'bolge_bossu' || d.gezgin || d.evre || d.can * 2 >= d.canEnCok) return { hedef: d, olay: null };
+  return {
+    hedef: { ...d, temelGuc: d.guc, guc: Math.round(d.guc * EVRE_GUC_CARPANI), evre: true },
+    olay: { tip: 'evre', kim: 'dusman' },
+  };
 }
 
-function yemekYe(s, anahtar) {
-  const o = s.oyuncu;
-  const { tur, miktar } = yemekEtkisi(anahtar, o, { can: o.canEnCok, nefes: o.nefesEnCok });
-  o[tur] += miktar;
-  s.heybe = yemekCikar(s.heybe, anahtar);
-  return { tip: 'yemek', kim: 'oyuncu', yemek: anahtar, yenilenen: tur, miktar };
+// Oyuncunun bir hamlesi:
+//   { tur: 'saldir' }            → hedefe vuruş
+//   { tur: 'yetenek', anahtar }  → nefes harcar; hasar yeteneği hedefe vurur, diğerleri
+//                                  yiğidin kendisine etki eder (şifa, korunma, güçlenme…)
+//   { tur: 'yemek', anahtar }    → heybeden bir yemek yer
+// `hedef`: vurulacak düşman (saldırı ve hasar yeteneğinde gerekir). Yapılamayan hamlede
+// her şey olduğu gibi döner ve olay listesi boştur.
+// Sonuç: { durum, hedef (güncel düşman ya da null), etkiler, olaylar }.
+// Hedef düşerse olaylara { tip: 'dustu' } eklenir; bossun evre değişimi { tip: 'evre' }.
+export function oyuncuHamlesi(durum, eylem, rng, { hedef = null, etkiler = [] } = {}) {
+  const bos = { durum, hedef, etkiler, olaylar: [] };
+  if (!eylemKontrol(durum, eylem).olur) return bos;
+  const o = savasci(durum);
+
+  if (eylem.tur === 'yemek') {
+    const r = yemekYe(durum, eylem.anahtar);
+    return { ...bos, durum: r.durum, olaylar: [{ tip: 'yemek', kim: 'oyuncu', yemek: eylem.anahtar, yenilenen: r.tur, miktar: r.miktar }] };
+  }
+
+  const yetenek = eylem.tur === 'yetenek' ? yetenekBul(o.sinif, eylem.anahtar) : null;
+  const vurus = !yetenek || yetenek.etki === 'hasar';
+  if (vurus && (!hedef || hedef.can <= 0)) return bos;
+
+  const yeniOyuncu = { ...durum.oyuncu, can: o.can, nefes: o.nefes - (yetenek?.nefes ?? 0) };
+  let yeniEtkiler = etkiler;
+  let yeniHedef = hedef;
+  const olaylar = [];
+
+  if (vurus) {
+    const r = oyuncuVurusu(o, hedef, etkiler, rng, { carpan: yetenek?.carpan ?? 1, yetenek });
+    yeniEtkiler = r.etkiler;
+    olaylar.push(r.olay);
+    const evre = evreKontrol(r.hedef);
+    yeniHedef = evre.hedef;
+    if (yeniHedef.can <= 0) olaylar.push({ tip: 'dustu', kim: 'dusman' });
+    else if (evre.olay) olaylar.push(evre.olay);
+  } else if (yetenek.etki === 'sifa') {
+    const miktar = Math.min(o.canEnCok - o.can, Math.round(o.canEnCok * yetenek.deger));
+    yeniOyuncu.can += miktar;
+    olaylar.push({ tip: 'yetenek', kim: 'oyuncu', yetenek: yetenek.anahtar, etki: 'sifa', miktar });
+  } else {
+    yeniEtkiler = etkiEkle(etkiler, yetenek.etki, yetenek.deger, yetenek.sure);
+    olaylar.push({ tip: 'yetenek', kim: 'oyuncu', yetenek: yetenek.anahtar, etki: yetenek.etki, sure: yetenek.sure });
+  }
+
+  return { durum: { ...durum, oyuncu: yeniOyuncu }, hedef: yeniHedef, etkiler: yeniEtkiler, olaylar };
 }
 
-// Zülmet'in bulunduğu evrenin verisi (1. evrede null).
-function finalEvresi(s) {
-  return s.evreNo > 1 ? dusmanlar[s.dusman.anahtar].evreler[s.evreNo - 2] : null;
-}
+// ── Düşmanın hamlesi ─────────────────────────────────────
 
 // Düşmanın özel hamleleri: bosslar ve mini bosslar kendi listelerini, diğerleri
 // türlerinin hamlesini kullanır. Zülmet her evrede yeni hamleler kullanır.
-export function ozelHamleler(dusman, evreNo = 1) {
+export function ozelHamleler(dusman, evreNo = dusman.evreNo ?? 1) {
   const veri = dusmanlar[dusman.anahtar];
   if (evreNo > 1 && veri?.evreler) return veri.evreler[evreNo - 2].ozelHamleler;
   return veri?.ozelHamleler ?? [OZEL_HAMLELER[dusman.tur]].filter(Boolean);
 }
 
-function ozelHamleSansi(s, d) {
-  const evre = finalEvresi(s);
-  if (evre) return evre.ozelHamleSansi;
-  if (s.evre) return EVRE_OZEL_HAMLE_SANSI;
+function ozelHamleSansi(d) {
+  if ((d.evreNo ?? 1) > 1) {
+    const evre = dusmanlar[d.anahtar].evreler?.[d.evreNo - 2];
+    if (evre) return evre.ozelHamleSansi;
+  }
+  if (d.evre) return EVRE_OZEL_HAMLE_SANSI;
   return d.sinif === 'siradan' ? OZEL_HAMLE_SANSI : BOSS_OZEL_HAMLE_SANSI;
 }
 
-// Bölge bossu canı yarının altına düşünce bir kez güçlenir (gezgin bosslar güçlenmez).
-// Zülmet ise üç evreli savaşır: canı her evre eşiğinin altına düşünce sıradaki evreye geçer.
-function evreKontrol(s) {
-  const d = s.dusman;
-  if (d.can <= 0) return null;
-  if (d.sinif === 'final') {
-    const evreler = dusmanlar[d.anahtar].evreler ?? [];
-    const hedef = 1 + evreler.filter((e) => d.can < d.canEnCok * e.can).length;
-    if (hedef <= s.evreNo) return null;
-    for (let n = s.evreNo; n < hedef; n++) d.guc = Math.round(d.guc * evreler[n - 1].guc);
-    s.evreNo = hedef;
-    s.evre = true;
-    return { tip: 'evre', kim: 'dusman', no: hedef };
-  }
-  if (d.sinif !== 'bolge_bossu' || d.gezgin || s.evre || d.can * 2 >= d.canEnCok) return null;
-  s.evre = true;
-  d.guc = Math.round(d.guc * EVRE_GUC_CARPANI);
-  return { tip: 'evre', kim: 'dusman' };
-}
-
-// Düşman yapay zekâsı: çoğunlukla saldırır, bazen özel hamle yapar.
-// `savunmaEtkisi`: oyuncunun Korunma etkisinin gücü (turun başında bir kez okunur, böylece
-// aynı turdaki bütün yaratıklara karşı geçerlidir); `hasarCarpani`: kalabalık çarpanı.
-function dusmanHamlesi(s, d, rng, { savunmaEtkisi = 0, hasarCarpani = 1 } = {}) {
-  const o = s.oyuncu;
-  const hamleler = ozelHamleler(d, s.evreNo);
-  const ozelMi = hamleler.length > 0 && sans(rng, ozelHamleSansi(s, d));
+// Düşmanın oyuncuya bir hamlesi: çoğunlukla vurur, bazen özel hamle yapar.
+// `hasarCarpani`: kalabalık çarpanı (TOPLU_HASAR_CARPANI). Korunma etkisi vuruşun hasarını
+// azaltır ve her vuruş hamlesinde bir azalır. Sonuç: { durum, etkiler, olay }.
+export function dusmanHamlesi(durum, dusman, rng, { etkiler = [], hasarCarpani = 1 } = {}) {
+  const o = savasci(durum);
+  const hamleler = ozelHamleler(dusman);
+  const ozelMi = hamleler.length > 0 && sans(rng, ozelHamleSansi(dusman));
   const ozel = ozelMi ? sec(rng, hamleler) : null;
-  const kim = kimlik(s, d);
 
   if (ozelMi && ozel.etki === 'zayiflatma') {
-    etkiEkle(s, 'oyuncu', 'zayiflatma', ozel.deger, ozel.sure);
-    return { tip: 'ozel_hamle', kim: 'dusman', ...kim, hamle: ozel.ad, etki: 'zayiflatma', sure: ozel.sure };
+    return {
+      durum,
+      etkiler: etkiEkle(etkiler, 'zayiflatma', ozel.deger, ozel.sure),
+      olay: { tip: 'ozel_hamle', kim: 'dusman', hamle: ozel.ad, etki: 'zayiflatma', sure: ozel.sure },
+    };
   }
 
   const olay = ozelMi
-    ? { tip: 'ozel_hamle', kim: 'dusman', ...kim, hamle: ozel.ad, etki: 'hasar' }
-    : { tip: 'saldiri', kim: 'dusman', ...kim };
-  if (sans(rng, kacinmaSansi(o.ceviklik))) return { ...olay, kacindi: true, hasar: 0 };
+    ? { tip: 'ozel_hamle', kim: 'dusman', hamle: ozel.ad, etki: 'hasar' }
+    : { tip: 'saldiri', kim: 'dusman' };
+  const savunmaEtkisi = etkiDegeri(etkiler, 'savunma');
+  const kalan = etkiTuket(etkiler, ['savunma']);
+  if (sans(rng, kacinmaSansi(o.ceviklik))) return { durum, etkiler: kalan, olay: { ...olay, kacindi: true, hasar: 0 } };
 
-  const kritik = sans(rng, kritikSansi(d.ceviklik));
+  const kritik = sans(rng, kritikSansi(dusman.ceviklik));
   let hasar = hasarHesapla({
-    guc: d.guc,
+    guc: dusman.guc,
     savunma: o.savunma,
     rnd: aralik(rng, 0.9, 1.1),
     carpan: (ozelMi ? ozel.carpan : 1) * hasarCarpani,
     kritik,
   });
   if (savunmaEtkisi > 0) hasar = Math.max(1, Math.round(hasar * (1 - savunmaEtkisi)));
-  o.can = Math.max(0, o.can - hasar);
-  return { ...olay, hasar, kritik, korundu: savunmaEtkisi > 0 };
-}
-
-// Düşmanların turu: canlı her yaratık sırayla hamle yapar (oyuncu bayılırsa kalanlar
-// vurmaz). Korunma etkisi tur başına bir kez azalır, yalnızca vuruş hamlesi yapıldıysa.
-function dusmanTuru(s, rng) {
-  const canli = canlilar(s);
-  const hasarCarpani = TOPLU_HASAR_CARPANI[canli.length] ?? TOPLU_HASAR_CARPANI[EN_COK_SALDIRGAN];
-  const savunmaEtkisi = etkiDegeri(s, 'oyuncu', 'savunma');
-  const olaylar = [];
-  let vurdu = false;
-  for (const d of canli) {
-    const olay = dusmanHamlesi(s, d, rng, { savunmaEtkisi, hasarCarpani });
-    if (olay.etki !== 'zayiflatma') vurdu = true;
-    olaylar.push(olay);
-    if (s.oyuncu.can <= 0) break;
-  }
-  if (vurdu) etkiTuket(s, 'oyuncu', ['savunma']);
-  return olaylar;
-}
-
-// Oyuncunun bir eylemini ve ardından düşmanın hamlesini oynatır.
-// eylem: { tur: 'saldir' } | { tur: 'yetenek', anahtar } | { tur: 'yemek', anahtar } | { tur: 'kac' }
-// Eylem yapılamıyorsa aynı savaş durumunu döndürür (bkz. eylemKontrol).
-export function oyuncuEylemi(savas, eylem, rng) {
-  if (!eylemKontrol(savas, eylem).olur) return savas;
-
-  const s = {
-    ...savas,
-    oyuncu: { ...savas.oyuncu },
-    dusman: { ...savas.dusman },
-    yoldaslar: (savas.yoldaslar ?? []).map((d) => ({ ...d })),
-    dusenler: savas.dusenler ?? [],
-    etkiler: [...savas.etkiler],
+  return {
+    durum: { ...durum, oyuncu: { ...durum.oyuncu, can: Math.max(0, o.can - hasar) } },
+    etkiler: kalan,
+    olay: { ...olay, hasar, kritik, korundu: savunmaEtkisi > 0 },
   };
-  const olaylar = [];
-
-  switch (eylem.tur) {
-    case 'saldir':
-      olaylar.push(oyuncuVurusu(s, rng));
-      break;
-    case 'yetenek':
-      olaylar.push(yetenekKullan(s, yetenekBul(s.oyuncu.sinif, eylem.anahtar), rng));
-      break;
-    case 'yemek':
-      olaylar.push(yemekYe(s, eylem.anahtar));
-      break;
-    case 'kac':
-      // Kalabalıkta en çevik yaratık belirleyicidir; içlerinde takipçi varsa o da sayılır
-      const canli = canlilar(s);
-      const kacmaOlasiligi = kacmaSansi(s.oyuncu.ceviklik, Math.max(...canli.map((d) => d.ceviklik)), { takipci: canli.some((d) => d.takipci) })
-        - TOPLU_KACMA_CEZASI * (canli.length - 1);
-      if (sans(rng, Math.max(0, kacmaOlasiligi))) {
-        s.sonuc = 'kacis';
-        olaylar.push({ tip: 'kacis', basarili: true });
-      } else {
-        olaylar.push({ tip: 'kacis', basarili: false });
-      }
-      break;
-  }
-
-  if (!s.sonuc && s.dusman.can <= 0) {
-    if (kalabalikMi(s)) olaylar.push({ tip: 'dusman_dustu', no: s.dusman.no });
-    if (s.yoldaslar.length) {
-      // Düşen yaratığın yerine sıradaki yaratık hedef olur
-      s.dusenler = [...s.dusenler, s.dusman];
-      [s.dusman, ...s.yoldaslar] = s.yoldaslar;
-    } else {
-      s.sonuc = 'zafer';
-      olaylar.push({ tip: 'zafer', xp: s.xpOdulu });
-    }
-  }
-  const evre = s.sonuc ? null : evreKontrol(s);
-  if (evre) olaylar.push(evre);
-  if (!s.sonuc) {
-    olaylar.push(...dusmanTuru(s, rng));
-    if (s.oyuncu.can <= 0) {
-      s.sonuc = 'yenilgi';
-      olaylar.push({ tip: 'yenilgi' });
-    }
-  }
-
-  s.tur = savas.tur + 1;
-  s.gunluk = [...savas.gunluk, ...olaylar];
-  return s;
 }
 
-// ── Savaş sonu ───────────────────────────────────────────
+// Savaştan uzaklaşan düşman toparlanır: canı dolar, bossun evre güçlenmesi söner.
+export function dusmanToparlan(d) {
+  if (d.can >= d.canEnCok && !d.evre) return d;
+  const { temelGuc, evre, evreNo, ...kalan } = d;
+  return { ...kalan, can: d.canEnCok, guc: temelGuc ?? d.guc };
+}
+
+// ── Bayılma ──────────────────────────────────────────────
 
 // Bayılma (plan.md Bölüm 5): oyuncu en son dinlendiği kervansarayda (hiç
 // dinlenmediyse bulunduğu ilin merkezinde) kendine gelir, canı ve nefesi dolar,
@@ -450,33 +365,4 @@ export function bayilmaUygula(durum) {
     donulenIl,
     kervansarayda: Boolean(durum.sonKervansaray),
   };
-}
-
-// Biten savaşın sonucunu oyun durumuna yansıtır: can ve nefes aktarılır,
-// zaferde XP eklenir (seviye atlama dahil), yenilgide bayılma uygulanır.
-// Zafer sofrası varsa süresinden bir savaş düşer.
-// Sonuç: { durum, ozet: { sonuc, xp, seviyeler, yeniYetenekler, akceKaybi } }.
-export function savasSonucunuUygula(durum, savas) {
-  if (!savas.sonuc) return { durum, ozet: null };
-  let yeni = {
-    ...sofraTuket(durum),
-    heybe: savas.heybe,
-    oyuncu: { ...durum.oyuncu, can: savas.oyuncu.can, nefes: savas.oyuncu.nefes },
-  };
-  const ozet = { sonuc: savas.sonuc, xp: 0, seviyeler: [], yeniYetenekler: [], akceKaybi: 0, donulenIl: null, kervansarayda: false };
-
-  if (savas.sonuc === 'zafer') {
-    const r = xpEkle(yeni.oyuncu, savas.xpOdulu);
-    yeni = { ...yeni, oyuncu: r.oyuncu };
-    // Yeni açılan yetenekler boş kısayol yuvalarına yerleşir
-    if (r.yeniYetenekler.length && yeni.kisayollar) {
-      yeni.kisayollar = yeniYetenekleriYerlestir(yeni.kisayollar, r.yeniYetenekler);
-    }
-    Object.assign(ozet, { xp: savas.xpOdulu, seviyeler: r.seviyeler, yeniYetenekler: r.yeniYetenekler });
-  } else if (savas.sonuc === 'yenilgi') {
-    const r = bayilmaUygula(yeni);
-    yeni = r.durum;
-    Object.assign(ozet, { akceKaybi: r.akceKaybi, donulenIl: r.donulenIl, kervansarayda: r.kervansarayda });
-  }
-  return { durum: yeni, ozet };
 }

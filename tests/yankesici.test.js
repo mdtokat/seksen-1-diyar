@@ -6,7 +6,6 @@ import {
   dusmanlariYerlestir,
   dusmanlariYurut,
   davranisi,
-  saldiriGrubu,
   siradanDusmanSayisi,
   yolBul,
   dusmanYurunurMu,
@@ -14,8 +13,8 @@ import {
   mesafe,
   yankesiciMi,
 } from '../src/oyun/gezinti.js';
-import { dusmanOlustur, savasBaslat, oyuncuEylemi, kacilabilirMi } from '../src/oyun/savas.js';
-import { kesifSonucunuUygula, ganimetUret, YANKESICI_CALMA, YANKESICI_AKCE_CARPANI } from '../src/oyun/kesif.js';
+import { dusmanOlustur, dusmanMenzili } from '../src/oyun/savas.js';
+import { zaferUygula, yenilgiUygula, yankesiciCalmasi, ganimetUret, YANKESICI_CALMA, YANKESICI_AKCE_CARPANI } from '../src/oyun/kesif.js';
 import { yeniOyunDurumu } from '../src/oyun/durum.js';
 import { rotaAyarla, ilSeviyesi } from '../src/oyun/rota.js';
 import { dusmanlar } from '../src/veri/dusmanlar.js';
@@ -44,12 +43,12 @@ function acikYer() {
 afterEach(() => rotaAyarla(null));
 
 describe('yankesici verisi', () => {
-  it('her bölgede çıkan insan düşman; kaçılabilir, çizimi var', () => {
+  it('her bölgede çıkan insan düşman; yakından vurur, çizimi var', () => {
     const v = dusmanlar.yankesici;
     expect(v).toMatchObject({ tur: 'insan', sinif: 'yankesici' });
     expect(v.bolge).toBeUndefined();
     const d = dusmanOlustur('yankesici', 5);
-    expect(kacilabilirMi(d)).toBe(true);
+    expect(dusmanMenzili(d)).toBe(1);
     expect(d.takipci).toBe(false);
     expect(DUSMAN_CIZIMLERI.yankesici).toBeDefined();
     expect(dusmanCizimi('yankesici')).toMatch(/^<svg/);
@@ -112,13 +111,9 @@ describe('yankesicinin belirmesi', () => {
     expect(yankesicileriCek(birakan)).toEqual({ dusmanlar: [], gidenler: [birakan[0]] });
   });
 
-  it('yaratıklarla birlik olmaz, ilin yaratık sayısına da sayılmaz', () => {
-    const yaratiklar = dusmanlariYerlestir(h, 0, rastgeleUreteci(1)).map((d) => ({ ...d, kovaliyor: true }));
+  it('ilin yaratık sayısına sayılmaz', () => {
+    const yaratiklar = dusmanlariYerlestir(h, 0, rastgeleUreteci(1));
     const [y] = yankesiciBelir(h, { dusmanlar: [], oyuncu, adim: 999, ilkId: 900 }, sabit(0));
-    const yakin = { ...yaratiklar[0], x: oyuncu.x + 1, y: oyuncu.y };
-    const yanYana = { ...y, x: oyuncu.x - 1, y: oyuncu.y };
-    expect(saldiriGrubu([yakin, yanYana], oyuncu, yanYana)).toEqual([yanYana]);
-    expect(saldiriGrubu([yakin, yanYana], oyuncu, yakin)).toEqual([yakin]);
     expect(siradanDusmanSayisi([...yaratiklar, y])).toBe(yaratiklar.length);
   });
 });
@@ -128,13 +123,10 @@ describe('yankesiciyle savaşın sonucu', () => {
 
   it('yenilen yankesici bol akçe bırakır; il arınmaz, yemek çıkmaz', () => {
     const d = durum();
-    const s0 = savasBaslat(d.oyuncu, dusmanOlustur('yankesici', 4), d.heybe);
-    const s = oyuncuEylemi({ ...s0, dusman: { ...s0.dusman, can: 1 } }, { tur: 'saldir' }, sabit(0.99));
-    expect(s.sonuc).toBe('zafer');
-    const r = kesifSonucunuUygula(d, s, KOCAELI, sabit(0));
+    const r = zaferUygula(d, dusmanOlustur('yankesici', 4), KOCAELI, sabit(0));
     expect(r.ozet.arinmaArtisi).toBe(0);
     expect(r.durum.arinma[KOCAELI] ?? 0).toBe(0);
-    expect(r.ozet.yemekler).toEqual([]);
+    expect(r.ozet.yemek).toBeNull();
     expect(r.ozet.akce).toBeGreaterThan(0);
     expect(r.durum.akce).toBe(200 + r.ozet.akce);
     const g = ganimetUret(dusmanOlustur('yankesici', 4), KOCAELI, sabit(0.5));
@@ -142,19 +134,23 @@ describe('yankesiciyle savaşın sonucu', () => {
     expect(g.akce).toBeGreaterThanOrEqual(kurt.akce * YANKESICI_AKCE_CARPANI);
   });
 
-  it('kaçan yiğidin kesesinden akçe aşırır', () => {
-    const d = durum();
-    const s0 = savasBaslat(d.oyuncu, dusmanOlustur('yankesici', 2), d.heybe);
-    const s = oyuncuEylemi(s0, { tur: 'kac' }, sabit(0));
-    expect(s.sonuc).toBe('kacis');
-    const r = kesifSonucunuUygula(d, s, KOCAELI, sabit(0));
-    expect(r.ozet.calinanAkce).toBe(Math.round(200 * YANKESICI_CALMA));
-    expect(r.durum.akce).toBe(200 - r.ozet.calinanAkce);
-    // Yaratıktan kaçmak akçe kaybettirmez
-    const k0 = savasBaslat(d.oyuncu, dusmanOlustur('ac_kurt', 2), d.heybe);
-    const k = kesifSonucunuUygula(d, oyuncuEylemi(k0, { tur: 'kac' }, sabit(0)), KOCAELI, sabit(0));
-    expect(k.ozet.calinanAkce).toBe(0);
-    expect(k.durum.akce).toBe(200);
+  it('vurduğu yiğit elinden kaçarsa kesesinden akçe aşırır; vuramadıysa eli boş gider', () => {
+    const r = yankesiciCalmasi(durum(), 1);
+    expect(r.calinan).toBe(Math.round(200 * YANKESICI_CALMA));
+    expect(r.durum.akce).toBe(200 - r.calinan);
+    expect(yankesiciCalmasi(durum(), 2).calinan).toBe(Math.round(200 * YANKESICI_CALMA * 2));
+    const bos = durum();
+    expect(yankesiciCalmasi(bos, 0)).toEqual({ durum: bos, calinan: 0 });
+    expect(yankesiciCalmasi({ ...bos, akce: 0 }, 1).calinan).toBe(0);
+  });
+
+  it('bayılan yiğidin kesesinden de aşırır (bayılma kaybından sonra)', () => {
+    const d = { ...durum(), konum: KOCAELI };
+    const r = yenilgiUygula(d, KOCAELI, { yankesiciler: 1 });
+    expect(r.ozet.akceKaybi).toBe(20);
+    expect(r.ozet.calinanAkce).toBe(Math.round(180 * YANKESICI_CALMA));
+    expect(r.durum.akce).toBe(180 - r.ozet.calinanAkce);
+    expect(yenilgiUygula(d, KOCAELI).ozet.calinanAkce).toBe(0);
   });
 });
 

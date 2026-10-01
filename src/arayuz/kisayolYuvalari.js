@@ -1,5 +1,5 @@
 // Savaş kısayol yuvalarının ortak arayüz parçaları: dört yuva düğmesi ve bir yuvaya
-// konacak şeyin seçildiği liste. Savaş ekranı ve karakter ekranı kullanır.
+// konacak şeyin seçildiği liste. Gezinti ekranı ve karakter ekranı kullanır.
 import { yemekler } from '../veri/yemekler.js';
 import { metinler } from '../veri/metinler.js';
 import { yetenekBul } from '../oyun/savas.js';
@@ -15,7 +15,6 @@ export function kisayolBilgisi(icerik, { sinif, heybe = [] }) {
   if (!icerik) return { ikon: '＋', ad: K.bos, alt: '' };
   switch (icerik.tur) {
     case 'saldir': return { ikon: '⚔️', ad: metinler.savas.saldir, alt: '' };
-    case 'kac': return { ikon: '🏃', ad: metinler.savas.kac, alt: '' };
     case 'yetenek': {
       const y = yetenekBul(sinif, icerik.anahtar);
       return { ikon: '✨', ad: y?.ad ?? '?', alt: y ? sablon(metinler.karakter.yetenekNefes, { nefes: y.nefes }) : '' };
@@ -54,11 +53,11 @@ export function yuvaDugmeleri(kisayollar, { sinif, heybe, kullanilir = () => tru
   }).join('');
 }
 
-// Bir yuvaya konabilecekler: Saldır, Kaç, açık yetenekler ve heybedeki yemekler
+// Bir yuvaya konabilecekler: Saldır, açık yetenekler ve heybedeki yemekler
 // (yuvadaki yemek heybede kalmasa da listede durur).
 export function secimListesi(oyuncu, heybe, kisayollar, sira) {
   const mevcut = kisayollar[sira];
-  const secenekler = [{ tur: 'saldir' }, { tur: 'kac' }, ...acikYetenekler(oyuncu).map((y) => ({ tur: 'yetenek', anahtar: y.anahtar }))];
+  const secenekler = [{ tur: 'saldir' }, ...acikYetenekler(oyuncu).map((y) => ({ tur: 'yetenek', anahtar: y.anahtar }))];
   const yemekAnahtarlari = [...new Set([...heybe.map((h) => h.anahtar), ...kisayollar.filter((k) => k?.tur === 'yemek').map((k) => k.anahtar)])];
   secenekler.push(...yemekAnahtarlari.map((anahtar) => ({ tur: 'yemek', anahtar })));
   const satirlar = secenekler.map((icerik) => {

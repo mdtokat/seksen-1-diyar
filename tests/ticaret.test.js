@@ -30,8 +30,8 @@ import {
   yolculukListesi,
   KERVANSARAY_ILLERI,
 } from '../src/oyun/kervansaray.js';
-import { dusmanOlustur, savasBaslat, oyuncuEylemi, savasSonucunuUygula } from '../src/oyun/savas.js';
-import { kesifSonucunuUygula, bossGanimeti } from '../src/oyun/kesif.js';
+import { dusmanOlustur, oyuncuHamlesi } from '../src/oyun/savas.js';
+import { zaferUygula, yenilgiUygula, bossGanimeti } from '../src/oyun/kesif.js';
 import { yemekFiyati, yemekAdedi, HEYBE_YUVA } from '../src/oyun/envanter.js';
 import { ilHaritasiUret, etkilesimTuru, ulasilabilir } from '../src/oyun/gezinti.js';
 import { rastgeleUreteci } from '../src/oyun/rastgele.js';
@@ -108,9 +108,8 @@ describe('ekipman', () => {
   it('savaşta ekipmanın güç farkı hissedilir', () => {
     const d = kusan(durumIle('akinci', 'bogaz_kilici'), 'bogaz_kilici');
     const dusman = dusmanOlustur('ac_kurt', 3);
-    const ciplak = oyuncuEylemi(savasBaslat(yeniOyunDurumu({ ad: 'A', sinif: 'akinci' }).oyuncu, dusman), { tur: 'saldir' }, sabit(0.99));
-    const silahli = oyuncuEylemi(savasBaslat(d.oyuncu, dusman), { tur: 'saldir' }, sabit(0.99));
-    expect(silahli.gunluk[1].hasar).toBeGreaterThan(ciplak.gunluk[1].hasar);
+    const vur = (durum) => oyuncuHamlesi(durum, { tur: 'saldir' }, sabit(0.99), { hedef: dusman }).olaylar[0].hasar;
+    expect(vur(d)).toBeGreaterThan(vur(yeniOyunDurumu({ ad: 'A', sinif: 'akinci' })));
   });
 
   it('yuvadaki eski eşya yenisiyle değişir', () => {
@@ -222,10 +221,8 @@ describe('kervansaray', () => {
     expect(dinlen({ ...yorgun, konum: 41 })).toEqual({ ...yorgun, konum: 41 });
 
     // Kocaeli'de bayılan oyuncu İstanbul kervansarayında kendine gelir
-    const uzakta = { ...d, konum: 41, akce: 100 };
-    const s0 = savasBaslat(uzakta.oyuncu, dusmanOlustur('ac_kurt', 1));
-    const s = oyuncuEylemi({ ...s0, oyuncu: { ...s0.oyuncu, can: 1 }, dusman: { ...s0.dusman, guc: 999 } }, { tur: 'saldir' }, sabit(0.99));
-    const { durum, ozet } = savasSonucunuUygula(uzakta, s);
+    const uzakta = { ...d, konum: 41, akce: 100, oyuncu: { ...d.oyuncu, can: 0 } };
+    const { durum, ozet } = yenilgiUygula(uzakta, 41);
     expect(durum.konum).toBe(34);
     expect(ozet).toMatchObject({ donulenIl: 34, kervansarayda: true, akceKaybi: 10 });
   });
@@ -274,17 +271,13 @@ describe('boss ganimeti', () => {
 
   it('boss zaferinde eşya çantaya girer, mini boss nadir eşya düşürür', () => {
     const d = { ...yeniOyunDurumu({ ad: 'A', sinif: 'alperen' }), konum: 34 };
-    const zafer = (dusman) => {
-      const s0 = savasBaslat(d.oyuncu, dusman, d.heybe);
-      return oyuncuEylemi({ ...s0, dusman: { ...s0.dusman, can: 1 } }, { tur: 'saldir' }, sabit(0.99));
-    };
-    const r = kesifSonucunuUygula(d, zafer(dusmanOlustur('bogaz_ejderi', 10)), 34, sabit(0.1));
+    const r = zaferUygula(d, dusmanOlustur('bogaz_ejderi', 10), 34, sabit(0.1));
     expect(esyalar[r.ozet.esya].nadirlik).toBe('efsanevi');
     expect(r.durum.esyalar).toContain(r.ozet.esya);
-    const m = kesifSonucunuUygula({ ...d, konum: 16 }, zafer(dusmanOlustur('gulyabani', 9)), 16, sabit(0.1));
+    const m = zaferUygula({ ...d, konum: 16 }, dusmanOlustur('gulyabani', 9), 16, sabit(0.1));
     expect(esyalar[m.ozet.esya].nadirlik).toBe('nadir');
     expect([undefined, 'alperen']).toContain(esyalar[m.ozet.esya].sinif);
-    const siradan = kesifSonucunuUygula(d, zafer(dusmanOlustur('ac_kurt', 1)), 34, sabit(0.1));
+    const siradan = zaferUygula(d, dusmanOlustur('ac_kurt', 1), 34, sabit(0.1));
     expect(siradan.ozet.esya).toBeNull();
   });
 });

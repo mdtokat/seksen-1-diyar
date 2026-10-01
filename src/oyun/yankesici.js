@@ -4,10 +4,10 @@
 // Yankesici Zülmet'in yaratıklarından değildir; her bölgede çıkar ve gücü bulunulan ilin
 // düşman seviyesine göredir. Oyuncuyu gözüne kestirip birkaç karo öteden çıkar ve hemen
 // peşine düşer (gezinti.js → DAVRANIS.yankesici). Meydana sığınan ya da yeterince uzağa
-// kaçan oyuncunun izini kaybeder ve haritadan çekip gider. Temas edince savaşılır:
-// yenilirse kesesindeki akçeyi (bol) bırakıp kaçar; oyuncu kaçar ya da bayılırsa
-// kesesinden bir miktar akçe aşırır (kesif.js → YANKESICI_CALMA). İlin arınmasına ve
-// görevlere sayılmaz.
+// kaçan oyuncunun izini kaybeder ve haritadan çekip gider. Yetişince vurur; yenilirse
+// kesesindeki akçeyi (bol) bırakıp kaçar. Oyuncuya bir kez vurmuş yankesici, oyuncu
+// elinden kaçarsa ya da bayılırsa kesesinden bir miktar akçe aşırır (kesif.js →
+// YANKESICI_CALMA). İlin arınmasına ve görevlere sayılmaz.
 import { dusmanOlustur } from './savas.js';
 import { ilSeviyesi } from './rota.js';
 import { dusmanYurunurMu, meydandaMi, mesafe, yolBul, yankesiciMi } from './gezinti.js';

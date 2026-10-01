@@ -9,10 +9,10 @@
 // çarpanlarıyla hesaplanır. İki tehlike düzeyi vardır:
 //   'zorlu'     → kesilebilir: o ilin seviyesindeki bir yiğit iyi dövüşürse yener.
 //   'kesilemez' → zırhı vuruşları neredeyse tümüyle savar; o ilin seviyesindeki bir yiğit
-//                 yenemez, akıllıca olan kaçmaktır. Bu yüzden gezgin bosslardan kaçılabilir.
+//                 yenemez, akıllıca olan uzaklaşıp kaçmaktır (ağır adımlıdır, peşini bırakır).
 //                 İlin çok üstünde seviyeye ulaşmış bir yiğit ise onu da kesebilir.
 // Gezgin bosslar ilerlemeyi etkilemez (bölge bossu yenilmiş sayılmaz, mühür çözülmez).
-import { dusmanlar } from '../veri/dusmanlar.js';
+import { dusmanlar, DUSMAN_MENZILI } from '../veri/dusmanlar.js';
 import { iller } from '../veri/iller.js';
 import { dusmanStatlari } from './savas.js';
 import { sans, sec, tamSayi } from './rastgele.js';
@@ -32,7 +32,7 @@ export const GEZGIN_BOSS = {
 // Kesilemezliğin kaynağı zırhtır: savunması vuruşları söndürür.
 // Değerler savaş motoruyla simülasyonla dengelendi: ilin üst seviyesindeki, yeteneklerini
 // kullanan ama yemek yemeyen, eşyasız bir yiğit zorlu bossların kabaca %30–85'ini yener;
-// kesilemezleri yenemez ama kaçmaya birkaç tur fırsatı bulur (tests/gezginBoss.test.js).
+// kesilemezleri yenemez ama kaçmaya fırsat bulur (tests/gezginBoss.test.js).
 export const TEHLIKE = {
   zorlu: { seviyeFarki: [0, 2], carpan: { can: 0.65, guc: 1, savunma: 1, ceviklik: 1 } },
   kesilemez: { seviyeFarki: [5, 8], carpan: { can: 1.5, guc: 1, savunma: 2.5, ceviklik: 1 } },
@@ -69,6 +69,7 @@ export function gezginBossOlustur(anahtar, plaka, rng, { tehlike = null } = {}) 
     tur: veri.tur,
     sinif: veri.sinif,
     takipci: false,
+    menzil: DUSMAN_MENZILI[veri.tur] ?? 1,
     gezgin: true,
     tehlike: t,
     seviye,

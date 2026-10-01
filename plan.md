@@ -1,6 +1,6 @@
 # Seksen Bir Diyar — Geliştirme Planı
 
-Türkiye'nin 81 ilinde geçen, tarayıcıda oynanan, sıra tabanlı bir RPG. Oyuncu illeri gezer, yaratıkları yener, seviye atlar ve yurdu zalim sihirbaz Zülmet'in kötülüğünden arındırır.
+Türkiye'nin 81 ilinde geçen, tarayıcıda oynanan bir RPG (savaş il haritasında gerçek zamanlı geçer; bkz. "Ek — Haritada savaş"). Oyuncu illeri gezer, yaratıkları yener, seviye atlar ve yurdu zalim sihirbaz Zülmet'in kötülüğünden arındırır.
 
 ---
 
@@ -26,7 +26,7 @@ Bu dosya projenin tek doğruluk kaynağıdır. "Planı uygula" dendiğinde şu k
 **Zülmet** adlı zalim bir sihirbaz, yasak sihirle zalim cinleri ve ifritleri Anadolu'ya salmıştır. Köyler basılmış, yollar kesilmiş, kervanlar yağmalanmıştır. Oyuncu, mazlumu korumak için yola çıkan genç bir yiğit olan **Alp**'tir. İstanbul'dan başlar ve bölge bölge ilerler. Her bölgede Zülmet'in sihriyle azmış bir mahlûku yener. Sonunda Ağrı Dağı'ndaki kalede Zülmet'in sihrini bozar.
 
 ### Temel döngü
-Oyuncu bir ile gider, orada **keşfe çıkar** ve bir **düşmanla karşılaşır**. Savaşı **sıra tabanlı** olarak yapar. Kazanınca **XP, akçe ve ganimet** alır, ilin **arınma yüzdesi** artar. Yeterli XP ile **seviye atlar**. Bölgede yeterince ilerleyince **bölge bossu** açılır. Boss yenilince **sonraki bölge** açılır.
+Oyuncu bir ile gider, orada **keşfe çıkar** ve bir **düşmanla karşılaşır**. Savaş, il haritasında sınıfın menziline göre (yakından ya da uzaktan) **gerçek zamanlı** geçer. Kazanınca **XP, akçe ve ganimet** alır, ilin **arınma yüzdesi** artar. Yeterli XP ile **seviye atlar**. Bölgede yeterince ilerleyince **bölge bossu** açılır. Boss yenilince **sonraki bölge** açılır.
 
 ### Uzun vadeli hedef
 81 ilin tamamını %100 arındırmak ve Zülmet'i yenmek.
@@ -75,8 +75,9 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 │  │  ├─ durum.js            # oyun durumu + abonelik (subscribe/emit)
 │  │  ├─ rastgele.js         # tohumlanabilir RNG (testler için)
 │  │  ├─ karakter.js         # stat hesapları, seviye atlama
-│  │  ├─ savas.js            # sıra tabanlı savaş motoru
-│  │  ├─ kesif.js            # keşif, karşılaşma üretimi, arınma
+│  │  ├─ savas.js            # savaş motoru: bir hamlenin sonucu, menziller
+│  │  ├─ catisma.js          # haritada gerçek zamanlı savaş: kim, ne zaman, kime vurur
+│  │  ├─ kesif.js            # karşılaşma üretimi, zafer ödülleri, arınma, bayılma
 │  │  ├─ envanter.js         # heybe, yemek kullanma
 │  │  ├─ ekipman.js          # eşya kuşanma ve çıkarma
 │  │  ├─ ticaret.js          # arasta ve Ahi esnafı alışverişi (dönen tezgâh)
@@ -105,7 +106,8 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 │  │  ├─ harita.js
 │  │  ├─ yeniOyunEkrani.js   # isim ve sınıf seçimi
 │  │  ├─ ilEkrani.js
-│  │  ├─ savasEkrani.js
+│  │  ├─ gezintiEkrani.js    # il haritası; savaş da burada geçer
+│  │  ├─ zaferKarti.js       # önemli zaferlerde açılan kart
 │  │  ├─ karakterEkrani.js
 │  │  ├─ envanterEkrani.js
 │  │  ├─ gorevEkrani.js      # muhtar ve Ahi Baba ile konuşma
@@ -129,7 +131,7 @@ Oyunun tüm kurgusu Türk ve İslam kültürüne uygun olmalıdır. Bu kurallar 
 - Çerçevelerde ve ayraçlarda sade geometrik (Selçuklu yıldızı tarzı) motifler kullanılır. Bunlar CSS veya SVG ile çizilir, harici görsel kullanılmaz.
 - Başlıklarda Türkçe karakter destekli bir serif font, metinlerde okunaklı bir sans-serif font kullanılır.
 - Karakter ve düşmanlar koddan üretilen stilize SVG çizimlerle temsil edilir (Faz 5; `src/arayuz/cizimler/`). Emojiler yalnızca yemek ve arayüz simgelerinde kullanılır. İnsan figürleri edepli ve stilize olur.
-- Savaş arka planlarında ibadethane silueti ve tanrı heykeli ya da put bulunmaz.
+- Bölge arka planlarında (zafer kartı) ibadethane silueti ve tanrı heykeli ya da put bulunmaz.
 - **Işık ve gölge (grafik geliştirmesi):** ışık sol üstten gelir; kumaş ve gövdeler hacim gradyanıyla, yüz ve kalkan gibi yuvarlak yüzeyler küre parlaklığıyla, kılıç ve miğfer metal bantlarıyla boyanır; gölgeler sağ alta düşer. Çizimler gradyanlara `url(#@<tür><renk>)` diye başvurur, `ortak.js` → `svgSar()` bunları tanımlar ve kimliklere her SVG'ye özgü ön ek verir (sayfadaki çizimlerin kimlikleri çakışmaz).
 - Sihirli varlıkların gözleri ve büyüleri ışıldar (ışıltı gradyanı); cin, hortlak, ifrit ve albastı havada süzülür, boss halesi yavaşça döner. `prefers-reduced-motion` açıkken bu hareketler durur.
 - İl haritasında zemin, yol, su ve meydan desen dolgulu tek birer yoldur; kıyı köpüğü ve yol kenarları da tek yoldur. Böylece en büyük il (Konya, 69×69) bile hafif kalır. Ağaçlar konumlarına göre (her açılışta aynı) boy ve tonca hafifçe değişir.
@@ -713,6 +715,21 @@ Kullanıcı kararları: kuşbakışı görünüm; düşmanlar haritada görünü
   - `kayitsiz` (peşe hiç düşmez): zeytinlik/orman hortlağı, akrep sürüsü, peri bacası cini, taş dev, buz cini.
   - Kovalamayan yaratıklar dolaşırken oyuncunun yanı başına kendiliğinden sokulmaz; kayıtsızlarla ancak oyuncu üstlerine varırsa dövüşülür. Haritada 👣 takipçi, 💤 kayıtsız rozeti görünür.
 - **Yankesiciler (`yankesici.js`):** `yankesici` (tür `insan`, sınıf `yankesici`, bölgesiz). Oyuncu meydan dışında yürürken, son yankesiciden (ya da ile girişten) en az 45 adım sonra her adımda %1,2 ihtimalle 4–6 karo ötede (yürüyerek ulaşılan bir yerde) bir, %30 ihtimalle iki yankesici çıkar ve hemen kovalar (görüş 9, bırakma 12, hız 0,8). Seviyesi ilin (rotaya göre) seviye aralığından. Peşini bırakınca (meydan, dokunulmazlık ya da uzaklık) haritadan çekilir. Yaratıklarla birlik olmaz, ilin yaratık sayısına sayılmaz. Zaferde XP (çarpan 1,5) ve 2 kat bol akçe; arınma, yemek ve görev ilerlemesi yok. Kaçış ya da bayılmada her yankesici kesenin %8'ini aşırır (`calinanAkce`). Savaştan sonra haritada kalmaz. Özel hamlesi *Çelme Takma* (zayıflatma).
+
+### Ek — Haritada savaş (savaş ekranı kalktı)
+Ayrı, sıra tabanlı savaş ekranı kaldırıldı; savaş il haritasında (gezinti ekranında) gerçek zamanlı geçer. Bu ek; Faz 3, 5 ve 6'daki savaş akışının, "Kalabalık saldırı" ekinin ve yankesici kaçışının yerini alır. Hasar, kritik, kaçınma, yetenek, özel hamle ve evre formülleri aynen geçerlidir.
+- **Menzil (`siniflar.js`, `dusmanlar.js`):** her sınıfın vuruş menzili vardır: Akıncı 1 (yakın dövüş), Alperen 2, Kemankeş 5 karo. Hasar yetenekleri kendi menzilini taşıyabilir: Akın Hamlesi 3 (yiğit hedefin yanına atılır), Arınma Işığı 4, Menzil Atışı 7. Düşmanların menzili türlerine göredir (`DUSMAN_MENZILI`): cin 3, ifrit 2, boss 2, diğerleri 1. Menzil karo yolu uzaklığıyla ölçülür ve görüş ister: ağaç, kaya, ev ve meydandaki yapılar görüşü kapatır, su kapatmaz (`gezinti.js → gorusAcikMi, menzildeMi`).
+- **Akış (`catisma.js`):** gezinti tıkları (170 ms) savaşın da saatidir.
+  - Oyuncu bir düşmana dokunursa (ya da üstüne yürürse) onu hedef alır; hedefin menziline yürünür. Yürümediği tıkta, vuruş beklemesi (5 tık) dolmuşsa hedefine vurur; seçili hedef menzilde değilse ona saldıran en yakın düşmana vurur. Kendi hâlinde dolaşan yaratıklara kendiliğinden vurulmaz. Vurulan düşman kızar (`kizgin`) ve peşe düşer (kayıtsızlar kızınca bekçi gibi davranır).
+  - Saldırgan düşmanlar (peşindekiler, kızdırılanlar, ininde bekleyen bosslar) oyuncu kendi menzillerine girince vurur: menzile yeni giren önce 2 tık hazırlanır, sonra 6 tıkta bir vurur. Uzaktan vuranlar menzile girince yaklaşmayı bırakır. Kalabalıkta her vuruş, o tık oyuncuya vurabilen düşman sayısına göre zayıflar (`TOPLU_HASAR_CARPANI` = { 1: 1, 2: 0,55, 3+: 0,38 }).
+  - Vurulan ama hedefi olmayan yiğit, kendisine vuranlardan en yakınını hedef alır; duruyorsa ve hedefi menzilinde değilse ona yürür. Yürüyen (kaçan) yiğidin yolu kesilmez.
+  - Meydanda ve dokunulmazken kimse vurmaz; meydandan da vurulmaz. Yürüyerek uzaklaşmak kaçmaktır; inlerdeki bosslardan da uzaklaşılabilir.
+  - Peşinde olmadığı oyuncudan 9 karodan uzaktaki yaralı düşman (inindeki boss dahil) toparlanır: canı dolar, evre güçlenmesi söner.
+- **Kısayol yuvaları:** gezintinin altında; 1–4 tuşları ya da dokunma. Saldır ve hasar yetenekleri vuruş beklemesi dolunca menzildeki hedefe yapılır (hedef uzaktaysa ona yürünür); diğer yetenekler (şifa, korunma, güçlenme, keskin göz) yürürken de yapılır; yemek hemen yenir. Boşluk tuşu en yakın düşmanı hedef alır. "Kaç" yuvası kalktı (kayıt şeması 8: eski "Kaç" yuvaları boşalır). Yetenek etkileri (Korunma vb.) ve zafer sofrası can göstergesinin altında görünür; etkiler gezinti durumunda tutulur.
+- **Zafer (`kesif.js → zaferUygula`):** her yenilen düşman ayrı bir zaferdir: XP, akçe, yemek şansı, arınma, görev sayacı, `istatistik.zafer`, zafer sofrasından bir zafer düşer (sofra artık "10 zafer" sürer, `SOFRA.zafer`). Sıradan zaferler haritada uçan yazı ve bildirimle görünür; boss, mini boss, gezgin boss ve Zülmet zaferleri, düşen eşya, il arınması ve beliren mini boss **zafer kartı** açar (oyun kart açıkken durur; Zülmet'te ardından bitiş sahnesi gelir).
+- **Bayılma (`kesif.js → yenilgiUygula`):** can biterse yiğit bayılır; son kervansarayda ya da ilin meydanında kendine gelir, akçenin %10'unu kaybeder, istatistiğe işlenir. Ona isabet ettirmiş yankesiciler (`vurdu`) kesenin %8'ini aşırır; peşini bıraktırılan ama ona isabet ettirmiş yankesici de aşırır (`yankesiciCalmasi`).
+- **Görsel:** uzaktan vuruşlar mermiyle (Kemankeş'te ok, Alperen'de ışık; cin ve bosslarda sihir, ifritte alev), yakın vuruşlar hamleyle gösterilir; hedefte halka ve can çubuğu, yaralı düşmanlarda can çubuğu görünür. `prefers-reduced-motion` açıkken mermi ve hamle görünmez.
+- **Kaldırılanlar:** `savasEkrani.js`, sıra tabanlı motor (`savasBaslat`, `oyuncuEylemi`, `hedefSec`, kaçma şansı), `saldiriGrubu` ve `temasEdenDusman`. Bölge arka planları zafer kartında kullanılır.
 
 ---
 

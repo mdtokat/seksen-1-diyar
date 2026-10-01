@@ -8,8 +8,9 @@ import {
   yeniYetenekleriYerlestir,
 } from '../src/oyun/kisayollar.js';
 import { yeniOyunDurumu } from '../src/oyun/durum.js';
-import { goc, yukle, kaydet, KAYIT_SURUMU } from '../src/oyun/kayit.js';
-import { savasBaslat, oyuncuEylemi, dusmanOlustur, savasSonucunuUygula } from '../src/oyun/savas.js';
+import { goc, yukle, kaydet, KAYIT_SURUMU, KAYIT_ANAHTARI } from '../src/oyun/kayit.js';
+import { oyuncuHamlesi, dusmanOlustur } from '../src/oyun/savas.js';
+import { zaferUygula } from '../src/oyun/kesif.js';
 import { xpEkle } from '../src/oyun/karakter.js';
 import { dusmanlar } from '../src/veri/dusmanlar.js';
 import { bolgeler } from '../src/veri/bolgeler.js';
@@ -31,10 +32,8 @@ describe('savaş kısayol yuvaları', () => {
     expect(d.kisayollar.every((k) => kisayolGecerliMi(k, 'akinci'))).toBe(true);
   });
 
-  it('yuvaya yetenek, yemek, saldır ya da kaç konur; aynı içerik başka yuvadan taşınır', () => {
+  it('yuvaya yetenek, yemek ya da saldır konur; aynı içerik başka yuvadan taşınır', () => {
     let d = yeniOyunDurumu({ ad: 'Alp', sinif: 'akinci' });
-    d = kisayolAta(d, 2, { tur: 'kac' });
-    expect(d.kisayollar[2]).toEqual({ tur: 'kac' });
     d = kisayolAta(d, 2, { tur: 'saldir' });
     expect(d.kisayollar[2]).toEqual({ tur: 'saldir' });
     expect(d.kisayollar[0]).toBeNull();
@@ -49,6 +48,8 @@ describe('savaş kısayol yuvaları', () => {
     expect(kisayolAta(d, 1, { tur: 'yetenek', anahtar: 'sifa_duasi_yok' })).toBe(d);
     expect(kisayolAta(d, 1, { tur: 'yemek', anahtar: 'yok_boyle_yemek' })).toBe(d);
     expect(kisayolAta(d, 1, { tur: 'uc' })).toBe(d);
+    // Savaş haritada geçtiği için "Kaç" yuvası yok: uzaklaşmak kaçmaktır
+    expect(kisayolAta(d, 2, { tur: 'kac' })).toBe(d);
     // Başka sınıfın yeteneği konamaz
     const baska = yeniOyunDurumu({ ad: 'Alp', sinif: 'alperen' }).kisayollar[1];
     expect(kisayolAta(d, 2, baska)).toBe(d);
@@ -60,15 +61,14 @@ describe('savaş kısayol yuvaları', () => {
     expect(kisayolEylemi({ tur: 'saldir' })).toEqual({ tur: 'saldir' });
     expect(kisayolEylemi({ tur: 'yemek', anahtar: 'boyoz' })).toEqual({ tur: 'yemek', anahtar: 'boyoz' });
     const d = yeniOyunDurumu({ ad: 'Alp', sinif: 'akinci' });
-    const savas = savasBaslat(d.oyuncu, dusmanOlustur('ac_kurt', 1), d.heybe);
-    const sonra = oyuncuEylemi(savas, kisayolEylemi(d.kisayollar[1]), rastgeleUreteci(1));
-    expect(sonra.gunluk[1]).toMatchObject({ tip: 'yetenek', yetenek: 'kilic_darbesi' });
+    const sonra = oyuncuHamlesi(d, kisayolEylemi(d.kisayollar[1]), rastgeleUreteci(1), { hedef: dusmanOlustur('ac_kurt', 1) });
+    expect(sonra.olaylar[0]).toMatchObject({ tip: 'yetenek', yetenek: 'kilic_darbesi' });
   });
 
   it('yeni açılan yetenek boş yuvaya yerleşir; yer yoksa dokunulmaz', () => {
     expect(yeniYetenekleriYerlestir([{ tur: 'saldir' }, null, null, null], [{ anahtar: 'kalkan_durusu' }]))
       .toEqual([{ tur: 'saldir' }, { tur: 'yetenek', anahtar: 'kalkan_durusu' }, null, null]);
-    const dolu = [{ tur: 'saldir' }, { tur: 'kac' }, { tur: 'yemek', anahtar: 'boyoz' }, { tur: 'yetenek', anahtar: 'kilic_darbesi' }];
+    const dolu = [{ tur: 'saldir' }, { tur: 'yemek', anahtar: 'pismaniye' }, { tur: 'yemek', anahtar: 'boyoz' }, { tur: 'yetenek', anahtar: 'kilic_darbesi' }];
     expect(yeniYetenekleriYerlestir(dolu, [{ anahtar: 'kalkan_durusu' }])).toEqual(dolu);
   });
 
@@ -79,8 +79,7 @@ describe('savaş kısayol yuvaları', () => {
     let o = d.oyuncu;
     while (o.seviye < 4) o = xpEkle(o, 50).oyuncu;
     d = { ...d, oyuncu: o };
-    const savas = { ...savasBaslat(o, dusmanOlustur('ac_kurt', 30), d.heybe), sonuc: 'zafer' };
-    const r = savasSonucunuUygula(d, { ...savas, xpOdulu: 100000 });
+    const r = zaferUygula(d, dusmanOlustur('ac_kurt', 30), 34, rastgeleUreteci(1));
     expect(r.ozet.yeniYetenekler.length).toBeGreaterThan(0);
     expect(r.durum.kisayollar).toContainEqual({ tur: 'yetenek', anahtar: 'kalkan_durusu' });
   });
@@ -94,9 +93,18 @@ describe('savaş kısayol yuvaları', () => {
     const depo = sahteDepo();
     expect(kaydet({ ...d, kisayollar: [{ tur: 'saldir' }] }, depo)).toBe(true);
     expect(yukle(depo)).toBeNull();
-    kaydet(kisayolAta(d, 2, { tur: 'kac' }), depo);
-    expect(yukle(depo).kisayollar[2]).toEqual({ tur: 'kac' });
+    kaydet(kisayolAta(d, 2, { tur: 'saldir' }), depo);
+    expect(yukle(depo).kisayollar[2]).toEqual({ tur: 'saldir' });
     expect(kisayollar).toHaveLength(KISAYOL_YUVA);
+  });
+
+  it('kayıt: sürüm 7 kaydındaki "Kaç" yuvaları boşalır', () => {
+    const d = yeniOyunDurumu({ ad: 'Alp', sinif: 'akinci' });
+    const eski = { ...d, kisayollar: [{ tur: 'saldir' }, { tur: 'kac' }, null, { tur: 'yetenek', anahtar: 'kilic_darbesi' }] };
+    expect(goc({ surum: 7, durum: eski }).durum.kisayollar).toEqual([{ tur: 'saldir' }, null, null, { tur: 'yetenek', anahtar: 'kilic_darbesi' }]);
+    const depo = sahteDepo();
+    depo.setItem(KAYIT_ANAHTARI, JSON.stringify({ surum: 7, durum: eski }));
+    expect(yukle(depo).kisayollar[1]).toBeNull();
   });
 });
 

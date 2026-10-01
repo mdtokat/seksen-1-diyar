@@ -2,7 +2,7 @@
   "name": "seksen-bir-diyar",
   "private": true,
   "version": "0.0.0",
-  "description": "Türkiye'nin 81 ilinde geçen, tarayıcıda oynanan sıra tabanlı bir RPG.",
+  "description": "Türkiye'nin 81 ilinde geçen, tarayıcıda oynanan, savaşı haritada gerçek zamanlı geçen bir RPG.",
   "type": "module",
   "scripts": {
     "dev": "vite",

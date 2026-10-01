@@ -98,6 +98,8 @@ const SESLER = {
   dusmanVurusu: (c, t) => { gurultu(c, t, { frekans: 500, guc: 0.2 }); gum(c, t, { frekans: 90 }); },
   kritik: (c, t) => { gurultu(c, t, { frekans: 1600, guc: 0.3 }); gum(c, t, { frekans: 160, guc: 0.4 }); tel(c, HICAZ.re2, t + 0.02, { sure: 0.25, guc: 0.1, dalga: 'square', filtre: 3000 }); },
   siyrilma: (c, t) => tel(c, 700, t, { sure: 0.12, guc: 0.06, dalga: 'sine' }),
+  // Uzaktan vuruş: yay kirişinin ya da ışığın kısa sesi
+  atis: (c, t) => { tel(c, HICAZ.re2, t, { sure: 0.08, guc: 0.07, dalga: 'triangle', filtre: 1800 }); tel(c, HICAZ.la, t + 0.03, { sure: 0.1, guc: 0.04, dalga: 'sine' }); },
   yemek: (c, t) => ezgi(c, t, [[HICAZ.sol, 0], [HICAZ.re2, 0.09]], { sure: 0.22, guc: 0.1, dalga: 'sine' }),
   yetenek: (c, t) => ezgi(c, t, [[HICAZ.fad, 0], [HICAZ.la, 0.06]], { sure: 0.25, guc: 0.1 }),
   seviye: (c, t) => ezgi(c, t, [[HICAZ.re, 0], [HICAZ.mib, 0.09], [HICAZ.fad, 0.18], [HICAZ.sol, 0.27], [HICAZ.la, 0.36], [HICAZ.re2, 0.5]], { sure: 0.5, guc: 0.14 }),

@@ -35,8 +35,8 @@ import {
 } from '../src/oyun/itibar.js';
 import { arastaFiyati, yemekAl, yemekAlKontrol } from '../src/oyun/ticaret.js';
 import { yemekAdedi, yemekFiyati, yemekCikar, HEYBE_YUVA } from '../src/oyun/envanter.js';
-import { dusmanOlustur, savasBaslat, oyuncuEylemi } from '../src/oyun/savas.js';
-import { kesifSonucunuUygula } from '../src/oyun/kesif.js';
+import { dusmanOlustur } from '../src/oyun/savas.js';
+import { zaferUygula, yenilgiUygula } from '../src/oyun/kesif.js';
 import { gerekenXp } from '../src/oyun/karakter.js';
 import { goc, yukle, kaydet, durumGecerliMi, KAYIT_ANAHTARI, KAYIT_SURUMU } from '../src/oyun/kayit.js';
 import { ilHaritasiUret, etkilesimTuru, ulasilabilir, yurunurMu } from '../src/oyun/gezinti.js';
@@ -54,11 +54,8 @@ function durumYap(ek = {}) {
   return { ...yeniOyunDurumu({ ad: 'Alp', sinif: 'akinci' }), ...ek };
 }
 
-// Verilen düşmana karşı kazanılmış bir savaş.
-function kazanilmis(durum, anahtar, seviye = 1) {
-  const s = savasBaslat(durum.oyuncu, dusmanOlustur(anahtar, seviye), durum.heybe);
-  return oyuncuEylemi({ ...s, dusman: { ...s.dusman, can: 1 } }, { tur: 'saldir' }, sabit(0.99));
-}
+// Haritada yenilen düşman.
+const yenilen = (anahtar, seviye = 1) => dusmanOlustur(anahtar, seviye);
 
 function depo() {
   const veri = new Map();
@@ -188,18 +185,16 @@ describe('düşman yenme görevi', () => {
     expect(zaferIlerlemesi(d, 'ac_kurt').ilerleyenler).toEqual([]);
   });
 
-  it('keşif zaferi görevi ilerletir ve hazır olunca bildirir', () => {
+  it('haritadaki zafer görevi ilerletir ve hazır olunca bildirir', () => {
     let d = gorevAl(durumYap(), 'bostanlarin_bekcisi');
     d = { ...d, gorevler: { bostanlarin_bekcisi: { durum: 'aktif', sayac: 1 } } };
-    const r1 = kesifSonucunuUygula(d, kazanilmis(d, 'ac_kurt'), ISTANBUL, sabit(0.5));
+    const r1 = zaferUygula(d, yenilen('ac_kurt'), ISTANBUL, sabit(0.5));
     expect(r1.ozet.gorevIlerlemesi).toEqual([{ anahtar: 'bostanlarin_bekcisi', mevcut: 2, hedef: 3 }]);
     expect(r1.ozet.hazirOlanGorevler).toEqual([]);
-    const r2 = kesifSonucunuUygula(r1.durum, kazanilmis(r1.durum, 'ac_kurt'), ISTANBUL, sabit(0.5));
+    const r2 = zaferUygula(r1.durum, yenilen('ac_kurt'), ISTANBUL, sabit(0.5));
     expect(r2.ozet.hazirOlanGorevler).toEqual(['bostanlarin_bekcisi']);
-    // Yenilgide görev ilerlemez
-    const s = savasBaslat(d.oyuncu, dusmanOlustur('ac_kurt', 1), d.heybe);
-    const yenilgi = oyuncuEylemi({ ...s, oyuncu: { ...s.oyuncu, can: 1 }, dusman: { ...s.dusman, guc: 999 } }, { tur: 'saldir' }, sabit(0.99));
-    expect(kesifSonucunuUygula(d, yenilgi, ISTANBUL, sabit(0.5)).durum.gorevler).toEqual(d.gorevler);
+    // Bayılınca görev ilerlemez
+    expect(yenilgiUygula(d, ISTANBUL).durum.gorevler).toEqual(d.gorevler);
   });
 
   it('tamamlanınca ödül verilir, görev bir daha alınamaz; başka ilde teslim edilemez', () => {
@@ -231,9 +226,9 @@ describe('arındırma görevi', () => {
     expect(r.odul.hayir).toBe(HAYIR.gorev.arindir);
   });
 
-  it('keşif zaferiyle eşik geçilince bildirilir', () => {
+  it('haritadaki zaferle eşik geçilince bildirilir', () => {
     const d = gorevAl(durumYap({ konum: TEKIRDAG, arinma: { [TEKIRDAG]: 65 } }), 'aycicegi_tarlalari');
-    const r = kesifSonucunuUygula(d, kazanilmis(d, 'ac_kurt'), TEKIRDAG, sabit(0.5));
+    const r = zaferUygula(d, yenilen('ac_kurt'), TEKIRDAG, sabit(0.5));
     expect(r.durum.arinma[TEKIRDAG]).toBeGreaterThanOrEqual(70);
     expect(r.ozet.hazirOlanGorevler).toEqual(['aycicegi_tarlalari']);
   });
@@ -307,15 +302,15 @@ describe('itibar (Hayır puanı)', () => {
 
   it('mazluma yardım: ili arındırmak ve mini bossu yenmek Hayır kazandırır', () => {
     const d = durumYap({ konum: KOCAELI, arinma: { [KOCAELI]: 95 } });
-    const r = kesifSonucunuUygula(d, kazanilmis(d, 'cakal_surusu'), KOCAELI, sabit(0.5));
+    const r = zaferUygula(d, yenilen('cakal_surusu'), KOCAELI, sabit(0.5));
     expect(r.ozet.arindi).toBe(true);
     expect(r.ozet.hayir).toBe(HAYIR.ilArindi);
     expect(hayirPuani(r.durum)).toBe(HAYIR.ilArindi);
-    const r2 = kesifSonucunuUygula(r.durum, kazanilmis(r.durum, 'cakal_surusu'), KOCAELI, sabit(0.5));
+    const r2 = zaferUygula(r.durum, yenilen('cakal_surusu'), KOCAELI, sabit(0.5));
     expect(r2.ozet.hayir).toBe(0); // zaten arınmış
 
     const m = durumYap({ konum: BURSA, arinma: { [BURSA]: 60 } });
-    const rm = kesifSonucunuUygula(m, kazanilmis(m, 'gulyabani', 9), BURSA, sabit(0.5));
+    const rm = zaferUygula(m, yenilen('gulyabani', 9), BURSA, sabit(0.5));
     expect(rm.ozet.miniBossYenildi).toBe(true);
     expect(rm.ozet.hayir).toBe(HAYIR.miniBoss);
   });
