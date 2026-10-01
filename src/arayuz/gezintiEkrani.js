@@ -69,6 +69,7 @@ const ADIM_MS = 170; // oyuncunun bir karo yürüme süresi
 const DUSMAN_MS = ADIM_MS; // düşman tıkı: hızları gezinti.js → DAVRANIS'ta tık başına verilir
 const TAKIP_UYARI_ARALIGI = 4000; // "peşine takıldı" bildirimleri arasındaki en az süre (ms)
 const MERMI_HIZI = 45; // uzaktan vuruşun bir karo yol alma süresi (ms)
+const COK_VURUS_ARALIGI = 150; // çok vuruşlu yetenekte (Çifte Ok) art arda vuruşların arası (ms)
 // Düşmanların uzaktan vuruşunun görünüşü, türlerine göre (yakından vuranlarda yok)
 const DUSMAN_MERMISI = { cin: 'sihir', ifrit: 'alev', boss: 'sihir' };
 const VURUS = `<svg viewBox="-20 -20 40 40" aria-hidden="true"><polygon points="0,-18 4,-6 17,-8 7,1 13,14 0,6 -13,14 -7,1 -17,-8 -4,-6" /></svg>`;
@@ -290,6 +291,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
       el.classList.toggle('saga', d.yon === 1);
       el.classList.toggle('kovaliyor', Boolean(d.kovaliyor));
       el.classList.toggle('hedefte', d.id === g.hedefId);
+      el.classList.toggle('sersem', d.sersem > 0);
       if (d.tur === 'boss' || d.tur === 'final') el.classList.toggle('muhurlu', muhurluMu(d));
       // Can çubuğu: yaralı ya da hedefteki düşmanda görünür
       const can = el.querySelector('.figur-can');
@@ -565,23 +567,36 @@ export function gezintiEkrani(kap, depo, secenekler) {
     else goster();
   }
 
-  function oyuncuOlayiniGoster(olay, hedef) {
-    if (olay.hasar !== undefined && hedef) {
+  // Yiğidin hamlesinden doğan bir olay. `hedef`: olayın düşman kaydı (varsa); `sira`: aynı
+  // düşmana inen kaçıncı vuruş (çok vuruşlu yetenekte oklar art arda uçar).
+  function oyuncuOlayiniGoster(olay, hedef, { sira = 0, adGoster = true } = {}) {
+    if (olay.tip === 'sersem' && hedef) {
+      const el = dusmanFigurleri.get(hedef.id);
+      if (el) yaziUcur(el, S.sahne.sersem, 'bilgi');
+    } else if (olay.hasar !== undefined && hedef) {
       const yetenek = olay.yetenek && yetenekBul(sinif, olay.yetenek);
-      if (yetenek) yaziUcur(oyuncuFiguru, yetenek.ad, 'bilgi');
-      vurusuGoster({
-        vuranEl: oyuncuFiguru,
-        vurulanEl: dusmanFigurleri.get(hedef.id),
-        bas: g.oyuncu,
-        son: hedef,
-        mermi: SINIF.mermi,
-        olay,
-        oyuncudan: true,
-      });
+      if (yetenek && adGoster) yaziUcur(oyuncuFiguru, yetenek.ad, 'bilgi');
+      const vurulanEl = dusmanFigurleri.get(hedef.id);
+      const goster = () => {
+        if (!vurulanEl?.isConnected) return;
+        vurusuGoster({
+          vuranEl: oyuncuFiguru,
+          vurulanEl,
+          bas: g.oyuncu,
+          son: hedef,
+          mermi: SINIF.mermi,
+          olay,
+          oyuncudan: true,
+        });
+        if (olay.sersem) yaziUcur(vurulanEl, S.sahne.sersem, 'bilgi');
+      };
+      if (sira > 0 && !azHareket) setTimeout(goster, sira * COK_VURUS_ARALIGI);
+      else goster();
     } else if (olay.tip === 'yemek' || olay.etki === 'sifa') {
       sesCal(olay.tip === 'yemek' ? 'yemek' : 'yetenek');
       titret(oyuncuFiguru, 'parilti', 600);
       yaziUcur(oyuncuFiguru, `+${olay.miktar}`, olay.yenilenen === 'nefes' ? 'nefes' : 'sifa');
+      if (olay.arindi) yaziUcur(oyuncuFiguru, S.sahne.arindi, 'bilgi');
     } else if (olay.tip === 'yetenek') {
       sesCal('yetenek');
       titret(oyuncuFiguru, 'parilti', 600);
@@ -646,7 +661,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
   // Oyuncunun bir hamlesi: kısayoldan ya da kendiliğinden saldırı. Sonuç: yapıldıysa true.
   function hamleYap(eylem, hedef) {
     const yetenek = eylem.tur === 'yetenek' ? yetenekBul(sinif, eylem.anahtar) : null;
-    const r = oyuncuVurur(depo.al(), g.dusmanlar, eylem, rng, { hedef, etkiler: g.etkiler });
+    const r = oyuncuVurur(depo.al(), g.dusmanlar, eylem, rng, { hedef, etkiler: g.etkiler, oyuncu: g.oyuncu, vurulamaz: muhurluMu });
     if (!r.olaylar.length) {
       if (eylem === g.siradakiEylem) g.siradakiEylem = null;
       return false;
@@ -669,10 +684,25 @@ export function gezintiEkrani(kap, depo, secenekler) {
         oyuncuyuCiz();
       }
     }
+    // Olayların düşman kayıtları: haritada kalanlar, düşenler ya da (hedefsiz olayda) hiçbiri
+    const onceki = g.dusmanlar;
+    const kayitBul = (id) => r.dusmanlar.find((d) => d.id === id) ?? r.dusenler.find((d) => d.id === id)
+      ?? onceki.find((d) => d.id === id) ?? null;
     g.dusmanlar = r.dusmanlar;
     depo.ayarla(r.durum);
-    for (const olay of r.olaylar) oyuncuOlayiniGoster(olay, hedef && (r.dusmanlar.find((d) => d.id === hedef.id) ?? hedef));
-    if (r.dusen) dusmanYenildi(r.dusen);
+    const vurusSayisi = new Map();
+    let adGosterildi = false;
+    for (const olay of r.olaylar) {
+      const kayit = olay.id === undefined ? null : kayitBul(olay.id);
+      let sira = 0;
+      if (olay.hasar !== undefined) {
+        sira = vurusSayisi.get(olay.id) ?? 0;
+        vurusSayisi.set(olay.id, sira + 1);
+      }
+      oyuncuOlayiniGoster(olay, kayit, { sira, adGoster: !adGosterildi });
+      if (olay.hasar !== undefined) adGosterildi = true;
+    }
+    for (const dusen of r.dusenler) dusmanYenildi(dusen);
     dusmanlariCiz();
     etkileriCiz();
     return true;
@@ -801,7 +831,15 @@ export function gezintiEkrani(kap, depo, secenekler) {
   }
 
   // Zafer kartı: oyun durur, "Devam et" ile sürer (Zülmet yenildiyse bitiş sahnesine geçilir).
+  // Bir alan vuruşu birden çok kartlı zafer getirirse kartlar sırayla açılır.
+  const kartKuyrugu = [];
+  let kartAcik = false;
   function zaferKartiAc(ozet, dusman) {
+    if (kartAcik) {
+      kartKuyrugu.push([ozet, dusman]);
+      return;
+    }
+    kartAcik = true;
     mesgul = true;
     kuyruk = [];
     tutulanYon = null;
@@ -813,6 +851,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     if (ozet.bossYenildi || ozet.zulmetYenildi) parilti(katman);
     const kapat = () => {
       katman.remove();
+      kartAcik = false;
       mesgul = false;
       g.dokunulmaz = Math.max(g.dokunulmaz, 2);
     };
@@ -822,7 +861,8 @@ export function gezintiEkrani(kap, depo, secenekler) {
       e.stopPropagation();
       kapat();
       if (ozet.zulmetYenildi) return secenekler.zulmetYenildi?.();
-      if (b.dataset.eylem === 'karakter') secenekler.karakterGoster?.();
+      if (b.dataset.eylem === 'karakter') return secenekler.karakterGoster?.();
+      if (kartKuyrugu.length) zaferKartiAc(...kartKuyrugu.shift());
     });
   }
 
@@ -840,7 +880,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
       // Peşindekiler dağılır; aynı ilde kalındıysa meydanda kendine gelir
       g.dusmanlar = g.dusmanlar
         .filter((d) => !yankesiciMi(d))
-        .map((d) => ({ ...d, kovaliyor: false, kizgin: false, bekleme: 0 }));
+        .map((d) => ({ ...d, kovaliyor: false, kizgin: false, bekleme: 0, sersem: 0 }));
       Object.assign(g, { hedefId: null, takip: false, siradakiEylem: null, etkiler: [], bekleme: 0, oyuncu: { ...harita.dogus }, dokunulmaz: 8 });
       secenekler.bayildi?.(r.ozet);
     }, azHareket ? 300 : 1300);

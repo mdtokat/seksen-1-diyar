@@ -5,8 +5,10 @@ import { statlar, gerekenXp, statPuaniDagit, STATLAR } from '../oyun/karakter.js
 import { kacis, sablon, degerCubugu } from './bilesenler.js';
 import { sinifCizimi } from './cizimler/karakterler.js';
 import { esyaBilgisi } from '../oyun/rota.js';
+import { YUVALAR } from '../veri/esyalar.js';
 import { kusan, kusanKontrol, cikar, kusaniliMi } from '../oyun/ekipman.js';
 import { esyaKarti } from './esyaKarti.js';
+import { kritikSansi, kritikCarpani, kacinmaSansi, KRITIK_TAVAN_CEVIKLIGI, KRITIK_CARPANI, KRITIK_EK_HASAR } from '../oyun/savas.js';
 import { hayirPuani, itibarKademesi } from '../oyun/itibar.js';
 import { kisayolAta, bosKisayollar } from '../oyun/kisayollar.js';
 import { yuvaDugmeleri, secimListesi, koddanIcerik } from './kisayolYuvalari.js';
@@ -57,6 +59,33 @@ function ekipmanBolumu(durum) {
 
 const M = metinler.karakter;
 
+// Yeteneğin savaştaki özellikleri (alan, sersemletme…) küçük etiketler olarak.
+function yetenekEtiketleri(y, menzilMetni, sinifMenzili) {
+  const E = M.etiketler;
+  const etiketler = [];
+  if (y.etki === 'hasar' && y.menzil && y.menzil !== sinifMenzili) etiketler.push(`🎯 ${menzilMetni(y.menzil)}`);
+  if (y.vurus > 1) etiketler.push(sablon(E.vurus, { vurus: y.vurus }));
+  if (y.alan) etiketler.push(y.alanMerkezi === 'oyuncu' ? E.alanOyuncu : sablon(E.alanHedef, { alan: y.alan }));
+  if (y.sersemAlan) etiketler.push(sablon(E.sersemAlan, { alan: y.sersemAlan }));
+  else if (y.sersem) etiketler.push(E.sersem);
+  if (y.arindirir) etiketler.push(E.arindirir);
+  return etiketler.map((e) => `<small class="yetenek-menzili">${e}</small>`).join(' ');
+}
+
+const yuzde = (oran) => Math.round(oran * 100);
+const ondalik = (sayi) => sayi.toFixed(2).replace(/0$/, '').replace('.', ',');
+
+// Çevikliğin savaştaki karşılığı: kritik şansı, kritik hasarı ve sıyrılma. Kritik şansı
+// tavana varınca fazla çevikliğin kritik hasarına gittiği belirtilir.
+function kritikNotu(ceviklik) {
+  const carpan = kritikCarpani(ceviklik);
+  const satir = sablon(M.kritik, { sans: yuzde(kritikSansi(ceviklik)), carpan: ondalik(carpan), siyrilma: yuzde(kacinmaSansi(ceviklik)) });
+  let ek = '';
+  if (carpan >= KRITIK_CARPANI + KRITIK_EK_HASAR.enCok) ek = ` ${M.kritikTavan} ${M.kritikTavanSiniri}`;
+  else if (ceviklik > KRITIK_TAVAN_CEVIKLIGI) ek = ` ${M.kritikTavan}`;
+  return `<p class="kart-not">⚡ ${satir}.${ek}</p>`;
+}
+
 function icerik(durum, secilenYuva = null) {
   const o = durum.oyuncu;
   const sinif = siniflar[o.sinif];
@@ -90,7 +119,7 @@ function icerik(durum, secilenYuva = null) {
           <span class="yetenek-bedel">${acik ? sablon(M.yetenekNefes, { nefes: y.nefes }) : sablon(M.yetenekKilitli, { seviye: y.seviye })}</span>
         </div>
         <p>${kacis(y.aciklama)}</p>
-        ${y.etki === 'hasar' && y.menzil && y.menzil !== sinif.menzil ? `<small class="yetenek-menzili">🎯 ${menzilMetni(y.menzil)}</small>` : ''}
+        ${yetenekEtiketleri(y, menzilMetni, sinif.menzil)}
       </li>`;
   }).join('');
 
@@ -119,6 +148,7 @@ function icerik(durum, secilenYuva = null) {
       </p>
       <ul class="stat-listesi">${statSatirlari}</ul>
       <p class="kart-not">🎯 ${metinler.savas.menzil}: ${menzilMetni(sinif.menzil)}</p>
+      ${kritikNotu(s.ceviklik)}
     </section>
     ${ekipmanBolumu(durum)}
     <section class="kart">

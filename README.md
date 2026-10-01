@@ -21,9 +21,9 @@ Telefonda dikey ekranda rahat oynanır; masaüstünde de çalışır. İlerleme 
 ### Başlangıç
 Adını gir ve üç yoldan birini seç:
 
-- **Akıncı:** kılıçlı öncü süvari, **yakından** (bitişik karodan) vurur. Canı ve savunması yüksektir; *Akın Hamlesi* ile üç karo öteden düşmanın yanına atılır, *Yiğit Nârası* ile gücünü artırır.
-- **Kemankeş:** Osmanlı okçusu, **beş karo öteden** ok atar (*Menzil Atışı* yedi karo). Çevik ve isabetlidir, kritik vuruşları güçlüdür; canı azdır, düşmanı yanına yaklaştırma.
-- **Alperen:** gazi-derviş geleneğinden gelir; uzun asası ve manevi gücüyle **iki karo öteye** erişir. Nefesi boldur, kendini iyileştirir; *Arınma Işığı* dört karo öteye uzanır, cinlere ve ifritlere ek hasar verir.
+- **Akıncı:** kılıçlı öncü süvari, **yakından** (bitişik karodan) vurur. Canı ve savunması yüksektir; *Akın Hamlesi* ile üç karo öteden düşmanın yanına atılıp onu sersemletir, *Yiğit Nârası* ile gücünü artırıp çevresindeki düşmanları duraksatır, *Tufan Kılıcı* yanı başındaki bütün düşmanlara iner.
+- **Kemankeş:** Osmanlı okçusu, **beş karo öteden** ok atar (*Menzil Atışı* yedi karo). Çevik ve isabetlidir, kritik vuruşları güçlüdür; *Çifte Ok* iki ayrı ok atar, *Ok Yağmuru* hedefin çevresine de yağar, *Menzil Atışı* vurduğunu yerine çiviler. Canı azdır, düşmanı yanına yaklaştırma.
+- **Alperen:** gazi-derviş geleneğinden gelir; uzun asası ve manevi gücüyle **iki karo öteye** erişir. Nefesi boldur, kendini iyileştirir; *Arınma Işığı* dört karo öteye uzanıp hedefin çevresine yayılır, cinlere ve ifritlere ek hasar verir; *Gönül Dirliği* ürküntüyü de giderir.
 
 Her yeni yolculuk **başka bir bölgeden** başlar: Marmara'dan hiç başlanmaz, kalan altı bölgenin hepsinden birer kez başlanmadan da aynı bölge tekrarlanmaz. Başlangıç ili, o bölgenin nüfusça **en küçük illerinden** biridir (ör. Bayburt, Kilis, Tunceli, Ardahan, Çankırı, Burdur, Uşak). Başlangıçta yalnızca o bölge açıktır; heybende başlangıç ilinin yöresel yemeği ve bölgeden bir azık bulunur.
 
@@ -57,6 +57,8 @@ Savaş ayrı bir ekranda değil, **il haritasında, gerçek zamanlı** geçer.
 
 ### Seviye ve ekipman
 - Her seviyede statların kendiliğinden artar ve **3 stat puanı** dağıtırsın (👤 karakter ekranı). Yeni yetenekler 5, 12, 20 ve 32. seviyelerde açılır.
+- **Çeviklik** kritik vuruş ve sıyrılma şansı verir. Kritik şansı 37,5 çeviklikte %30 tavanına varır; ötesindeki çeviklik boşa gitmez, **kritik vuruşlarını güçlendirir** (×1,5'ten ×2'ye dek). Karakter ekranı kritik şansını, kritik hasarını ve sıyrılma şansını gösterir.
+- **Yetenek özellikleri:** kimi yetenek birden çok vurur (🏹), kimi hedefin ya da senin çevrene iner (💥), kimi düşmanı **sersemletir** (💫: birkaç an ne yürür ne vurur; bosslarda yarı süre). Karakter ekranında her yeteneğin altında bu etiketler görünür.
 - **Ahi esnafı** bölgenin sıradan ve nadir silah, zırh ve kuşaklarından altısını sergiler; eşyalarını yarı fiyatına geri alır. Tezgâh her 4 zaferde başka mallarla dolar ve aynı bölgedeki her dükkânın tezgâhı ayrıdır; her sınıf için silah ve bir zırh ya da kuşak her zaman bulunur. **Efsanevi** eşyaları bosslar düşürür.
 - **Seyyar tüccar** yollarda dolaşır: ile girerken haritada bekliyor olabilir ya da yürürken yakınlarda belirir (🛍️). Sınıfına uygun **güçlü** mallar satar — bölgenin efsanevi eşyaları ve yolculuğundaki bir sonraki bölgenin eşyaları — ama yol masrafı yüzünden %50 pahalıdır; bir süre sonra yoluna devam eder.
 - Eşyaların gücü, fiyatı ve kuşanma seviyesi bölgenin yolculuktaki sırasına göredir: ilk açılan bölgenin eşyaları seviye 1'den kuşanılır.

@@ -288,7 +288,7 @@ describe('sınıflar', () => {
       expect(sinif.yetenekler.map((y) => y.ad)).toEqual(beklenenAdlar[anahtar]);
       for (const y of sinif.yetenekler) {
         expect(['hasar', 'savunma', 'sifa', 'guclenme', 'kritik'], y.ad).toContain(y.etki);
-        if (y.etki === 'hasar') expect(y.carpan, y.ad).toBeGreaterThan(1);
+        if (y.etki === 'hasar') expect(y.carpan * (y.vurus ?? 1), y.ad).toBeGreaterThan(1);
         if (['savunma', 'guclenme', 'kritik'].includes(y.etki)) expect(y.sure, y.ad).toBeGreaterThan(0);
         if (y.etki !== 'hasar') expect(y.deger, y.ad).toBeGreaterThan(0);
         expect(y.nefes, y.ad).toBeGreaterThan(0);

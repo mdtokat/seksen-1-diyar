@@ -623,6 +623,7 @@ export function surprizBaskin(harita, { dusmanlar, oyuncu, adim, id }, rng) {
 // hemen bir adım atılır; oyuncu bırakma uzaklığından öteye kaçana, meydana girene
 // ya da dokunulmaz olana dek kovalar (bırakınca kızgınlığı da geçer). Kovalarken oyuncu
 // vuruş menziline girdiyse durup vurur: uzaktan vuranlar (cinler, ifritler) yaklaşmaz.
+// Sersemleyen düşman (kayıttaki `sersem`) yerinden kıpırdamaz; sersemliği catisma.js azaltır.
 // Kovalamayan düşman yuvasına döner ve çevresinde
 // gezinir; gezinirken oyuncunun yanı başına sokulmaz (kayıtsız yaratıklarla ancak
 // oyuncu üstlerine varırsa dövüşülür). Hız, tık başına biriken adım payıyla uygulanır. Meydana ve çıkışlara
@@ -637,6 +638,7 @@ export function dusmanlariYurut(harita, dusmanlar, oyuncu, rng, { dokunulmaz = f
   const guvende = dokunulmaz || meydandaMi(harita, oyuncu);
   for (const d of sonuc) {
     if (d.sabit) continue; // boss ve mini bosslar ininden ayrılmaz
+    if (d.sersem > 0) continue; // sersemleyen düşman yerinden kıpırdayamaz
     const dav = davranisi(d);
     const uzaklik = mesafe(d, oyuncu);
     if (guvende || uzaklik > dav.birakma) {
