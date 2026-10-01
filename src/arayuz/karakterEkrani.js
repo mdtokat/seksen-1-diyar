@@ -8,7 +8,7 @@ import { esyaBilgisi } from '../oyun/rota.js';
 import { YUVALAR } from '../veri/esyalar.js';
 import { kusan, kusanKontrol, cikar, kusaniliMi } from '../oyun/ekipman.js';
 import { esyaKarti } from './esyaKarti.js';
-import { kritikSansi, kritikCarpani, kacinmaSansi, KRITIK_TAVAN_CEVIKLIGI, KRITIK_CARPANI, KRITIK_EK_HASAR } from '../oyun/savas.js';
+import { kritikSansi, kritikCarpani, kacinmaSansi, canEsigiEtkinMi, KRITIK_TAVAN_CEVIKLIGI, KRITIK_CARPANI, KRITIK_EK_HASAR } from '../oyun/savas.js';
 import { hayirPuani, itibarKademesi } from '../oyun/itibar.js';
 import { kisayolAta, bosKisayollar } from '../oyun/kisayollar.js';
 import { yuvaDugmeleri, secimListesi, koddanIcerik } from './kisayolYuvalari.js';
@@ -69,6 +69,9 @@ function yetenekEtiketleri(y, menzilMetni, sinifMenzili) {
   if (y.sersemAlan) etiketler.push(sablon(E.sersemAlan, { alan: y.sersemAlan }));
   else if (y.sersem) etiketler.push(E.sersem);
   if (y.arindirir) etiketler.push(E.arindirir);
+  if (y.zirhDelme) etiketler.push(E.zirhDelme);
+  if (y.ekSifa) etiketler.push(sablon(E.ekSifa, { oran: Math.round(y.ekSifa * 100) }));
+  if (y.etki === 'cosku') etiketler.push(E.cosku);
   return etiketler.map((e) => `<small class="yetenek-menzili">${e}</small>`).join(' ');
 }
 
@@ -151,6 +154,14 @@ function icerik(durum, secilenYuva = null) {
       ${kritikNotu(s.ceviklik)}
     </section>
     ${ekipmanBolumu(durum)}
+    <section class="kart pasif-karti">
+      <h3>✦ ${M.pasif}</h3>
+      <div class="yetenek-ust">
+        <strong>${kacis(sinif.pasif.ad)}</strong>
+        ${canEsigiEtkinMi({ sinif: o.sinif, can: o.can, canEnCok: s.can }) ? `<span class="yetenek-bedel pasif-etkin">${M.pasifEtkin}</span>` : ''}
+      </div>
+      <p>${kacis(sinif.pasif.aciklama)}</p>
+    </section>
     <section class="kart">
       <h3>${M.yetenekler}</h3>
       <ul class="yetenek-listesi">${yetenekler}</ul>

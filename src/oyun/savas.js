@@ -204,6 +204,22 @@ export function sersemSuresi(dusman, sure) {
   return korunakli ? Math.ceil(sure / 2) : sure;
 }
 
+// Sınıfın pasif özelliği (siniflar.js → pasif) ya da null.
+export const pasifOzellik = (sinif) => siniflar[sinif]?.pasif ?? null;
+
+// Gözü pek (canı eşiğin altındaki Akıncı) gibi cana bağlı pasif şu an etkin mi?
+// `o`: { sinif, can, canEnCok } (savasci() ya da oyuncu değerleri).
+export function canEsigiEtkinMi(o) {
+  const p = pasifOzellik(o.sinif);
+  return p?.tur === 'can_esigi' && o.can > 0 && o.can < o.canEnCok * p.esik;
+}
+
+// Uzak Nişan: `uzaklik` karo öteye vuruşta hasar çarpanı (pasif yoksa 1).
+export function uzakNisanCarpani(sinif, uzaklik) {
+  const p = pasifOzellik(sinif);
+  return p?.tur === 'uzak_nisan' && uzaklik >= p.uzaklik ? 1 + p.hasar : 1;
+}
+
 // Oyuncunun bir düşmana tek vuruşu. `guc` ve `kritikBonusu` hamlenin başında etkilerle
 // hesaplanmıştır. Sonuç: { hedef, olay }.
 function oyuncuVurusu(o, hedef, rng, { guc, kritikBonusu = 0, carpan = 1, yetenek = null }) {
@@ -214,7 +230,7 @@ function oyuncuVurusu(o, hedef, rng, { guc, kritikBonusu = 0, carpan = 1, yetene
   const ekHasar = Boolean(yetenek?.ekHasarTurleri?.includes(hedef.tur));
   const hasar = hasarHesapla({
     guc,
-    savunma: hedef.savunma,
+    savunma: hedef.savunma * (1 - (yetenek?.zirhDelme ?? 0)),
     rnd: aralik(rng, 0.9, 1.1),
     carpan,
     kritik,
@@ -277,12 +293,14 @@ function evreKontrol(d) {
 // `hedef`: vurulacak düşman (saldırı ve hasar yeteneğinde gerekir). `ekHedefler`: alan
 // vuruşunda (yetenek.alan) hedefin yanında vurulacak düşmanlar; hangilerinin alanda olduğu
 // haritaya bağlıdır (catisma.js). Yapılamayan hamlede her şey olduğu gibi döner ve olay
-// listesi boştur.
+// listesi boştur. `uzaklik`: hedefin karo uzaklığı (Uzak Nişan için; verilmezse yok sayılır).
 // Sonuç: { durum, hedef (güncel düşman ya da null), ekHedefler, etkiler, olaylar }.
-// Güçlenme, kritik ve ürkme etkileri hamle başına bir kez azalır (çok vuruşlu yetenekte de).
-// Hedef düşerse olaylara { tip: 'dustu' } eklenir; bossun evre değişimi { tip: 'evre' }.
+// Güçlenme, kritik, coşku ve ürkme etkileri hamle başına bir kez azalır (çok vuruşlu
+// yetenekte de). Gözü Pek (canı azken güç) ve Uzak Nişan pasifleri vuruşa katılır.
+// Hedef düşerse olaylara { tip: 'dustu' } eklenir; bossun evre değişimi { tip: 'evre' };
+// coşkunun yenilediği can { tip: 'canlanma', miktar }.
 // Ek hedeflerin olayları `ek` (ekHedefler sırası) taşır.
-export function oyuncuHamlesi(durum, eylem, rng, { hedef = null, ekHedefler = [], etkiler = [] } = {}) {
+export function oyuncuHamlesi(durum, eylem, rng, { hedef = null, ekHedefler = [], etkiler = [], uzaklik = null } = {}) {
   const bos = { durum, hedef, ekHedefler, etkiler, olaylar: [] };
   if (!eylemKontrol(durum, eylem).olur) return bos;
   const o = savasci(durum);
@@ -303,19 +321,31 @@ export function oyuncuHamlesi(durum, eylem, rng, { hedef = null, ekHedefler = []
   const olaylar = [];
 
   if (vurus) {
-    const guc = o.guc * Math.max(0, 1 + etkiDegeri(etkiler, 'guclenme') - etkiDegeri(etkiler, 'zayiflatma'));
+    const gozuPek = canEsigiEtkinMi(o) ? pasifOzellik(o.sinif).guc : 0;
+    const guc = o.guc * Math.max(0, 1 + etkiDegeri(etkiler, 'guclenme') + gozuPek - etkiDegeri(etkiler, 'zayiflatma'));
+    const uzak = uzaklik === null ? 1 : uzakNisanCarpani(o.sinif, uzaklik);
     const secenek = { guc, kritikBonusu: etkiDegeri(etkiler, 'kritik'), yetenek };
-    yeniEtkiler = etkiTuket(etkiler, ['guclenme', 'kritik', 'zayiflatma']);
-    const r = vuruslar(o, hedef, rng, { ...secenek, carpan: yetenek?.carpan ?? 1, kac: yetenek?.vurus ?? 1 });
+    yeniEtkiler = etkiTuket(etkiler, ['guclenme', 'kritik', 'zayiflatma', 'cosku']);
+    const r = vuruslar(o, hedef, rng, { ...secenek, carpan: (yetenek?.carpan ?? 1) * uzak, kac: yetenek?.vurus ?? 1 });
     yeniHedef = r.hedef;
     olaylar.push(...r.olaylar);
     if (yetenek?.alan) {
       yeniEkler = ekHedefler.map((ekHedef, ek) => {
         if (ekHedef.can <= 0) return ekHedef;
-        const e = vuruslar(o, ekHedef, rng, { ...secenek, carpan: yetenek.alanCarpani, ek });
+        const e = vuruslar(o, ekHedef, rng, { ...secenek, carpan: yetenek.alanCarpani * uzak, ek });
         olaylar.push(...e.olaylar);
         return e.hedef;
       });
+    }
+    // Akın Coşkusu: verilen hasarın bir kısmı kadar can yenilenir
+    const cosku = etkiDegeri(etkiler, 'cosku');
+    if (cosku > 0) {
+      const toplam = olaylar.reduce((t, ol) => t + (ol.hasar ?? 0), 0);
+      const miktar = Math.min(o.canEnCok - o.can, Math.round(toplam * cosku));
+      if (miktar > 0) {
+        yeniOyuncu.can += miktar;
+        olaylar.push({ tip: 'canlanma', kim: 'oyuncu', miktar });
+      }
     }
   } else if (yetenek.etki === 'sifa') {
     const miktar = Math.min(o.canEnCok - o.can, Math.round(o.canEnCok * yetenek.deger));
@@ -328,7 +358,12 @@ export function oyuncuHamlesi(durum, eylem, rng, { hedef = null, ekHedefler = []
     olaylar.push(olay);
   } else {
     yeniEtkiler = etkiEkle(etkiler, yetenek.etki, yetenek.deger, yetenek.sure);
-    olaylar.push({ tip: 'yetenek', kim: 'oyuncu', yetenek: yetenek.anahtar, etki: yetenek.etki, sure: yetenek.sure });
+    const olay = { tip: 'yetenek', kim: 'oyuncu', yetenek: yetenek.anahtar, etki: yetenek.etki, sure: yetenek.sure };
+    if (yetenek.ekSifa) {
+      olay.miktar = Math.min(o.canEnCok - o.can, Math.round(o.canEnCok * yetenek.ekSifa));
+      yeniOyuncu.can += olay.miktar;
+    }
+    olaylar.push(olay);
   }
 
   return { durum: { ...durum, oyuncu: yeniOyuncu }, hedef: yeniHedef, ekHedefler: yeniEkler, etkiler: yeniEtkiler, olaylar };

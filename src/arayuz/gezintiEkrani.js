@@ -43,7 +43,7 @@ import {
   mesafe,
   ozelDusmanlariGuncelle,
 } from '../oyun/gezinti.js';
-import { eylemKontrol, eylemMenzili, yetenekBul, dusmanMenzili } from '../oyun/savas.js';
+import { eylemKontrol, eylemMenzili, yetenekBul, dusmanMenzili, canEsigiEtkinMi, pasifOzellik } from '../oyun/savas.js';
 import { BEKLEME, hedefBul, oyuncuVurur, dusmanlarVurur, dusmanlariToparla, atilmaYeri, saldirganMi } from '../oyun/catisma.js';
 import { zaferUygula, yenilgiUygula, yankesiciCalmasi } from '../oyun/kesif.js';
 import { kisayolEylemi, bosKisayollar } from '../oyun/kisayollar.js';
@@ -414,7 +414,10 @@ export function gezintiEkrani(kap, depo, secenekler) {
 
   function etkileriCiz(durum = depo.al()) {
     const sofra = durum.sofra?.kalan > 0 ? [{ etki: 'sofra', kalan: durum.sofra.kalan }] : [];
-    etkiListesi.innerHTML = [...g.etkiler, ...sofra]
+    // Gözü Pek gibi cana bağlı pasif, etkinken gösterilir
+    const o = durum.oyuncu;
+    const pasif = canEsigiEtkinMi({ sinif: o.sinif, can: o.can, canEnCok: statlar(o).can }) ? [{ etki: pasifOzellik(o.sinif).anahtar }] : [];
+    etkiListesi.innerHTML = [...pasif, ...g.etkiler, ...sofra]
       .map((e) => `<li class="etki etki-${e.etki}">${sablon(S.etkiler[e.etki], { kalan: e.kalan })}</li>`).join('');
     etkiListesi.hidden = !etkiListesi.childElementCount;
   }
@@ -592,6 +595,11 @@ export function gezintiEkrani(kap, depo, secenekler) {
       };
       if (sira > 0 && !azHareket) setTimeout(goster, sira * COK_VURUS_ARALIGI);
       else goster();
+    } else if (olay.tip === 'canlanma') {
+      yaziUcur(oyuncuFiguru, `+${olay.miktar}`, 'sifa');
+    } else if (olay.tip === 'pasif') {
+      titret(oyuncuFiguru, 'parilti', 600);
+      yaziUcur(oyuncuFiguru, `+${olay.miktar}`, olay.yenilenen === 'nefes' ? 'nefes' : 'sifa');
     } else if (olay.tip === 'yemek' || olay.etki === 'sifa') {
       sesCal(olay.tip === 'yemek' ? 'yemek' : 'yetenek');
       titret(oyuncuFiguru, 'parilti', 600);
@@ -601,6 +609,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
       sesCal('yetenek');
       titret(oyuncuFiguru, 'parilti', 600);
       yaziUcur(oyuncuFiguru, yetenekBul(sinif, olay.yetenek).ad, 'bilgi');
+      if (olay.miktar) yaziUcur(oyuncuFiguru, `+${olay.miktar}`, 'sifa');
     } else if (olay.tip === 'evre' && hedef) {
       const el = dusmanFigurleri.get(hedef.id);
       sesCal('evre');

@@ -4,6 +4,8 @@ import {
   kritikSansi,
   kritikCarpani,
   sersemSuresi,
+  canEsigiEtkinMi,
+  uzakNisanCarpani,
   KRITIK_CARPANI,
   KRITIK_TAVAN_CEVIKLIGI,
   kacinmaSansi,
@@ -471,5 +473,77 @@ describe('yetenek etkileri: çoklu vuruş, alan, sersemletme, arınma', () => {
     const s = oyuncuHamlesi(durum('alperen', 32, { can: 20 }), { tur: 'yetenek', anahtar: 'sifa_nefesi' }, sabit(0.99), { etkiler });
     expect(s.etkiler).toBe(etkiler);
     expect(s.olaylar[0].arindi).toBeUndefined();
+  });
+});
+
+describe('sınıf özellikleri (pasifler) ve geç seviye yetenekleri', () => {
+  const ayi = (seviye) => dusmanOlustur('boz_ayi', seviye);
+
+  it('Gözü Pek: canı eşiğin altındaki Akıncı daha sert vurur; başka sınıflarda yoktur', () => {
+    const tam = durum('akinci', 20);
+    const enCok = statlar(tam.oyuncu).can;
+    const yarali = durum('akinci', 20, { can: Math.floor(enCok * 0.3) });
+    expect(canEsigiEtkinMi(savasci(tam))).toBe(false);
+    expect(canEsigiEtkinMi(savasci(yarali))).toBe(true);
+    const hedef = ayi(20);
+    const normal = oyuncuHamlesi(tam, { tur: 'saldir' }, sabit(0.99), { hedef }).olaylar[0].hasar;
+    const hirsli = oyuncuHamlesi(yarali, { tur: 'saldir' }, sabit(0.99), { hedef }).olaylar[0].hasar;
+    const s = statlar(tam.oyuncu);
+    expect(hirsli).toBe(hasarHesapla({ guc: s.guc * 1.2, savunma: hedef.savunma, rnd: 0.9 + 0.99 * 0.2 }));
+    expect(hirsli).toBeGreaterThan(normal);
+    const alperen = durum('alperen', 20, { can: 10 });
+    expect(canEsigiEtkinMi(savasci(alperen))).toBe(false);
+  });
+
+  it('Uzak Nişan: Kemankeş üç karo ve ötesine daha ağır vurur; uzaklık bilinmezse etki yok', () => {
+    expect(uzakNisanCarpani('kemankes', 2)).toBe(1);
+    expect(uzakNisanCarpani('kemankes', 3)).toBeCloseTo(1.15);
+    expect(uzakNisanCarpani('akinci', 5)).toBe(1);
+    const d = durum('kemankes', 10);
+    const hedef = ayi(10);
+    const yakin = oyuncuHamlesi(d, { tur: 'saldir' }, sabit(0.99), { hedef, uzaklik: 1 }).olaylar[0].hasar;
+    const uzak = oyuncuHamlesi(d, { tur: 'saldir' }, sabit(0.99), { hedef, uzaklik: 5 }).olaylar[0].hasar;
+    const bilinmez = oyuncuHamlesi(d, { tur: 'saldir' }, sabit(0.99), { hedef }).olaylar[0].hasar;
+    expect(uzak).toBeGreaterThan(yakin);
+    expect(bilinmez).toBe(yakin);
+  });
+
+  it('Delici Ok düşmanın savunmasını yok sayar', () => {
+    const d = durum('kemankes', 45);
+    const s = statlar(d.oyuncu);
+    const hedef = ayi(45);
+    const r = oyuncuHamlesi(d, { tur: 'yetenek', anahtar: 'delici_ok' }, sabit(0.99), { hedef });
+    expect(r.olaylar[0].hasar).toBe(hasarHesapla({ guc: s.guc, savunma: 0, rnd: 0.9 + 0.99 * 0.2, carpan: 2.8 }));
+  });
+
+  it('Akın Coşkusu: sonraki saldırılarda verilen hasarın bir kısmı kadar can yenilenir, hamle başına bir azalır', () => {
+    const d = durum('akinci', 45, { can: 50 });
+    const c = oyuncuHamlesi(d, { tur: 'yetenek', anahtar: 'akin_coskusu' }, sabit(0.99));
+    expect(c.etkiler).toEqual([{ etki: 'cosku', deger: 0.35, kalan: 4 }]);
+    const r = oyuncuHamlesi(c.durum, { tur: 'saldir' }, sabit(0.99), { hedef: ayi(45), etkiler: c.etkiler });
+    const hasar = r.olaylar[0].hasar;
+    expect(r.olaylar).toContainEqual({ tip: 'canlanma', kim: 'oyuncu', miktar: Math.round(hasar * 0.35) });
+    expect(r.durum.oyuncu.can).toBe(50 + Math.round(hasar * 0.35));
+    expect(r.etkiler).toEqual([{ etki: 'cosku', deger: 0.35, kalan: 3 }]);
+    // Can doluyken yenilenecek bir şey yok
+    const tam = durum('akinci', 45);
+    const t = oyuncuHamlesi(tam, { tur: 'saldir' }, sabit(0.99), { hedef: ayi(45), etkiler: c.etkiler });
+    expect(t.olaylar.some((o) => o.tip === 'canlanma')).toBe(false);
+  });
+
+  it('Çınar Sükûneti korur ve canı hemen yeniler', () => {
+    const d = durum('alperen', 45, { can: 40 });
+    const enCok = statlar(d.oyuncu).can;
+    const r = oyuncuHamlesi(d, { tur: 'yetenek', anahtar: 'cinar_sukuneti' }, sabit(0.99));
+    expect(r.etkiler).toEqual([{ etki: 'savunma', deger: 0.6, kalan: 4 }]);
+    expect(r.olaylar[0]).toMatchObject({ etki: 'savunma', miktar: Math.round(enCok * 0.3) });
+    expect(r.durum.oyuncu.can).toBe(40 + Math.round(enCok * 0.3));
+  });
+
+  it('geç yetenekler 38 ve 45. seviyede açılır', () => {
+    expect(eylemKontrol(durum('kemankes', 37), { tur: 'yetenek', anahtar: 'yaylim_atesi' })).toEqual({ olur: false, neden: 'kilitli_yetenek' });
+    expect(eylemKontrol(durum('kemankes', 38), { tur: 'yetenek', anahtar: 'yaylim_atesi' })).toEqual({ olur: true });
+    expect(eylemKontrol(durum('alperen', 44), { tur: 'yetenek', anahtar: 'cinar_sukuneti' }).olur).toBe(false);
+    expect(eylemKontrol(durum('alperen', 45), { tur: 'yetenek', anahtar: 'cinar_sukuneti' }).olur).toBe(true);
   });
 });

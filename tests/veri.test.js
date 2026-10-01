@@ -277,19 +277,20 @@ describe('sınıflar', () => {
     expect(siniflar.alperen.baslangic).toEqual({ can: 85, nefes: 70, guc: 9, savunma: 7, ceviklik: 8 });
   });
 
-  it('her sınıfın 5 yeteneği 1, 5, 12, 20, 32. seviyelerde açılıyor', () => {
+  it('her sınıfın 7 yeteneği 1, 5, 12, 20, 32, 38, 45. seviyelerde açılıyor', () => {
     const beklenenAdlar = {
-      akinci: ['Kılıç Darbesi', 'Kalkan Duruşu', 'Akın Hamlesi', 'Yiğit Nârası', 'Tufan Kılıcı'],
-      kemankes: ['Nişan Oku', 'Çifte Ok', 'Ok Yağmuru', 'Kartal Gözü', 'Menzil Atışı'],
-      alperen: ['Asa Darbesi', 'Şifa Nefesi', 'Hikmet Kalkanı', 'Arınma Işığı', 'Gönül Dirliği'],
+      akinci: ['Kılıç Darbesi', 'Kalkan Duruşu', 'Akın Hamlesi', 'Yiğit Nârası', 'Tufan Kılıcı', 'Kalkan Savuruşu', 'Akın Coşkusu'],
+      kemankes: ['Nişan Oku', 'Çifte Ok', 'Ok Yağmuru', 'Kartal Gözü', 'Menzil Atışı', 'Yaylım Ateşi', 'Delici Ok'],
+      alperen: ['Asa Darbesi', 'Şifa Nefesi', 'Hikmet Kalkanı', 'Arınma Işığı', 'Gönül Dirliği', 'Işık Çemberi', 'Çınar Sükûneti'],
     };
     for (const [anahtar, sinif] of Object.entries(siniflar)) {
-      expect(sinif.yetenekler.map((y) => y.seviye)).toEqual([1, 5, 12, 20, 32]);
+      expect(sinif.yetenekler.map((y) => y.seviye)).toEqual([1, 5, 12, 20, 32, 38, 45]);
       expect(sinif.yetenekler.map((y) => y.ad)).toEqual(beklenenAdlar[anahtar]);
+      expect(new Set(sinif.yetenekler.map((y) => y.anahtar)).size).toBe(7);
       for (const y of sinif.yetenekler) {
-        expect(['hasar', 'savunma', 'sifa', 'guclenme', 'kritik'], y.ad).toContain(y.etki);
+        expect(['hasar', 'savunma', 'sifa', 'guclenme', 'kritik', 'cosku'], y.ad).toContain(y.etki);
         if (y.etki === 'hasar') expect(y.carpan * (y.vurus ?? 1), y.ad).toBeGreaterThan(1);
-        if (['savunma', 'guclenme', 'kritik'].includes(y.etki)) expect(y.sure, y.ad).toBeGreaterThan(0);
+        if (['savunma', 'guclenme', 'kritik', 'cosku'].includes(y.etki)) expect(y.sure, y.ad).toBeGreaterThan(0);
         if (y.etki !== 'hasar') expect(y.deger, y.ad).toBeGreaterThan(0);
         expect(y.nefes, y.ad).toBeGreaterThan(0);
       }
@@ -299,6 +300,19 @@ describe('sınıflar', () => {
     }
   });
 
+
+  it('her sınıfın bilinen türde, açıklamalı bir pasif özelliği var', () => {
+    const turler = { can_esigi: ['esik', 'guc'], uzak_nisan: ['uzaklik', 'hasar'], zafer_nefesi: ['nefes'] };
+    const gorulen = new Set();
+    for (const [anahtar, sinif] of Object.entries(siniflar)) {
+      const p = sinif.pasif;
+      expect(Object.keys(turler), anahtar).toContain(p.tur);
+      expect(p.ad && p.aciklama && p.anahtar, anahtar).toBeTruthy();
+      for (const alan of turler[p.tur]) expect(p[alan], `${anahtar}.${alan}`).toBeGreaterThan(0);
+      gorulen.add(p.tur);
+    }
+    expect(gorulen.size).toBe(3);
+  });
   it('her stat için stat puanı değeri tanımlı', () => {
     for (const stat of ['can', 'nefes', 'guc', 'savunma', 'ceviklik']) {
       expect(STAT_PUANI_DEGERI[stat], stat).toBeGreaterThan(0);

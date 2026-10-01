@@ -19,7 +19,14 @@
 //         bosslarda yarı süre),
 //   sersemAlan: hedefsiz yetenekte yiğidin bu kadar karo çevresindeki düşmanları
 //         `sersem` tık sersemletir,
-//   arindirir: şifa yeteneği ürkme (zayıflatma) etkisini de giderir.
+//   arindirir: şifa yeteneği ürkme (zayıflatma) etkisini de giderir,
+//   zirhDelme: hasar yeteneğinin düşman savunmasının ne kadarını yok saydığı (1 → tamamı),
+//   ekSifa: etki yeteneği (ör. korunma) ayrıca canın bu oranını hemen yeniler.
+// 'cosku' etkisi: sonraki `sure` saldırıda verilen hasarın `deger` oranı kadar can yenilenir.
+// pasif: sınıfın her zaman açık özelliği (savas.js, catisma.js). tur:
+//   'can_esigi'    → canı `esik` oranının altındayken güç `guc` oranı kadar artar,
+//   'uzak_nisan'   → en az `uzaklik` karo öteye vurduğu her vuruş `hasar` oranı kadar ağır iner,
+//   'zafer_nefesi' → yendiği her düşmanla en yüksek nefesinin `nefes` oranı kadar nefes yenilenir.
 // Savaş il haritasında, gezinti ekranında geçer (savas.js, catisma.js). Sınıfın
 // `menzil` değeri vuruş erimidir: 1 yakın dövüştür (yalnızca bitişik karo), büyük
 // değerler uzaktan vurur; arada ağaç, kaya ya da ev varsa görüş kapanır.
@@ -38,6 +45,7 @@ export const siniflar = {
     tarif: 'Kılıçlı öncü süvari. Dayanıklıdır, ön safta göğüs gerer; yakından vurur.',
     menzil: 1,
     mermi: null,
+    pasif: { anahtar: 'gozu_pek', ad: 'Gözü Pek', tur: 'can_esigi', esik: 0.35, guc: 0.2, aciklama: 'Canı %35\'in altına düşünce yılmaz, daha da hırslanır: gücü %20 artar.' },
     baslangic: { can: 120, nefes: 30, guc: 12, savunma: 10, ceviklik: 6 },
     seviyeArtisi: { can: 12, nefes: 3, guc: 2, savunma: 2, ceviklik: 1 },
     yetenekler: [
@@ -46,6 +54,8 @@ export const siniflar = {
       { anahtar: 'akin_hamlesi', ad: 'Akın Hamlesi', seviye: 12, nefes: 12, etki: 'hasar', carpan: 2.0, menzil: 3, atilma: true, sersem: 6, aciklama: 'Atını mahmuzlayıp üç karo öteden düşmanın üzerine yıldırım gibi atılır; çarptığı düşman bir an sersemler.' },
       { anahtar: 'yigit_narasi', ad: 'Yiğit Nârası', seviye: 20, nefes: 15, etki: 'guclenme', deger: 0.3, sure: 3, sersemAlan: 2, sersem: 4, aciklama: 'Gür bir nâra atar; sonraki üç saldırısında gücü artar, iki karo çevresindeki düşmanlar sinip bir an duraksar.' },
       { anahtar: 'tufan_kilici', ad: 'Tufan Kılıcı', seviye: 32, nefes: 25, etki: 'hasar', carpan: 3.0, alan: 1, alanMerkezi: 'oyuncu', alanCarpani: 1.8, aciklama: 'Ardı ardına inen, durdurulamaz kılıç darbeleri; yanı başındaki bütün düşmanlar da nasibini alır.' },
+      { anahtar: 'kalkan_savurusu', ad: 'Kalkan Savuruşu', seviye: 38, nefes: 22, etki: 'hasar', carpan: 1.6, alan: 1, alanMerkezi: 'oyuncu', alanCarpani: 1.6, sersem: 5, aciklama: 'Kalkanını çevresinde savurur; yanı başındaki bütün düşmanları vurup sersemletir.' },
+      { anahtar: 'akin_coskusu', ad: 'Akın Coşkusu', seviye: 45, nefes: 24, etki: 'cosku', deger: 0.35, sure: 4, aciklama: 'Akının coşkusu damarlarını sarar; sonraki dört saldırısında verdiği hasarın üçte biri kadar canı yerine gelir.' },
     ],
   },
   kemankes: {
@@ -54,6 +64,7 @@ export const siniflar = {
     tarif: 'Osmanlı okçusu. Çevik ve isabetlidir, beş karo öteden ok atar.',
     menzil: 5,
     mermi: 'ok',
+    pasif: { anahtar: 'uzak_nisan', ad: 'Uzak Nişan', tur: 'uzak_nisan', uzaklik: 3, hasar: 0.15, aciklama: 'Üç karo ve daha uzaktaki düşmana attığı oklar %15 daha ağır iner.' },
     baslangic: { can: 90, nefes: 40, guc: 11, savunma: 6, ceviklik: 12 },
     seviyeArtisi: { can: 11, nefes: 4, guc: 2, savunma: 1, ceviklik: 2 },
     yetenekler: [
@@ -62,6 +73,8 @@ export const siniflar = {
       { anahtar: 'ok_yagmuru', ad: 'Ok Yağmuru', seviye: 12, nefes: 14, etki: 'hasar', carpan: 2.0, alan: 1, alanCarpani: 1.2, aciklama: 'Hedefin üzerine ok yağdırır; bir karo çevresindeki düşmanlar da oklardan nasibini alır.' },
       { anahtar: 'kartal_gozu', ad: 'Kartal Gözü', seviye: 20, nefes: 15, etki: 'kritik', deger: 0.25, sure: 3, aciklama: 'Kartal gibi keskin bakar; sonraki üç saldırısında kritik vuruş şansı artar.' },
       { anahtar: 'menzil_atisi', ad: 'Menzil Atışı', seviye: 32, nefes: 25, etki: 'hasar', carpan: 3.0, menzil: 7, sersem: 8, aciklama: 'Kemankeşlerin efsanevi uzun menzil atışı: yedi karo öteyi vurur; oku yiyen düşman bir süre yerinden kıpırdayamaz.' },
+      { anahtar: 'yaylim_atesi', ad: 'Yaylım Ateşi', seviye: 38, nefes: 22, etki: 'hasar', carpan: 1.8, alan: 2, alanCarpani: 1.4, aciklama: 'Göğü oklarla doldurur; hedefin iki karo çevresindeki bütün düşmanlar okların altında kalır.' },
+      { anahtar: 'delici_ok', ad: 'Delici Ok', seviye: 45, nefes: 28, etki: 'hasar', carpan: 2.8, menzil: 6, zirhDelme: 1, aciklama: 'Çelik temrenli ağır bir ok: altı karo öteyi vurur, zırhı deler; düşmanın savunması işe yaramaz.' },
     ],
   },
   alperen: {
@@ -70,6 +83,7 @@ export const siniflar = {
     tarif: 'Gazi-derviş geleneğinden gelir. Uzun asası ve manevi gücüyle (Nefes) iki karo öteye erişir, iyileşir.',
     menzil: 2,
     mermi: 'isik',
+    pasif: { anahtar: 'gonul_gucu', ad: 'Gönül Gücü', tur: 'zafer_nefesi', nefes: 0.1, aciklama: 'Yendiği her düşmanla gönlü ferahlar; nefesinin %10\'u yenilenir.' },
     baslangic: { can: 85, nefes: 70, guc: 9, savunma: 7, ceviklik: 8 },
     seviyeArtisi: { can: 8, nefes: 7, guc: 2, savunma: 1, ceviklik: 1 },
     yetenekler: [
@@ -78,6 +92,8 @@ export const siniflar = {
       { anahtar: 'hikmet_kalkani', ad: 'Hikmet Kalkanı', seviye: 12, nefes: 14, etki: 'savunma', deger: 0.5, sure: 3, aciklama: 'Sükûnetini korur; düşmanın sonraki üç hamlesinde alınan hasar yarıya iner.' },
       { anahtar: 'arinma_isigi', ad: 'Arınma Işığı', seviye: 20, nefes: 18, etki: 'hasar', carpan: 2.2, menzil: 4, ekHasarTurleri: ['cin', 'ifrit'], ekHasarCarpani: 1.5, alan: 1, alanCarpani: 1.1, aciklama: 'Gönlündeki aydınlık dört karo öteye uzanır ve hedefin çevresine yayılır; zalim cinleri ve ifritleri sarsar, onlara ek hasar verir.' },
       { anahtar: 'gonul_dirligi', ad: 'Gönül Dirliği', seviye: 32, nefes: 25, etki: 'sifa', deger: 0.7, arindirir: true, aciklama: 'Gönül huzuruyla toparlanır; canının büyük kısmını yeniler, ürküntüsünü de giderir.' },
+      { anahtar: 'isik_cemberi', ad: 'Işık Çemberi', seviye: 38, nefes: 24, etki: 'hasar', carpan: 1.8, alan: 2, alanMerkezi: 'oyuncu', alanCarpani: 1.5, ekHasarTurleri: ['cin', 'ifrit'], ekHasarCarpani: 1.5, aciklama: 'Çevresine aydınlıktan bir çember yayar; iki karo içindeki bütün düşmanları sarsar, cinlere ve ifritlere ek hasar verir.' },
+      { anahtar: 'cinar_sukuneti', ad: 'Çınar Sükûneti', seviye: 45, nefes: 28, etki: 'savunma', deger: 0.6, sure: 4, ekSifa: 0.3, aciklama: 'Ulu bir çınar gibi kök salar; canının bir kısmını hemen yeniler, düşmanın sonraki dört hamlesinde alınan hasar çok azalır.' },
     ],
   },
 };
