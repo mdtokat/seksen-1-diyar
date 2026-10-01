@@ -4,21 +4,36 @@
 // yemek alır, fazlası yeni yuvaya geçer.
 import { yemekler, YEMEK_TABANI } from '../veri/yemekler.js';
 import { iller } from '../veri/iller.js';
-import { bolgeler } from '../veri/bolgeler.js';
 import { statlar } from './karakter.js';
+import { yemekCarpani, klasikMi, bolgeIciMesafeler } from './rota.js';
 
 export const HEYBE_YUVA = 20;
 export const YIGIN_EN_FAZLA = 10;
 
-// Yeni oyunun başlangıç heybesi (plan.md Faz 4).
+// Klasik rotanın (İstanbul'dan başlayan) başlangıç heybesi (plan.md Faz 4).
 export const BASLANGIC_HEYBESI = [
   { anahtar: 'balik_ekmek', adet: 3 },
   { anahtar: 'hosmerim', adet: 2 },
 ];
 
+const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
+
+// Yeni oyunun başlangıç heybesi: başlangıç ilinin yöresel yemeğinden 3, bölgeden öbür
+// türde (can yerine nefes ya da tersi) bir yemekten 2 tane. Öbür tür yemek başlangıç
+// iline en yakın (bölge içinden yürüyerek) ilden seçilir; eşitlikte plaka sırası geçerli.
+export function baslangicHeybesi(rota) {
+  if (klasikMi(rota)) return BASLANGIC_HEYBESI.map((y) => ({ ...y }));
+  const il = ilHaritasi.get(rota.baslangic);
+  const tur = yemekler[il.yemek].tur;
+  const uzaklik = bolgeIciMesafeler(iller, { anahtar: il.bolge, giris: il.plaka });
+  const adaylar = Object.keys(uzaklik).map(Number).sort((a, b) => uzaklik[a] - uzaklik[b] || a - b).map((p) => ilHaritasi.get(p));
+  const ikinci = adaylar.find((k) => yemekler[k.yemek].tur !== tur);
+  return [{ anahtar: il.yemek, adet: 3 }, ...(ikinci ? [{ anahtar: ikinci.yemek, adet: 2 }] : [])];
+}
+
+// Yemeğin gücü, ilinin bölgesinin rotadaki kademesine göre artar.
 function bolgeCarpani(anahtar) {
-  const il = iller.find((i) => i.plaka === yemekler[anahtar].il);
-  return bolgeler.find((b) => b.anahtar === il.bolge).yemekCarpani;
+  return yemekCarpani(ilHaritasi.get(yemekler[anahtar].il).bolge);
 }
 
 // Yemeğin yenilediği can ya da nefes miktarı (plan.md Bölüm 7).

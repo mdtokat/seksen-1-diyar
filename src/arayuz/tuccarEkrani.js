@@ -1,6 +1,6 @@
 // Seyyar tüccar: yollarda dolaşan, sınıfa uygun güçlü ekipman satan gezgin esnaf.
 // Ahi dükkânından farklı olarak yalnızca alışveriş vardır (satın alma).
-import { esyalar } from '../veri/esyalar.js';
+import { esyaBilgisi } from '../oyun/rota.js';
 import { metinler } from '../veri/metinler.js';
 import { tuccarMallari, tuccarFiyati, tuccarAl, tuccarAlKontrol } from '../oyun/tuccar.js';
 import { kacis, sablon, bildirimGoster } from './bilesenler.js';
@@ -45,7 +45,7 @@ export function tuccarEkrani(kap, depo, { tuccar, geri } = {}) {
     }
     alan.innerHTML = `<ul class="esya-listesi">${mallar.map((a) => {
       const k = tuccarAlKontrol(durum, a, mallar);
-      const e = esyalar[a];
+      const e = esyaBilgisi(a);
       const not = k.neden === 'zaten_var' ? M.senin
         : durum.oyuncu.seviye < e.seviye ? sablon(metinler.ekipman.neden.seviye, { seviye: e.seviye })
         : '';
@@ -65,7 +65,7 @@ export function tuccarEkrani(kap, depo, { tuccar, geri } = {}) {
       const sonra = tuccarAl(once, b.dataset.al, mallar);
       if (sonra === once) return;
       depo.ayarla(sonra);
-      bildirimGoster(ekran, sablon(M.aldin, { esya: esyalar[b.dataset.al].ad }), { tur: 'kutlama' });
+      bildirimGoster(ekran, sablon(M.aldin, { esya: esyaBilgisi(b.dataset.al).ad }), { tur: 'kutlama' });
     }
   });
 

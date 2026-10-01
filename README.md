@@ -25,7 +25,7 @@ Adını gir ve üç yoldan birini seç:
 - **Kemankeş:** Osmanlı okçusu. Çevik ve isabetlidir, kritik vuruşları güçlüdür; canı azdır, dikkatli oyna.
 - **Alperen:** gazi-derviş geleneğinden gelir. Nefesi boldur, kendini iyileştirir; *Arınma Işığı* cinlere ve ifritlere ek hasar verir.
 
-Yolculuk İstanbul'da başlar. Başlangıçta yalnızca Marmara açıktır.
+Her yeni yolculuk **başka bir bölgeden** başlar: Marmara'dan hiç başlanmaz, kalan altı bölgenin hepsinden birer kez başlanmadan da aynı bölge tekrarlanmaz. Başlangıç ili, o bölgenin nüfusça **en küçük illerinden** biridir (ör. Bayburt, Kilis, Tunceli, Ardahan, Çankırı, Burdur, Uşak). Başlangıçta yalnızca o bölge açıktır; heybende başlangıç ilinin yöresel yemeği ve bölgeden bir azık bulunur.
 
 ### Gezinti
 - Gitmek istediğin yere **dokun** ya da ekrandaki **yön tuşlarını** (🎮) kullan. Masaüstünde **ok tuşları** ve **WASD** çalışır.
@@ -37,8 +37,11 @@ Yolculuk İstanbul'da başlar. Başlangıçta yalnızca Marmara açıktır.
 - **İller gerçek boyutlarıyla orantılıdır:** il haritasının büyüklüğü yüzölçümüyle, en-boy oranı ilin şekliyle belirlenir. Konya en geniş, Yalova en küçük haritadır. Evler ve meydanda dolaşan halk nüfusla artar; İstanbul en kalabalık ildir. İl bilgisinde ve Türkiye haritasındaki il kartında yüzölçümü, nüfus ve sıralamaları görünür.
 
 ### Savaş
-- Düşmanlar haritada dolaşır; yaklaşınca peşine düşer, temas edince sıra tabanlı savaş başlar. Büyük illerde daha çok düşman olur.
-- **Takipçi düşmanlar** (👣 rozetli: kurtlar, çakallar, yol kesen cinler…) seni uzaktan fark eder, neredeyse senin kadar hızlı koşar ve kolay kolay peşini bırakmaz. Kurtulmak için meydana sığın, başka ile geç ya da savaş. Savaşta bunlardan kaçmak da daha zordur.
+- Düşmanlar haritada dolaşır; temas edince sıra tabanlı savaş başlar. Büyük illerde daha çok düşman olur. Her yaratık peşine düşmez, tavrı türden türe değişir:
+  - **Takipçiler** (👣 rozetli: kurtlar, parslar, kara cinler, sis cinleri…) seni uzaktan fark eder, neredeyse senin kadar hızlı koşar ve kolay kolay peşini bırakmaz. Kurtulmak için meydana sığın, başka ile geç ya da savaş. Savaşta bunlardan kaçmak da daha zordur.
+  - **Bekçiler** (rozetsiz: ayılar, yaban domuzları, ifritler, muhafızlar…) yalnızca yakınlarına gelince saldırır, biraz uzaklaşınca peşini bırakır.
+  - **Kayıtsızlar** (💤 rozetli: hortlaklar, akrepler, taş devler, peri bacası cinleri…) kendi hâlinde dolaşır, peşine hiç düşmez; ancak üstlerine varırsan dövüşürler.
+- **Yankesiciler** (🗡️): meydan dışında yürürken ara sıra bir, bazen iki yol haramisi birkaç adım ötende belirip kesene göz diker ve peşine düşer. Gücü bulunduğun ilin düşman seviyesine göredir. Yenersen kesesindeki bol akçeyi bırakıp kaçar (il arınmaz, yemek çıkmaz); savaştan kaçarsan ya da bayılırsan kesenden akçenin %8'ini aşırır. Meydana sığınır ya da onu geride bırakırsan izini kaybedip çekip gider.
 - Her turda **Saldır**, **Yetenek** (nefes harcar), **Yemek** ya da **Kaç** seçilir. İnlerindeki bosslardan kaçılamaz; gezgin bosslardan kaçılabilir.
 - **Kısayol yuvaları:** savaş ekranındaki dört yuva, sıra sendeyken `1` `2` `3` `4` tuşlarıyla ya da dokunarak kullanılır. Yuvalara yetenek, yemek, Saldır ya da Kaç konur (✎ düğmesi ya da karakter ekranındaki *Savaş Kısayolları*). Yeni açılan yetenekler boş yuvalara kendiliğinden yerleşir.
 - Zafer XP, akçe ve bazen ilin yöresel yemeğini getirir; ayrıca ili **%12–18 arındırır**. %100 olan il yeşile döner.
@@ -47,13 +50,14 @@ Yolculuk İstanbul'da başlar. Başlangıçta yalnızca Marmara açıktır.
 ### Seviye ve ekipman
 - Her seviyede statların kendiliğinden artar ve **3 stat puanı** dağıtırsın (👤 karakter ekranı). Yeni yetenekler 5, 12, 20 ve 32. seviyelerde açılır.
 - **Ahi esnafı** bölgenin sıradan ve nadir silah, zırh ve kuşaklarından altısını sergiler; eşyalarını yarı fiyatına geri alır. Tezgâh her 4 zaferde başka mallarla dolar ve aynı bölgedeki her dükkânın tezgâhı ayrıdır; her sınıf için silah ve bir zırh ya da kuşak her zaman bulunur. **Efsanevi** eşyaları bosslar düşürür.
-- **Seyyar tüccar** yollarda dolaşır: ile girerken haritada bekliyor olabilir ya da yürürken yakınlarda belirir (🛍️). Sınıfına uygun **güçlü** mallar satar — bölgenin efsanevi eşyaları ve bir sonraki bölgenin eşyaları — ama yol masrafı yüzünden %50 pahalıdır; bir süre sonra yoluna devam eder.
+- **Seyyar tüccar** yollarda dolaşır: ile girerken haritada bekliyor olabilir ya da yürürken yakınlarda belirir (🛍️). Sınıfına uygun **güçlü** mallar satar — bölgenin efsanevi eşyaları ve yolculuğundaki bir sonraki bölgenin eşyaları — ama yol masrafı yüzünden %50 pahalıdır; bir süre sonra yoluna devam eder.
+- Eşyaların gücü, fiyatı ve kuşanma seviyesi bölgenin yolculuktaki sırasına göredir: ilk açılan bölgenin eşyaları seviye 1'den kuşanılır.
 
 ### Yemekler
-Her ilin meşhur yemeği ya **canı** (ana yemekler) ya da **nefesi** (tatlılar, içecekler, meyveler, bal) yeniler. Doğuya gidildikçe yemekler güçlenir. Heybe 20 yuvadır; aynı yemekten bir yuvada 10 tane durur.
+Her ilin meşhur yemeği ya **canı** (ana yemekler) ya da **nefesi** (tatlılar, içecekler, meyveler, bal) yeniler. Yolculukta sonraki bölgelerin yemekleri daha güçlüdür (ilk bölgede ×1, son bölgede ×6). Heybe 20 yuvadır; aynı yemekten bir yuvada 10 tane durur.
 
 ### Bölgeler ve bosslar
-Bölgeler sırayla açılır: Marmara → Ege → Akdeniz → İç Anadolu → Karadeniz → Güneydoğu → Doğu Anadolu. Her bölgenin bossu, bölge illerinin ortalama arınması %60'a ve seviyen bölgenin üst seviyesinin bir altına ulaşınca mühründen çıkar. Boss yenilince sonraki bölge açılır ve **zafer sofrası** kurulur (10 savaş boyunca %10 güç). Bazı illerde arınma %50'yi geçince **mini boss** belirir.
+Bölgeler, yolculuğun başladığı bölgeden komşuluk zinciriyle sırayla açılır; her yeni bölge, önceki bölgelerden birine kara sınırıyla bağlıdır (ör. Karadeniz → Doğu Anadolu → İç Anadolu → Marmara → Ege → Akdeniz → Güneydoğu). **Güç sıraya bağlıdır:** ilk açılan bölgenin düşmanları seviye 1–10, sonrakiler 8–18, 15–25, 20–32, 28–40, 35–45 ve sonuncusu 42–50 aralığındadır. Bölge içinde seviyeler, bölgeye girilen ilden (ilk bölgede başlangıç ilinden) uzaklaştıkça artar. Bossların, mini bossların ve sıradan yaratıkların gücü de bu kademeye göre ayarlanır; sıradan yaratıklar kendi güçlü ve zayıf yanlarını korur. Her bölgenin bossu, bölge illerinin ortalama arınması %60'a ve seviyen bölgenin üst seviyesinin bir altına ulaşınca mühründen çıkar. Boss yenilince sonraki bölge açılır ve **zafer sofrası** kurulur (10 savaş boyunca %10 güç). Bazı illerde arınma %50'yi geçince **mini boss** belirir.
 
 ### Gezgin ve sürpriz bosslar
 Bölgenin boss yaratıkları (mini bosslar ve bölge bossları) inlerinin dışında da çıkar: haritada sıradan düşmanlar arasında **gezgin boss** olarak dolaşabilir, yürürken de hiç beklemediğin bir anda **sürpriz** olarak yanı başında belirebilirler (meydan güvenlidir). Güçleri karaktere göre değil, bulundukları ile göre belirlenir: seviyeleri ilin düşman seviyesinin üst ucundan başlar, yani o ilin sıradan düşmanlarından hep güçlüdürler:
@@ -73,7 +77,7 @@ Kervansarayda dinlenmek ücretsizdir; can ve nefes dolar. Tamamen arınmış ill
 Meydanlardaki **muhtarlar** ve **Ahi Babalar** görev verir (başlarındaki `!` işareti). Görevler: belirli bir düşmandan birkaç tane yenmek, bir ili arındırmak ya da bir yöresel yemeği komşu ile ulaştırmak. Görevler ve mazluma yardım (ili arındırmak, bossları yenmek) **Hayır puanı** kazandırır. Unvanın yükseldikçe arastada indirim alırsın; muhtarlar da köylüler adına hediye yemek verir (🎁).
 
 ### Final
-Van Gölü Canavarı'nı yenip **seviye 48**'e ulaşınca Ağrı Dağı'ndaki kalenin mührü çözülür. Zülmet ile **üç evreli** bir savaş seni bekler: canı azaldıkça yeni sihirlerle güçlenir. Onu yenince hikâyenin sonunu ve 81 ilin özetini görürsün; ardından kalan illeri arındırmaya devam edebilirsin.
+Yolculuğun son bölgesinin bossunu yenip **seviye 48**'e ulaşınca Ağrı Dağı'ndaki kalenin mührü çözülür. Zülmet ile **üç evreli** bir savaş seni bekler: canı azaldıkça yeni sihirlerle güçlenir. Onu yenince hikâyenin sonunu ve 81 ilin özetini görürsün; ardından kalan illeri arındırmaya devam edebilirsin.
 
 ### Başarımlar
 İlk Zafer, İlk İl Arındı, Bir Bölge Tamam, Yiğit (bir bölge bossunu o bölgede hiç bayılmadan yenmek), Efsanenin Sahibi, Halkın Yiğidi, Hizmet Ehli, Sofra Ustası (81 yemeğin hepsini toplamak), Zulmete Son ve 81 Diyar. Hepsi görev günlüğündedir.

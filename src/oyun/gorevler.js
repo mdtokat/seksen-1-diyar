@@ -10,6 +10,7 @@ import { bolgeAcikMi, arinmaYuzdesi } from './ilerleme.js';
 import { yemekEkle, yemekAdedi, yemekCikar } from './envanter.js';
 import { xpEkle } from './karakter.js';
 import { hayirEkle, hediyeKontrol } from './itibar.js';
+import { ilSeviyesi } from './rota.js';
 
 // Ödül: veren ilin üst seviyesindeki sıradan bir düşmanın XP'si ve akçesi, bu çarpanlarla.
 export const GOREV_ODUL_CARPANI = { xp: 4, akce: 5 };
@@ -60,7 +61,7 @@ export function gorevDurumu(durum, anahtar) {
 // Görevi tamamlayınca kazanılanlar: { xp, akce, hayir }.
 export function gorevOdulu(anahtar) {
   const g = gorevler[anahtar];
-  const sv = ilHaritasi.get(g.il).seviye[1];
+  const sv = ilSeviyesi(g.il)[1];
   return {
     xp: Math.round((5 + sv * 10) * GOREV_ODUL_CARPANI.xp),
     akce: Math.round((3 + sv * 2) * GOREV_ODUL_CARPANI.akce),

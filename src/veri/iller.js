@@ -3,8 +3,10 @@
 // yuzolcumu: km² (yaklaşık, göl yüzeyleri hariç). nufus: TÜİK ADNKS 2023 (yaklaşık).
 //   İl içi haritanın boyutu yüzölçümüyle, kalabalığı (ev ve halk sayısı) nüfusla orantılıdır.
 // komsular: gerçek kara sınırı olan illerin plakaları (deniz geçişi yok, simetrik).
-// seviye: ildeki düşman seviye aralığı. Bölge içinde giriş ilinden BFS mesafesiyle
-//   hesaplanmıştır (src/oyun/ilerleme.js → ilSeviyeleriniHesapla). Komşuluk ya da
+// seviye: klasik rotada (Marmara'dan başlayan) ildeki düşman seviye aralığı. Bölge
+//   içinde giriş ilinden BFS mesafesiyle hesaplanmıştır (src/oyun/rota.js →
+//   ilSeviyeleriniHesapla). Oyun seviyeleri yolculuğun rotasına göre aynı yolla yeniden
+//   hesaplar (rota.js → ilSeviyesi); bu alan klasik rotanın kaydıdır. Komşuluk ya da
 //   bölge verisi değişirse testler uyuşmazlığı bildirir; değerleri yeniden hesaplayın.
 // dusmanlar: bölgenin düşman havuzundan 2–3 tür (dusmanlar.js anahtarları).
 // yemek: ilin yöresel yemeği (yemekler.js anahtarı).

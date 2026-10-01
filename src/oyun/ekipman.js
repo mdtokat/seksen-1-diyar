@@ -1,7 +1,7 @@
 // Ekipman: eşya kuşanma ve çıkarma. Saf oyun mantığı — DOM'a dokunmaz.
 // Oyuncunun sahip olduğu eşyalar `durum.esyalar` (anahtar dizisi), kuşandıkları
 // `durum.oyuncu.kusanilan` ({ silah, zirh, aksesuar }) içindedir.
-import { esyalar } from '../veri/esyalar.js';
+import { esyaBilgisi } from './rota.js';
 import { siniflar } from '../veri/siniflar.js';
 import { statlar } from './karakter.js';
 
@@ -14,7 +14,7 @@ function sinirla(oyuncu) {
 // Sonuç: { olur: true } ya da { olur: false, neden }.
 // neden: 'bilinmeyen' | 'sahip_degil' | 'sinif' | 'seviye' | 'zaten_kusanili'
 export function kusanKontrol(durum, anahtar) {
-  const esya = esyalar[anahtar];
+  const esya = esyaBilgisi(anahtar);
   if (!esya) return { olur: false, neden: 'bilinmeyen' };
   if (!(durum.esyalar ?? []).includes(anahtar)) return { olur: false, neden: 'sahip_degil' };
   const o = durum.oyuncu;
@@ -28,7 +28,7 @@ export function kusanKontrol(durum, anahtar) {
 export function kusan(durum, anahtar) {
   if (!kusanKontrol(durum, anahtar).olur) return durum;
   const o = durum.oyuncu;
-  const kusanilan = { silah: null, zirh: null, aksesuar: null, ...o.kusanilan, [esyalar[anahtar].yuva]: anahtar };
+  const kusanilan = { silah: null, zirh: null, aksesuar: null, ...o.kusanilan, [esyaBilgisi(anahtar).yuva]: anahtar };
   return { ...durum, oyuncu: sinirla({ ...o, kusanilan }) };
 }
 
@@ -44,6 +44,6 @@ export function kusaniliMi(durum, anahtar) {
 
 // Eşyayı bu sınıf kullanabilir mi (seviye hariç)?
 export function sinifaUygunMu(anahtar, sinif) {
-  const esya = esyalar[anahtar];
+  const esya = esyaBilgisi(anahtar);
   return Boolean(esya) && (!esya.sinif || esya.sinif === sinif) && Boolean(siniflar[sinif]);
 }

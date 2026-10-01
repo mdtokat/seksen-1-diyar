@@ -2,47 +2,10 @@
 import { iller as ilVerisi } from '../veri/iller.js';
 import { bolgeler as bolgeVerisi, final } from '../veri/bolgeler.js';
 import { tamIyilestir } from './karakter.js';
+import { durumRotasi, bolgeSeviyesi, sonrakiBolge, sonBolge } from './rota.js';
 
-// Bölge içinde, giriş ilinden başlayarak yalnızca aynı bölgedeki komşular
-// üzerinden BFS ile her ilin mesafesini hesaplar. Sonuç: { plaka: mesafe }.
-export function bolgeIciMesafeler(iller, bolge) {
-  const bolgeIlleri = new Map(
-    iller.filter((il) => il.bolge === bolge.anahtar).map((il) => [il.plaka, il]),
-  );
-  const mesafe = { [bolge.giris]: 0 };
-  const kuyruk = [bolge.giris];
-  while (kuyruk.length > 0) {
-    const plaka = kuyruk.shift();
-    for (const komsu of bolgeIlleri.get(plaka).komsular) {
-      if (bolgeIlleri.has(komsu) && !(komsu in mesafe)) {
-        mesafe[komsu] = mesafe[plaka] + 1;
-        kuyruk.push(komsu);
-      }
-    }
-  }
-  return mesafe;
-}
-
-// Her ilin düşman seviye aralığını hesaplar (plan.md Bölüm 4).
-// Giriş iline yakın iller düşük, uzak iller yüksek seviyeli olur; mesafe
-// kademeleri bölgenin seviye aralığını eşit parçalara bölerek kaplar.
-// Sonuç: { plaka: [enAz, enCok] }.
-export function ilSeviyeleriniHesapla(iller, bolgeler) {
-  const sonuc = {};
-  for (const bolge of bolgeler) {
-    const mesafeler = bolgeIciMesafeler(iller, bolge);
-    const enUzak = Math.max(...Object.values(mesafeler));
-    const [altSinir, ustSinir] = bolge.seviye;
-    const kademe = (ustSinir - altSinir) / (enUzak + 1);
-    for (const [plaka, d] of Object.entries(mesafeler)) {
-      sonuc[plaka] = [
-        altSinir + Math.round(d * kademe),
-        altSinir + Math.round((d + 1) * kademe),
-      ];
-    }
-  }
-  return sonuc;
-}
+// Bölge içi mesafeler ve il seviyeleri rotaya bağlıdır (rota.js); burada da sunulur.
+export { bolgeIciMesafeler, ilSeviyeleriniHesapla } from './rota.js';
 
 // ── Bölge kilitleri ve seyahat ───────────────────────────
 
@@ -99,7 +62,7 @@ export function bossKosullari(durum, bolgeAnahtari) {
   const bolge = bolgeHaritasi.get(bolgeAnahtari);
   const ortalama = bolgeArinmaOrtalamasi(durum, bolgeAnahtari);
   const seviye = durum.oyuncu?.seviye ?? 0;
-  const gerekenSeviye = bolge.seviye[1] - 1;
+  const gerekenSeviye = bolgeSeviyesi(bolge.anahtar, durumRotasi(durum))[1] - 1;
   return {
     arinma: Math.floor(ortalama), // ekranda gösterilen değer
     gerekenArinma: BOSS_ARINMA_ESIGI,
@@ -127,14 +90,13 @@ export function yeniAcilanBosslar(onceki, sonraki) {
   return acikBosslar(sonraki).filter((b) => !once.has(b));
 }
 
-// Bölge bossu yenilince: boss yenilmiş sayılır, sıradaki bölge açılır ve zafer
+// Bölge bossu yenilince: boss yenilmiş sayılır, rotadaki sıradaki bölge açılır ve zafer
 // sofrası kurulur (can ve nefes dolar, SOFRA.savas savaş boyunca güç bonusu).
 // Sonuç: { durum, acilanBolge } — acilanBolge son bölgede null'dır.
 export function bossYenildi(durum, bolgeAnahtari) {
-  const bolge = bolgeHaritasi.get(bolgeAnahtari);
-  const sonraki = bolgeVerisi.find((b) => b.sira === bolge.sira + 1) ?? null;
-  const acikBolgeler = sonraki && !durum.acikBolgeler.includes(sonraki.anahtar)
-    ? [...durum.acikBolgeler, sonraki.anahtar]
+  const sonraki = sonrakiBolge(bolgeAnahtari, durumRotasi(durum));
+  const acikBolgeler = sonraki && !durum.acikBolgeler.includes(sonraki)
+    ? [...durum.acikBolgeler, sonraki]
     : durum.acikBolgeler;
   return {
     durum: {
@@ -144,7 +106,7 @@ export function bossYenildi(durum, bolgeAnahtari) {
       sofra: { bolge: bolgeAnahtari, kalan: SOFRA.savas },
       oyuncu: tamIyilestir(durum.oyuncu),
     },
-    acilanBolge: sonraki?.anahtar ?? null,
+    acilanBolge: sonraki,
   };
 }
 
@@ -171,10 +133,13 @@ export function miniBossVarMi(durum, plaka) {
 
 // ── Final: Ağrı Dağı'ndaki kale (plan.md Faz 10) ─────────
 
-// Kalenin mührünün çözülme koşulları: önkoşul bölgenin (Doğu Anadolu) bossu
-// yenilmiş ve oyuncu en az final seviyesinde olmalı.
+// Rotanın son bölgesi (Zülmet'e giden yolun son durağı).
+export const finalOnkosulBolgesi = (durum) => sonBolge(durumRotasi(durum));
+
+// Kalenin mührünün çözülme koşulları: rotanın son bölgesinin bossu yenilmiş ve oyuncu
+// en az final seviyesinde olmalı.
 export function finalKosullari(durum) {
-  const onkosulBossu = (durum.yenilenBosslar ?? []).includes(final.onkosulBolge);
+  const onkosulBossu = (durum.yenilenBosslar ?? []).includes(finalOnkosulBolgesi(durum));
   const seviye = durum.oyuncu?.seviye ?? 0;
   return { onkosulBossu, seviye, gerekenSeviye: final.seviye, olur: onkosulBossu && seviye >= final.seviye };
 }

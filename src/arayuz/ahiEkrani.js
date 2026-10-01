@@ -1,7 +1,7 @@
 // Ahi esnafı: bölgenin silah, zırh ve kuşaklarını satan dükkân; eşyaları yarı
 // fiyatına geri de alır.
 import { iller } from '../veri/iller.js';
-import { esyalar } from '../veri/esyalar.js';
+import { esyaBilgisi } from '../oyun/rota.js';
 import { metinler } from '../veri/metinler.js';
 import {
   ahiMallari, esyaAl, esyaAlKontrol, esyaSat, esyaSatKontrol, satisFiyati, pazarDonemi, pazarYenilenmesineKalan,
@@ -15,15 +15,15 @@ const M = metinler.ahi;
 function alSekmesi(durum) {
   const o = durum.oyuncu;
   const mallar = ahiMallari(durum.konum, pazarDonemi(durum))
-    .sort((a, b) => Number(!sinifaUygunMu(a, o.sinif)) - Number(!sinifaUygunMu(b, o.sinif)) || esyalar[a].fiyat - esyalar[b].fiyat);
+    .sort((a, b) => Number(!sinifaUygunMu(a, o.sinif)) - Number(!sinifaUygunMu(b, o.sinif)) || esyaBilgisi(a).fiyat - esyaBilgisi(b).fiyat);
   return mallar.map((a) => {
     const k = esyaAlKontrol(durum, a);
     const uygun = sinifaUygunMu(a, o.sinif);
     const not = !uygun ? metinler.ekipman.neden.sinif
       : k.neden === 'zaten_var' ? M.senin
-      : o.seviye < esyalar[a].seviye ? sablon(metinler.ekipman.neden.seviye, { seviye: esyalar[a].seviye })
+      : o.seviye < esyaBilgisi(a).seviye ? sablon(metinler.ekipman.neden.seviye, { seviye: esyaBilgisi(a).seviye })
       : '';
-    const sag = `<span class="esya-fiyat">${sablon(M.fiyat, { fiyat: esyalar[a].fiyat })}</span>
+    const sag = `<span class="esya-fiyat">${sablon(M.fiyat, { fiyat: esyaBilgisi(a).fiyat })}</span>
       <button class="buton buton-kucuk" data-al="${a}" ${k.olur ? '' : 'disabled'}
         title="${kacis(k.olur ? '' : M.neden[k.neden] ?? '')}">${M.al}</button>`;
     return esyaKarti(a, { sag, not, soluk: !uygun });
@@ -91,12 +91,12 @@ export function ahiEkrani(kap, depo, { geri } = {}) {
       const sonra = esyaAl(once, b.dataset.al);
       if (sonra === once) return;
       depo.ayarla(sonra);
-      bildirimGoster(ekran, sablon(M.aldin, { esya: esyalar[b.dataset.al].ad }), { tur: 'kutlama' });
+      bildirimGoster(ekran, sablon(M.aldin, { esya: esyaBilgisi(b.dataset.al).ad }), { tur: 'kutlama' });
     } else if (b.dataset.sat) {
       const sonra = esyaSat(once, b.dataset.sat);
       if (sonra === once) return;
       depo.ayarla(sonra);
-      bildirimGoster(ekran, sablon(M.sattin, { esya: esyalar[b.dataset.sat].ad, akce: satisFiyati(b.dataset.sat) }));
+      bildirimGoster(ekran, sablon(M.sattin, { esya: esyaBilgisi(b.dataset.sat).ad, akce: satisFiyati(b.dataset.sat) }));
     }
   });
 

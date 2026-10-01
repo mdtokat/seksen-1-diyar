@@ -10,6 +10,7 @@
 // Karşılaşma iki yolla olur: ile girildiğinde haritada bekliyor olabilir ya da oyuncu
 // meydan dışında yürürken yakınlarda belirir.
 import { esyalar } from '../veri/esyalar.js';
+import { esyaBilgisi, sonrakiBolge } from './rota.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { iller } from '../veri/iller.js';
 import { KARO, karo, mesafe, meydandaMi } from './gezinti.js';
@@ -28,15 +29,15 @@ const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
 
 // Tüccarın tezgâhı: (il, tohum, sınıf) üçlüsünden türetilir; tohum tüccara doğarken
 // verilir, böylece aynı tüccar hep aynı malları taşır.
-// Havuz: bölgenin efsanevi eşyaları + sonraki bölgenin sıradan ve nadir eşyaları
+// Havuz: bölgenin efsanevi eşyaları + rotadaki sonraki bölgenin sıradan ve nadir eşyaları
 // (son bölgede sonraki yoktur; onun yerine kendi nadir eşyaları). Yalnızca sınıfa uygun
 // eşyalar getirilir.
 export function tuccarMallari(plaka, tohum, sinif) {
   const bolge = bolgeler.find((b) => b.anahtar === ilHaritasi.get(plaka).bolge);
-  const sonraki = bolgeler.find((b) => b.sira === bolge.sira + 1);
+  const sonraki = bolgeler.find((b) => b.anahtar === sonrakiBolge(bolge.anahtar));
   const uygun = (e) => !e.sinif || e.sinif === sinif;
   const havuz = Object.keys(esyalar).filter((a) => {
-    const e = esyalar[a];
+    const e = esyaBilgisi(a);
     if (!uygun(e)) return false;
     if (e.bolge === bolge.anahtar && e.nadirlik === 'efsanevi') return true;
     if (sonraki) return e.bolge === sonraki.anahtar && e.nadirlik !== 'efsanevi';
@@ -45,11 +46,11 @@ export function tuccarMallari(plaka, tohum, sinif) {
   const rng = rastgeleUreteci(tohum);
   const secilen = [];
   while (secilen.length < TUCCAR.stok && havuz.length) secilen.push(...havuz.splice(Math.floor(rng() * havuz.length), 1));
-  return secilen.sort((a, b) => esyalar[a].fiyat - esyalar[b].fiyat);
+  return secilen.sort((a, b) => esyaBilgisi(a).fiyat - esyaBilgisi(b).fiyat);
 }
 
 export function tuccarFiyati(anahtar) {
-  return Math.round((esyalar[anahtar].fiyat * TUCCAR.fiyatCarpani) / 5) * 5;
+  return Math.round((esyaBilgisi(anahtar).fiyat * TUCCAR.fiyatCarpani) / 5) * 5;
 }
 
 // neden: 'satilmiyor' | 'zaten_var' | 'akce_yetersiz'

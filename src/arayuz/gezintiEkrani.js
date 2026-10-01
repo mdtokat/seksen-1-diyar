@@ -5,11 +5,12 @@
 // Gezinti durumu (g) ekranlar arasında korunur (savaşa girip çıkınca kaldığı yerden
 // sürer) ve bu ekran tarafından güncellenir:
 //   { plaka, harita, oyuncu: {x, y}, yon, dusmanlar, halk, sonrakiId, dogusSayaclari, dokunulmaz,
-//     surprizAdimi, tuccar (seyyar tüccar kaydı ya da null), tuccarAdimi }
+//     surprizAdimi, tuccar (seyyar tüccar kaydı ya da null), tuccarAdimi, yankesiciAdimi }
 import { iller } from '../veri/iller.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { metinler } from '../veri/metinler.js';
-import { arinmaYuzdesi, seyahatKontrol, bolgeAcikMi, bossDurumu, bossKosullari, finalDurumu, finalKosullari } from '../oyun/ilerleme.js';
+import { arinmaYuzdesi, seyahatKontrol, bolgeAcikMi, bossDurumu, bossKosullari, finalDurumu, finalKosullari, finalOnkosulBolgesi } from '../oyun/ilerleme.js';
+import { dusmanlar as dusmanVerisi } from '../veri/dusmanlar.js';
 import { sesAcikMi, sesAyarla, sesCal } from './ses.js';
 import { statlar } from '../oyun/karakter.js';
 import {
@@ -28,7 +29,9 @@ import {
   surprizBaskin,
   saldiriGrubu,
   suruUyeleri,
+  yankesiciMi,
 } from '../oyun/gezinti.js';
+import { yankesiciBelir, yankesicileriCek } from '../oyun/yankesici.js';
 import { tuccarBelir, tuccarKonumdaMi } from '../oyun/tuccar.js';
 import { sablon, kacis, bildirimGoster, degerCubugu } from './bilesenler.js';
 import { karakterDugmesiniCiz } from './karakterDugmesi.js';
@@ -218,13 +221,20 @@ export function gezintiEkrani(kap, depo, secenekler) {
     let rozet;
     if (d.sabit) rozet = `${{ boss: B.rozet, mini: B.miniRozet, final: metinler.final.rozet }[d.tur]} · ${seviye}`;
     else if (gezgin) rozet = `${GB.tehlike[d.dusman.tehlike]} · ${seviye}`;
-    else rozet = seviye + (d.dusman.takipci ? ` <span title="${M.takipciRozeti}">👣</span>` : '');
+    else if (yankesiciMi(d)) rozet = `${seviye} <span title="${M.yankesiciRozeti}">🗡️</span>`;
+    else if (d.dusman.takip === 'takipci') rozet = `${seviye} <span title="${M.takipciRozeti}">👣</span>`;
+    else if (d.dusman.takip === 'kayitsiz') rozet = `${seviye} <span title="${M.kayitsizRozeti}">💤</span>`;
+    else rozet = seviye;
     el.innerHTML = `<div class="figur-ic">${dusmanCizimi(d.dusman.anahtar)}</div>
       <span class="figur-rozeti">${rozet}</span>
       ${d.tur === 'boss' || d.tur === 'final' ? `<span class="muhur" aria-hidden="true"></span>` : ''}
       ${gezgin ? `<span class="gezgin-aura" aria-hidden="true"></span>` : ''}`;
     if (gezgin) el.title = `${d.dusman.ad} · ${d.surpriz ? GB.surprizRozet : GB.rozet} · ${GB.tehlikeAciklama[d.dusman.tehlike]}`;
-    else el.title = d.dusman.takipci ? `${d.dusman.ad} · ${M.takipciRozeti}` : d.dusman.ad;
+    else {
+      const tavir = yankesiciMi(d) ? M.yankesiciRozeti : M[`${d.dusman.takip}Rozeti`];
+      el.title = tavir ? `${d.dusman.ad} · ${tavir}` : d.dusman.ad;
+    }
+    if (yankesiciMi(d)) el.classList.add('yankesici-figuru');
     figurKatmani.appendChild(el);
     dusmanFigurleri.set(d.id, el);
     return el;
@@ -412,7 +422,8 @@ export function gezintiEkrani(kap, depo, secenekler) {
     let metin;
     if (d.tur === 'final') {
       const k = finalKosullari(depo.al());
-      metin = sablon(metinler.final.muhurlu, { ...k, boss: metinler.final.bossDurumu[k.onkosulBossu ? 'evet' : 'hayir'] });
+      const sonBoss = dusmanVerisi[bolgeHaritasi.get(finalOnkosulBolgesi(depo.al())).boss].ad;
+      metin = sablon(metinler.final.muhurlu, { ...k, sonBoss, boss: metinler.final.bossDurumu[k.onkosulBossu ? 'evet' : 'hayir'] });
     } else {
       metin = sablon(metinler.boss.muhurlu, { boss: d.dusman.ad, bolge: bolge.ad, ...bossKosullari(depo.al(), il.bolge) });
     }
@@ -543,7 +554,26 @@ export function gezintiEkrani(kap, depo, secenekler) {
     if (kapi) return kapidanGec(kapi);
     tuccarTuru();
     if (surprizDene()) return;
+    yankesiciDene();
     temasKontrol();
+  }
+
+  // Yürürken bazen bir yankesici (ya da iki) yakınlarda çıkıp peşine düşer.
+  function yankesiciDene() {
+    g.yankesiciAdimi = (g.yankesiciAdimi ?? 0) + 1;
+    if (g.dokunulmaz > 0) return;
+    const cikanlar = yankesiciBelir(harita, {
+      dusmanlar: g.dusmanlar, oyuncu: g.oyuncu, adim: g.yankesiciAdimi, ilkId: g.sonrakiId,
+      engeller: g.tuccar ? [g.tuccar] : [],
+    }, rng);
+    if (!cikanlar.length) return;
+    g.sonrakiId += cikanlar.length;
+    g.yankesiciAdimi = 0;
+    g.dusmanlar.push(...cikanlar);
+    dusmanlariCiz();
+    for (const d of cikanlar) dusmanFigurleri.get(d.id)?.classList.add('beliriyor');
+    sesCal('evre');
+    bildirimGoster(ekran, cikanlar.length > 1 ? M.yankesiciIkili : M.yankesici, { tur: 'uyari', sure: 2600 });
   }
 
   function dusmanTuru() {
@@ -552,6 +582,12 @@ export function gezintiEkrani(kap, depo, secenekler) {
     g.dusmanlar = dusmanlariYurut(harita, g.dusmanlar, g.oyuncu, rng, {
       dokunulmaz: g.dokunulmaz > 0, engeller: g.tuccar ? [g.tuccar] : [],
     });
+    // İzini kaybettiren oyuncunun peşini bırakan yankesiciler çekip gider
+    const cekilen = yankesicileriCek(g.dusmanlar);
+    if (cekilen.gidenler.length) {
+      g.dusmanlar = cekilen.dusmanlar;
+      bildirimGoster(ekran, M.yankesiciGitti, { sure: 2400 });
+    }
     // Takipçi bir düşman peşine takılınca oyuncu uyarılır
     const takipci = yeniKovalayanlar(onceki, g.dusmanlar).find((d) => d.dusman.takipci);
     if (takipci && performance.now() - sonTakipUyarisi > TAKIP_UYARI_ARALIGI) {

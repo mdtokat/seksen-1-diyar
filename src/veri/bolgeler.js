@@ -1,5 +1,8 @@
 // Bölgeler. Yalnızca veri — mantık kodu yok.
-// Bölgeler `sira` alanına göre sırayla açılır (plan.md Bölüm 4).
+// `sira`, `seviye`, `giris` ve `yemekCarpani` klasik rotanın (Marmara'dan başlayan)
+// değerleridir. Oyunda bölgeler yolculuğun rotasındaki sırayla açılır; rotanın k.
+// bölgesi, klasik sıranın k. bölgesinin seviye aralığını ve yemek çarpanını alır,
+// giriş ili de rotaya göre seçilir (src/oyun/rota.js).
 // `giris` ve `bossIli` il plakasıdır, `boss` dusmanlar.js anahtarıdır.
 // `miniBoss` bölgenin mini bossu, `miniBossIlleri` onun ortaya çıktığı illerdir
 // (ilin arınması %50'yi geçince, plan.md Faz 7).
@@ -116,11 +119,10 @@ export const bolgeler = [
 ];
 
 // Final savaşı: Ağrı Dağı'ndaki kalede Zülmet (plan.md Faz 10).
-// Kale, `onkosulBolge` bölgesinin bossu yenilip oyuncu `seviye`ye ulaşınca açılır.
+// Kale, rotanın son bölgesinin bossu yenilip oyuncu `seviye`ye ulaşınca açılır.
 export const final = {
   boss: 'zulmet',
   il: 4,
   seviye: 48,
-  onkosulBolge: 'dogu_anadolu',
   dusmanSeviyesi: 50,
 };

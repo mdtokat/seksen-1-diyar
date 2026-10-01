@@ -1,6 +1,7 @@
 // Türkiye haritası: iller düğüm, kara komşulukları çizgi olarak çizilir.
 // Kaydırma (tek parmak / fare), yakınlaştırma (iki parmak / tekerlek / butonlar),
 // il bilgi kartı ve komşu illere seyahat.
+import { ilSeviyesi } from '../oyun/rota.js';
 import { iller } from '../veri/iller.js';
 import { bolgeler } from '../veri/bolgeler.js';
 import { yemekler } from '../veri/yemekler.js';
@@ -356,7 +357,7 @@ export function haritaEkrani(kap, depo, { baslikaDon, karakterGoster, ilGoster }
       <p class="kart-bolge"><span class="bolge-noktasi" style="background:${bolge.renk}"></span>${kacis(bolge.ad)}</p>
       ${ozellikRozetleri(plaka)}
       <dl class="kart-bilgi">
-        <div><dt>${M.seviye}</dt><dd>${sablon(M.seviyeDegeri, { en_az: il.seviye[0], en_cok: il.seviye[1] })}</dd></div>
+        <div><dt>${M.seviye}</dt><dd>${sablon(M.seviyeDegeri, { en_az: ilSeviyesi(il.plaka)[0], en_cok: ilSeviyesi(il.plaka)[1] })}</dd></div>
         <div><dt>${M.yemek}</dt><dd><span aria-hidden="true">${yemek.ikon}</span> ${kacis(yemek.ad)}<small>${kacis(yemek.aciklama)}</small></dd></div>
         <div><dt>${M.arinma}</dt><dd>${ilerlemeCubugu(yuzde, { etiket: M.arinma, renk: 'var(--arinmis)' })}</dd></div>
         ${bossSatiri(durum, il, bolge)}

@@ -296,7 +296,7 @@ describe('haritada kalabalık saldırı ve sürüler', () => {
     expect(suruSayisi / deneme).toBeLessThan(SURU.sansi * 1.4);
     // Takipçi olmayan, boss ve gezgin öncü sürü getirmez
     const sabit0 = sabit(0);
-    const takipsiz = Object.keys(dusmanVerisi).find((a) => !dusmanVerisi[a].takipci && dusmanVerisi[a].sinif === 'siradan');
+    const takipsiz = Object.keys(dusmanVerisi).find((a) => dusmanVerisi[a].takip !== 'takipci' && dusmanVerisi[a].sinif === 'siradan');
     const lider = { id: 1, x: 8, y: 8, dusman: dusmanOlustur(takipsiz, 3) };
     expect(suruUyeleri(h, lider, sabit0)).toEqual([]);
     expect(suruUyeleri(h, { ...lider, dusman: kurt(), sabit: true }, sabit0)).toEqual([]);
