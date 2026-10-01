@@ -31,6 +31,7 @@ import { rastgeleUreteci } from '../src/oyun/rastgele.js';
 import { yemekGucu } from '../src/oyun/envanter.js';
 import { iller } from '../src/veri/iller.js';
 import { siniflar } from '../src/veri/siniflar.js';
+import { esyalar } from '../src/veri/esyalar.js';
 import { dusmanlar, DUSMAN_MENZILI, DUSMAN_TURLERI } from '../src/veri/dusmanlar.js';
 
 // Hep aynı değeri veren sahte üreteç:
@@ -107,13 +108,14 @@ describe('formüller', () => {
 });
 
 describe('menziller', () => {
-  it('sınıflar farklı uzaklıktan vurur: Akıncı yakından, Alperen iki karo, Kemankeş beş karo öteden', () => {
+  it('sınıflar farklı uzaklıktan vurur: Akıncı yakından, Alperen iki, Bacı üç, Kemankeş beş karo öteden', () => {
     expect(eylemMenzili('akinci', { tur: 'saldir' })).toBe(1);
     expect(eylemMenzili('alperen', { tur: 'saldir' })).toBe(2);
+    expect(eylemMenzili('baci', { tur: 'saldir' })).toBe(3);
     expect(eylemMenzili('kemankes', { tur: 'saldir' })).toBe(5);
     for (const s of Object.values(siniflar)) {
       expect(s.menzil).toBeGreaterThanOrEqual(1);
-      expect(s.menzil > 1 ? ['ok', 'isik'] : [null, 'isik']).toContain(s.mermi);
+      expect(s.menzil > 1 ? ['ok', 'isik', 'tas'] : [null, 'isik']).toContain(s.mermi);
     }
   });
 
@@ -611,5 +613,51 @@ describe('uzmanlık dallarının savaştaki etkileri', () => {
     expect(vurus(gazi, cin)).toBeGreaterThan(vurus(gaziSadece, cin));
     const s = savasci(gazi);
     expect(vurus(gazi, cin)).toBe(hasarHesapla({ guc: s.guc, savunma: cin.savunma, rnd: 0.9 + 0.99 * 0.2, ek: 1.2 }));
+  });
+});
+
+describe('Bacı', () => {
+  it('Bereket: yediği yemekler %30, Şifacı ise %60 daha çok yeniler; başka sınıflarda yoktur', () => {
+    const heybe = [{ anahtar: 'balik_ekmek', adet: 3 }];
+    const guc = yemekGucu('balik_ekmek');
+    const ye = (sinif, dal = null) => {
+      const d = durum(sinif, 20, { can: 10, heybe });
+      return oyuncuHamlesi({ ...d, oyuncu: { ...d.oyuncu, dal } }, { tur: 'yemek', anahtar: 'balik_ekmek' }, sabit(0.99)).olaylar[0].miktar;
+    };
+    expect(ye('akinci')).toBe(guc);
+    expect(ye('baci')).toBe(Math.round(guc * 1.3));
+    expect(ye('baci', 'sifaci')).toBe(Math.round(guc * 1.6));
+    expect(ye('baci', 'sapanci')).toBe(Math.round(guc * 1.3));
+  });
+
+  it('sapanla üç karo öteden vurur; Kement uzun süre bağlar, Üçlü Taş üç ayrı vurur', () => {
+    expect(eylemMenzili('baci', { tur: 'yetenek', anahtar: 'kement' })).toBe(4);
+    const d = durum('baci', 32);
+    const ayi = dusmanOlustur('boz_ayi', 32);
+    expect(oyuncuHamlesi(d, { tur: 'yetenek', anahtar: 'kement' }, sabit(0.99), { hedef: ayi }).olaylar[0].sersem).toBe(10);
+    const uclu = oyuncuHamlesi(d, { tur: 'yetenek', anahtar: 'uclu_tas' }, sabit(0.99), { hedef: ayi });
+    expect(uclu.olaylar.filter((o) => o.yetenek === 'uclu_tas')).toHaveLength(3);
+  });
+
+  it('Bacıların Sancağı gücü artırır ve canı hemen yeniler', () => {
+    const d = durum('baci', 45, { can: 30 });
+    const r = oyuncuHamlesi(d, { tur: 'yetenek', anahtar: 'bacilarin_sancagi' }, sabit(0.99));
+    expect(r.etkiler).toEqual([{ etki: 'guclenme', deger: 0.35, kalan: 4 }]);
+    expect(r.durum.oyuncu.can).toBe(30 + Math.round(statlar(d.oyuncu).can * 0.2));
+  });
+
+  it('Sapancı\'nın kritik vuruşu daha ağırdır', () => {
+    const d = durum('baci', 25);
+    const hedef = dusmanOlustur('yol_kesen_cin', 25);
+    const kritik = (dal) => oyuncuHamlesi({ ...d, oyuncu: { ...d.oyuncu, dal } }, { tur: 'saldir' }, sirali(0.99, 0, 0.5), { hedef }).olaylar[0];
+    expect(kritik('sapanci').hasar).toBeGreaterThan(kritik('sifaci').hasar);
+  });
+
+  it('her bölgede Bacı\'ya sapan satılır; yeni Bacı\'nın kısayolları geçerlidir', () => {
+    const bolgeSapanlari = Object.values(esyalar).filter((e) => e.sinif === 'baci');
+    expect(bolgeSapanlari).toHaveLength(21);
+    const d = yeniOyunDurumu({ ad: 'Fatma', sinif: 'baci' });
+    expect(d.kisayollar[0]).toEqual({ tur: 'saldir' });
+    expect(d.kisayollar[1]).toEqual({ tur: 'yetenek', anahtar: 'tas_atisi' });
   });
 });

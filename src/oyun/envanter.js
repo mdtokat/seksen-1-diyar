@@ -4,7 +4,7 @@
 // yemek alır, fazlası yeni yuvaya geçer.
 import { yemekler, YEMEK_TABANI } from '../veri/yemekler.js';
 import { iller } from '../veri/iller.js';
-import { statlar } from './karakter.js';
+import { statlar, yemekBereketi } from './karakter.js';
 import { yemekCarpani, klasikMi, bolgeIciMesafeler } from './rota.js';
 
 export const HEYBE_YUVA = 20;
@@ -39,6 +39,11 @@ function bolgeCarpani(anahtar) {
 // Yemeğin yenilediği can ya da nefes miktarı (plan.md Bölüm 7).
 export function yemekGucu(anahtar) {
   return Math.round(YEMEK_TABANI[yemekler[anahtar].tur].guc * bolgeCarpani(anahtar));
+}
+
+// Yemeğin bu oyuncuya göre gücü (Bacı'nın Bereket'i yemeği güçlendirir).
+export function oyuncuYemekGucu(anahtar, oyuncu) {
+  return Math.round(yemekGucu(anahtar) * yemekBereketi(oyuncu));
 }
 
 // Yemeğin akçe cinsinden fiyatı (plan.md Bölüm 7).
@@ -81,10 +86,11 @@ export function yemekCikar(heybe, anahtar) {
 }
 
 // Yemeğin güncel can ya da nefese katacağı miktar (en yüksek değer aşılmaz).
-// `mevcut`: { can, nefes }, `enCok`: { can, nefes }.
+// `mevcut`: { can, nefes } (oyuncuysa sınıfı da: Bacı'nın Bereket'i yemeği güçlendirir),
+// `enCok`: { can, nefes }.
 export function yemekEtkisi(anahtar, mevcut, enCok) {
   const tur = yemekler[anahtar].tur;
-  return { tur, miktar: Math.max(0, Math.min(enCok[tur] - mevcut[tur], yemekGucu(anahtar))) };
+  return { tur, miktar: Math.max(0, Math.min(enCok[tur] - mevcut[tur], oyuncuYemekGucu(anahtar, mevcut))) };
 }
 
 // Savaş dışında yemek yeme. Yemek yeme sebebi yoksa ya da heybede yoksa

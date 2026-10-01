@@ -78,7 +78,7 @@ function yetenekEtiketleri(y, menzilMetni, sinifMenzili) {
 const yuzde = (oran) => Math.round(oran * 100);
 
 // Pasifin dalın değiştirdiği değeri (türüne göre).
-const PASIF_DEGERI = { can_esigi: 'guc', uzak_nisan: 'hasar', zafer_nefesi: 'nefes' };
+const PASIF_DEGERI = { can_esigi: 'guc', uzak_nisan: 'hasar', zafer_nefesi: 'nefes', yemek_bereketi: 'yemek' };
 
 // Uzmanlık dalının getirdikleri, okunur satırlar olarak (veriden üretilir).
 function dalEtkileri(sinifAnahtari, dalAnahtari) {

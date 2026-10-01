@@ -2,7 +2,7 @@
 import { yemekler } from '../veri/yemekler.js';
 import { metinler } from '../veri/metinler.js';
 import { statlar } from '../oyun/karakter.js';
-import { yemekGucu, yemekYe, yemekYeKontrol, HEYBE_YUVA } from '../oyun/envanter.js';
+import { oyuncuYemekGucu, yemekYe, yemekYeKontrol, HEYBE_YUVA } from '../oyun/envanter.js';
 import { kacis, sablon, degerCubugu, bildirimGoster } from './bilesenler.js';
 import { sesCal } from './ses.js';
 
@@ -21,7 +21,7 @@ function icerik(durum) {
         <span class="heybe-ikon" aria-hidden="true">${y.ikon}<span class="heybe-adet">${yuva.adet}</span></span>
         <div class="heybe-bilgi">
           <strong>${kacis(y.ad)}</strong>
-          <span class="heybe-etki">${sablon(M.etki, { miktar: yemekGucu(yuva.anahtar), tur: turAdi(y.tur) })}</span>
+          <span class="heybe-etki">${sablon(M.etki, { miktar: oyuncuYemekGucu(yuva.anahtar, durum.oyuncu), tur: turAdi(y.tur) })}</span>
           <small>${kacis(not || y.aciklama)}</small>
         </div>
         <button class="buton buton-kucuk" data-sira="${sira}" ${kontrol.olur ? '' : 'disabled'}

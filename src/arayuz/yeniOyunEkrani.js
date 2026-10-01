@@ -1,7 +1,7 @@
 // Yeni oyun ekranı: oyuncu adını girer ve üç sınıftan birini seçer.
 import { siniflar } from '../veri/siniflar.js';
 import { metinler } from '../veri/metinler.js';
-import { AD_EN_FAZLA, VARSAYILAN_AD, STATLAR } from '../oyun/karakter.js';
+import { AD_EN_FAZLA, VARSAYILAN_AD, STATLAR, varsayilanAd } from '../oyun/karakter.js';
 import { kacis, sablon } from './bilesenler.js';
 import { sinifCizimi } from './cizimler/karakterler.js';
 
@@ -37,7 +37,7 @@ export function yeniOyunEkrani(kap, { olustur, geri } = {}) {
             <span class="alan-etiket">${M.adEtiketi}</span>
             <input class="metin-kutusu" name="ad" type="text" maxlength="${AD_EN_FAZLA}"
                    placeholder="${VARSAYILAN_AD}" autocomplete="off" spellcheck="false" />
-            <small class="alan-ipucu">${M.adIpucu}</small>
+            <small class="alan-ipucu">${sablon(M.adIpucu, { ad: VARSAYILAN_AD })}</small>
           </label>
           <fieldset class="sinif-secimi">
             <legend class="alan-etiket">${M.sinifBasligi}</legend>
@@ -65,6 +65,10 @@ export function yeniOyunEkrani(kap, { olustur, geri } = {}) {
     }
     baslat.disabled = false;
     uyari.hidden = true;
+    // Boş ad yerine geçecek ad, seçilen sınıfa göre (ör. Bacı'da Fatma)
+    const ad = varsayilanAd(secilen);
+    form.elements.ad.placeholder = ad;
+    form.querySelector('.alan-ipucu').textContent = sablon(M.adIpucu, { ad });
   });
 
   form.addEventListener('submit', (e) => {

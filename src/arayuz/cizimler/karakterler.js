@@ -9,6 +9,7 @@ import { esyaBilgisi } from '../../oyun/rota.js';
 import { bolgeler } from '../../veri/bolgeler.js';
 
 const TEN = '#e9b98f';
+const CIZGI_KOYU = '#1b2a5c';
 const ALTIN = '#d4a537';
 const EFSANE_ISIGI = '#f7d774';
 
@@ -280,7 +281,39 @@ function alperen(ekipman) {
     <path d="M50 26 Q60 23.5 70 26" fill="none" stroke="${ALTIN}" stroke-width="1"/>`;
 }
 
-const cizimler = { akinci, kemankes, alperen };
+// Bacı: Bacıyân-ı Rûm'dan bir yiğit kadın. Oyalı yazma, erik rengi entari, şalvar ve
+// kuşakta taş kesesi; kaldırdığı elinde döndürdüğü sapan. Sapan ipi nadirde bölge
+// renginde, efsanevide altın; taşı efsanevide ışıl ışıl.
+function baci(ekipman) {
+  const kaftan = '#7e4a8a';
+  const yazma = '#d9483b';
+  const silah = ekipman.silah?.nadirlik;
+  const ip = { nadir: ekipman.silah?.renk, efsanevi: ALTIN }[silah] ?? '#9e7b54';
+  const tas = silah === 'efsanevi' ? acik(ekipman.silah.renk, 0.3) : '#8a8f96';
+  return `${golge()}${efsaneHalesi(ekipman)}
+    <path d="M47 34 Q38 50 41 66 Q45 64 48 66 L52 44 Z" fill="${hacim(yazma)}"/>
+    ${govde({ kaftan, kaftanKoyu: '#57305f', kusak: '#e08a3a', salvar: '#3b2f5c', cizme: '#7b5236', ekipman })}
+    <ellipse cx="44.5" cy="79" rx="4.2" ry="5" fill="${hacim('#9e6b3a')}"/>
+    <path d="M42 75 Q44.5 73 47 75" fill="none" stroke="${ALTIN}" stroke-width="1.2"/>
+    ${kol('M44 52 Q38 60 40 70 L46 70.5 Q46 62 50 56 Z', kaftan, [43, 71])}
+    ${kol('M71 49 Q80 44 86 38 L90.5 43 Q83 50 75 57 Z', kaftan, [89, 39])}
+    <path d="M84 15 A 17 17 0 0 1 113 29" fill="none" stroke="#fffaf0" stroke-width="1.4" stroke-dasharray="2 3" opacity=".7"/>
+    ${silah === 'efsanevi' ? `<path d="M89 37 Q97 30 100 17 M90 38 Q100 31 102 18" fill="none" stroke="${EFSANE_ISIGI}" stroke-width="5" opacity=".45"/>` : ''}
+    <path d="M89 37 Q97 30 100 17 M90 38 Q100 31 102 18" fill="none" stroke="${CIZGI_KOYU}" stroke-width="2.6"/>
+    <path d="M89 37 Q97 30 100 17 M90 38 Q100 31 102 18" fill="none" stroke="${ip}" stroke-width="1.3"/>
+    <ellipse cx="101" cy="16.5" rx="4.2" ry="3" fill="${hacim(koyu(ip, 0.15))}" transform="rotate(-20 101 16.5)" stroke-width="1.2"/>
+    ${silah === 'efsanevi' ? `<circle cx="101" cy="14.6" r="6" fill="${isilti(tas)}" stroke="none"/>` : ''}
+    <circle cx="101" cy="14.8" r="2.3" fill="${kure(tas)}" stroke-width="1"/>
+    ${silah === 'efsanevi' ? pirilti(105, 11, 1.8) : ''}
+    ${bas({ sac: '#3a2418', kas: '#3a2418' })}
+    <path d="M46 37 Q43 17 61 17.5 Q77 18 75 36 Q71 25.5 61 24.5 Q51 25 46 37 Z" fill="${hacim(yazma)}"/>
+    <path d="M46 36 Q42 47 49 53 L54 44 L52 36 Z" fill="${hacim(yazma)}"/>
+    <path d="M47.5 34 Q50 26 61 25 Q71 25.5 74 33" fill="none" stroke="${ALTIN}" stroke-width="1.4" stroke-dasharray="1.6 1.6"/>
+    <path d="M51 21.5 l1.6 1.6 M57 19.5 l1.6 1.6 M64 19.5 l1.6 1.6 M70 21.5 l1.6 1.6" stroke="#f7efdc" stroke-width="1.3"/>
+    ${parlak('M50 29 Q51 22 57 19.5', 0.4)}`;
+}
+
+const cizimler = { akinci, kemankes, alperen, baci };
 
 export const SINIF_CIZIMLERI = Object.keys(cizimler);
 

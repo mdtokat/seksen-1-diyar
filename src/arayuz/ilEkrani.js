@@ -7,7 +7,7 @@ import { yemekler } from '../veri/yemekler.js';
 import { metinler } from '../veri/metinler.js';
 import { arinmaYuzdesi } from '../oyun/ilerleme.js';
 import { statlar } from '../oyun/karakter.js';
-import { yemekGucu, HEYBE_YUVA } from '../oyun/envanter.js';
+import { oyuncuYemekGucu, HEYBE_YUVA } from '../oyun/envanter.js';
 import { kacis, sablon, ilerlemeCubugu, degerCubugu } from './bilesenler.js';
 import { oyuncuCizimi } from './cizimler/karakterler.js';
 import { cografyaSatirlari, ozellikRozetleri } from './cografyaBilgisi.js';
@@ -26,7 +26,7 @@ function icerik(durum) {
   const o = durum.oyuncu;
   const s = statlar(o);
   const yemekEtkisi = sablon(metinler.envanter.etki, {
-    miktar: yemekGucu(il.yemek),
+    miktar: oyuncuYemekGucu(il.yemek, o),
     tur: metinler.statAdlari[yemek.tur].toLocaleLowerCase('tr'),
   });
 

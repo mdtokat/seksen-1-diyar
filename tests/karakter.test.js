@@ -195,3 +195,11 @@ describe('uzmanlık dalı', () => {
     expect(statlar(dervis).nefes).toBe(Math.round(statlar(seviyeli('alperen', DAL_SEVIYESI)).nefes * 1.2));
   });
 });
+
+describe('varsayılan ad', () => {
+  it('boş adda Alp; Bacı\'da Fatma', () => {
+    expect(yeniKarakter('', 'akinci').ad).toBe('Alp');
+    expect(yeniKarakter('  ', 'baci').ad).toBe('Fatma');
+    expect(yeniKarakter('Ayşe', 'baci').ad).toBe('Ayşe');
+  });
+});

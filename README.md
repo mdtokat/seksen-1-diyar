@@ -1,6 +1,6 @@
 # Seksen Bir Diyar
 
-Türkiye'nin 81 ilinde geçen, tarayıcıda oynanan bir RPG. Savaş ayrı bir ekranda değil, il haritasında gerçek zamanlı geçer: her sınıf kendi menzilinden, yakından ya da uzaktan vurur. Oyuncu, genç yiğit **Alp** olarak illeri gezer, zalim sihirbaz **Zülmet**'in saldığı cinleri ve ifritleri yener, seviye atlar ve yurdu kötülükten arındırır. Her ilin yöresel yemeği, can ve nefes yenileyen birer azıktır.
+Türkiye'nin 81 ilinde geçen, tarayıcıda oynanan bir RPG. Savaş ayrı bir ekranda değil, il haritasında gerçek zamanlı geçer: her sınıf kendi menzilinden, yakından ya da uzaktan vurur. Oyuncu, genç yiğit **Alp** (ya da Bacıyân-ı Rûm'dan **Fatma**) olarak illeri gezer, zalim sihirbaz **Zülmet**'in saldığı cinleri ve ifritleri yener, seviye atlar ve yurdu kötülükten arındırır. Her ilin yöresel yemeği, can ve nefes yenileyen birer azıktır.
 
 **Oyna:** <https://mdtokat.github.io/seksen-1-diyar/>
 
@@ -19,11 +19,12 @@ Telefonda dikey ekranda rahat oynanır; masaüstünde de çalışır. İlerleme 
 ## Oyun rehberi
 
 ### Başlangıç
-Adını gir ve üç yoldan birini seç:
+Adını gir ve dört yoldan birini seç:
 
 - **Akıncı:** kılıçlı öncü süvari, **yakından** (bitişik karodan) vurur. Canı ve savunması yüksektir; *Akın Hamlesi* ile üç karo öteden düşmanın yanına atılıp onu sersemletir, *Yiğit Nârası* ile gücünü artırıp çevresindeki düşmanları duraksatır, *Tufan Kılıcı* yanı başındaki bütün düşmanlara iner. Sınıf özelliği **Gözü Pek**: canı %35'in altına düşünce gücü %20 artar.
 - **Kemankeş:** Osmanlı okçusu, **beş karo öteden** ok atar (*Menzil Atışı* yedi karo). Çevik ve isabetlidir, kritik vuruşları güçlüdür; *Çifte Ok* iki ayrı ok atar, *Ok Yağmuru* hedefin çevresine de yağar, *Menzil Atışı* vurduğunu yerine çiviler. Canı azdır, düşmanı yanına yaklaştırma. Sınıf özelliği **Uzak Nişan**: üç karo ve daha uzağa attığı oklar %15 daha ağır iner.
 - **Alperen:** gazi-derviş geleneğinden gelir; uzun asası ve manevi gücüyle **iki karo öteye** erişir. Nefesi boldur, kendini iyileştirir; *Arınma Işığı* dört karo öteye uzanıp hedefin çevresine yayılır, cinlere ve ifritlere ek hasar verir; *Gönül Dirliği* ürküntüyü de giderir. Sınıf özelliği **Gönül Gücü**: yendiği her düşmanla nefesinin %10'u yenilenir.
+- **Bacı:** Bacıyân-ı Rûm'dan (Anadolu Bacıları), Ahi ocağında yetişmiş bir yiğit kadın; sapanıyla **üç karo öteden** taş atar. Düşmanı sersemletmekte ustadır: *Sersemleten Taş*, dört karo öteye uzanan *Kement* ve hedefin çevresine yağan *Taş Fırtınası*. *Ocak Sıcaklığı* ile iyileşir, *Bacıların Sancağı* ile güçlenir. Sınıf özelliği **Bereket**: yediği her yemek %30 daha çok yeniler (heybe ve arasta bu artışı gösterir). Adını boş bırakırsan adı **Fatma** olur.
 
 Her yeni yolculuk **başka bir bölgeden** başlar: Marmara'dan hiç başlanmaz, kalan altı bölgenin hepsinden birer kez başlanmadan da aynı bölge tekrarlanmaz. Başlangıç ili, o bölgenin nüfusça **en küçük illerinden** biridir (ör. Bayburt, Kilis, Tunceli, Ardahan, Çankırı, Burdur, Uşak). Başlangıçta yalnızca o bölge açıktır; heybende başlangıç ilinin yöresel yemeği ve bölgeden bir azık bulunur.
 
@@ -41,7 +42,7 @@ Her yeni yolculuk **başka bir bölgeden** başlar: Marmara'dan hiç başlanmaz,
 Savaş ayrı bir ekranda değil, **il haritasında, gerçek zamanlı** geçer.
 
 - **Hedef al:** bir düşmana (ya da başının üstüne) dokun ya da üstüne yürü. Yiğidin onun **menziline yürür** ve durduğunda belli aralıklarla vurur; hedefin ayağının altında kırmızı bir halka, başının üstünde can çubuğu görünür. `Boşluk` en yakın düşmanı hedef alır.
-- **Menzil sınıfına göredir:** Akıncı bitişik karodan, Alperen iki, Kemankeş beş karo öteden vurur. Arada **ağaç, kaya ya da ev** varsa görüş kapanır ve uzaktan vurulamaz; su görüşü kapatmaz. Kemankeş'in okları, Alperen'in ışığı haritada uçar.
+- **Menzil sınıfına göredir:** Akıncı bitişik karodan, Alperen iki, Bacı üç, Kemankeş beş karo öteden vurur. Arada **ağaç, kaya ya da ev** varsa görüş kapanır ve uzaktan vurulamaz; su görüşü kapatmaz. Kemankeş'in okları, Alperen'in ışığı, Bacı'nın sapan taşları haritada uçar.
 - **Yürürken vurulmaz:** her vuruş için durmak gerekir. Okçu, yaklaşan düşmana durup ok atar, sonra geri çekilip yine atabilir.
 - **Düşmanlar da menzillerinden vurur:** hayvanlar, hortlaklar, devler ve yankesiciler yakından; cinler (3 karo), ifritler ve bölge bossları (2 karo) uzaktan. Menzile giren düşman bir an hazırlanır, sonra aralıklarla vurur. Uzaktan vuranlar yaklaşmaz, durduğu yerden saldırır.
 - Seni vuran düşman kendiliğinden hedefin olur; yerinde duruyorsan ve o menzilinde değilse ona yürürsün. Kendi hâlinde dolaşan yaratıklara sen dokunmadıkça vurulmaz.
@@ -61,6 +62,7 @@ Savaş ayrı bir ekranda değil, **il haritasında, gerçek zamanlı** geçer.
   - Akıncı: **Serdengeçti** (güç +%15, kritik şansı +%5, Gözü Pek %35) ya da **Sipahi** (savunma +%20, can +%10, korunma yetenekleri %15 daha çok korur).
   - Kemankeş: **Nişancı** (çeviklik +%10, kritik hasarı +0,25, Uzak Nişan %30) ya da **Avcı** (can +%10, alan vuruşları çevredekilere %30 daha ağır, hayvanlara %25 fazla hasar).
   - Alperen: **Derviş** (nefes +%20, şifalar %30 daha çok, Gönül Gücü %18) ya da **Gazi** (güç +%15, savunma +%10, cinlere ve ifritlere %20 fazla hasar).
+  - Bacı: **Sapancı** (güç +%10, çeviklik +%10, kritik hasarı +0,2) ya da **Şifacı** (can +%15, şifalar %30 daha çok, Bereket %60).
 - Her sınıfın baştan açık bir **sınıf özelliği** vardır; yeni oyun ve karakter ekranlarında görünür. Gözü Pek etkinken can göstergesinin altında 🔥 belirir.
 - **Çeviklik** kritik vuruş ve sıyrılma şansı verir. Kritik şansı 37,5 çeviklikte %30 tavanına varır; ötesindeki çeviklik boşa gitmez, **kritik vuruşlarını güçlendirir** (×1,5'ten ×2'ye dek). Karakter ekranı kritik şansını, kritik hasarını ve sıyrılma şansını gösterir.
 - **Yetenek özellikleri:** kimi yetenek birden çok vurur (🏹), kimi hedefin ya da senin çevrene iner (💥), kimi düşmanı **sersemletir** (💫: birkaç an ne yürür ne vurur; bosslarda yarı süre). Karakter ekranında her yeteneğin altında bu etiketler görünür.

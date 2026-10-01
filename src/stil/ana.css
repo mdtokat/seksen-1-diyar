@@ -3373,6 +3373,16 @@ h3 {
   box-shadow: 0 0 10px 3px rgba(240, 138, 36, 0.6);
 }
 
+/* Bacı'nın sapan taşı */
+.mermi-tas {
+  width: calc(var(--karo, 36px) * 0.24);
+  height: calc(var(--karo, 36px) * 0.24);
+  margin: calc(var(--karo, 36px) * -0.12) 0 0 calc(var(--karo, 36px) * -0.12);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #d6dade 0 20%, #8a8f96 55%, #4a4f57 100%);
+  box-shadow: 0 1px 2px rgba(16, 24, 58, 0.45);
+}
+
 /* Can göstergesinin altında yiğidin savaş etkileri */
 .durum-gostergesi .etki-listesi {
   margin: 0;

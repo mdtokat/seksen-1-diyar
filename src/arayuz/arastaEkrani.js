@@ -4,7 +4,7 @@ import { yemekler } from '../veri/yemekler.js';
 import { metinler } from '../veri/metinler.js';
 import { arastaMallari, arastaFiyati, yemekAl, yemekAlKontrol } from '../oyun/ticaret.js';
 import { arastaIndirimi } from '../oyun/itibar.js';
-import { yemekFiyati, yemekGucu, yemekAdedi, HEYBE_YUVA } from '../oyun/envanter.js';
+import { yemekFiyati, oyuncuYemekGucu, yemekAdedi, HEYBE_YUVA } from '../oyun/envanter.js';
 import { kacis, sablon, bildirimGoster } from './bilesenler.js';
 
 const M = metinler.arasta;
@@ -15,7 +15,7 @@ function icerik(durum) {
     const kontrol = yemekAlKontrol(durum, anahtar);
     const il = iller.find((i) => i.plaka === y.il);
     const etki = sablon(metinler.envanter.etki, {
-      miktar: yemekGucu(anahtar),
+      miktar: oyuncuYemekGucu(anahtar, durum.oyuncu),
       tur: metinler.statAdlari[y.tur].toLocaleLowerCase('tr'),
     });
     const fiyat = arastaFiyati(durum, anahtar);

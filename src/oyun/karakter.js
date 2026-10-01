@@ -14,18 +14,22 @@ export function gerekenXp(seviye) {
 }
 
 // Oyuncu adını temizler: baştaki/sondaki boşluklar atılır, uzunluk sınırlanır.
-// Boş ad verilirse hikâyenin kahramanı Alp'in adı kullanılır.
-export function adTemizle(ad) {
+// Boş ad verilirse `varsayilan` kullanılır (hikâyenin kahramanı Alp; sınıfın kendi
+// varsayılan adı varsa o, ör. Bacı'da Fatma).
+export function adTemizle(ad, varsayilan = VARSAYILAN_AD) {
   const temiz = String(ad ?? '').replace(/\s+/g, ' ').trim().slice(0, AD_EN_FAZLA).trim();
-  return temiz || VARSAYILAN_AD;
+  return temiz || varsayilan;
 }
+
+// Sınıfın boş ad yerine kullanılan varsayılan adı.
+export const varsayilanAd = (sinifAnahtari) => siniflar[sinifAnahtari]?.varsayilanAd ?? VARSAYILAN_AD;
 
 // 1. seviyede, canı ve nefesi dolu yeni bir karakter.
 export function yeniKarakter(ad, sinifAnahtari) {
   const sinif = siniflar[sinifAnahtari];
   if (!sinif) throw new Error(`Bilinmeyen sınıf: ${sinifAnahtari}`);
   return {
-    ad: adTemizle(ad),
+    ad: adTemizle(ad, varsayilanAd(sinifAnahtari)),
     sinif: sinifAnahtari,
     seviye: 1,
     xp: 0,
@@ -73,6 +77,14 @@ export function statlar(oyuncu) {
 // Oyuncunun seçtiği dalın verisi ya da null. `oyuncu`: { sinif, dal } taşıyan her nesne.
 export function dalBilgisi(oyuncu) {
   return (oyuncu?.dal && siniflar[oyuncu.sinif]?.dallar?.[oyuncu.dal]) || null;
+}
+
+// Bereket (yemek_bereketi pasifi): yenen yemeğin etkisine uygulanan çarpan (yoksa 1).
+// Uzmanlık dalı oranı değiştirebilir. `oyuncu`: { sinif, dal } taşıyan her nesne.
+export function yemekBereketi(oyuncu) {
+  const p = siniflar[oyuncu?.sinif]?.pasif;
+  if (p?.tur !== 'yemek_bereketi') return 1;
+  return 1 + (dalBilgisi(oyuncu)?.pasif?.yemek ?? p.yemek);
 }
 
 // Oyuncu şimdi dal seçebilir mi (seviyesi yetti ve henüz seçmedi)?

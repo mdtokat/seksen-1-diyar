@@ -137,7 +137,7 @@ describe('gezgin boss yaratıkları', () => {
 describe('gezgin boss savaşı', () => {
   it('ilin seviyesindeki yiğit zorlu bossu bazen keser bazen kesemez; kesilemezi kesemez', () => {
     const rng = rastgeleUreteci(42);
-    for (const sinif of ['akinci', 'kemankes', 'alperen']) {
+    for (const sinif of ['akinci', 'kemankes', 'alperen', 'baci']) {
       for (const plaka of [ISTANBUL, 35, 6, 25]) {
         const seviye = ilHaritasi.get(plaka).seviye[1];
         const zorlu = kazanmaOrani(sinif, seviye, plaka, 'zorlu', rng);

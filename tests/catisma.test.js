@@ -269,8 +269,8 @@ describe('sınıfa göre çatışma (simülasyon)', () => {
     return { kazandi: false, ilkIsabettenOnce };
   }
 
-  it('üç sınıf da Sv 1 Aç Kurt\'u yener', () => {
-    for (const sinif of ['akinci', 'alperen', 'kemankes']) {
+  it('dört sınıf da Sv 1 Aç Kurt\'u yener', () => {
+    for (const sinif of ['akinci', 'alperen', 'kemankes', 'baci']) {
       for (let t = 1; t <= 30; t++) expect(karsilasma(sinif, t).kazandi, `${sinif} ${t}`).toBe(true);
     }
   });
