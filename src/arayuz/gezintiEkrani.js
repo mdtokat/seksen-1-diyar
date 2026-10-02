@@ -594,12 +594,51 @@ export function gezintiEkrani(kap, depo, secenekler) {
     setTimeout(() => y.remove(), 1100);
   }
 
-  function vurusGoster(el) {
+  // Vuruşun izi: vurulanın üstünde dört bir yana saçılan kıvılcımlar (sihirde ışık
+  // zerreleri), kritikte daha çok ve iri. Hareket azaltılmışsa eski yıldız gösterilir.
+  const KIVILCIM_RENGI = { isik: '#ffe8a3', sihir: '#cfa8ff', alev: '#ffb347' };
+  function vurusGoster(el, { mermi = null, kritik = false } = {}) {
     const v = document.createElement('span');
-    v.className = 'vurus';
-    v.innerHTML = VURUS;
+    if (azHareket) {
+      v.className = 'vurus';
+      v.innerHTML = VURUS;
+    } else {
+      const sayi = kritik ? 12 : 8;
+      v.className = `kivilcimlar${kritik ? ' kritik' : ''}${KIVILCIM_RENGI[mermi] ? ' isikli' : ''}`;
+      v.style.setProperty('--renk', KIVILCIM_RENGI[mermi] ?? '#fff4c2');
+      v.innerHTML = Array.from({ length: sayi }, (_, i) => {
+        const aci = ((i + Math.random() * 0.6) / sayi) * 360;
+        const uzak = 0.35 + Math.random() * 0.35;
+        return `<i style="--aci:${aci.toFixed(0)}deg;--uzak:${uzak.toFixed(2)}"></i>`;
+      }).join('');
+    }
     el.appendChild(v);
-    setTimeout(() => v.remove(), 450);
+    setTimeout(() => v.remove(), 520);
+  }
+
+  // Yakın dövüşte vurulanın üstünde kılıç (ya da pençe) izi: hızla çizilip sönen bir yay.
+  function kesikGoster(el, yon) {
+    if (azHareket) return;
+    const k = document.createElement('span');
+    k.className = 'kesik';
+    k.style.setProperty('--aci', `${Math.round(-35 + Math.random() * 30)}deg`);
+    k.style.setProperty('--ayna', String(yon < 0 ? -1 : 1));
+    el.appendChild(k);
+    setTimeout(() => k.remove(), 320);
+  }
+
+  // Yenilen düşman dağılır: yerinde duman bulutçukları ve sönen ışık zerreleri kalır.
+  function dagilmaDumani(x, y) {
+    if (azHareket) return;
+    const d = document.createElement('div');
+    d.className = 'dagilma';
+    d.setAttribute('aria-hidden', 'true');
+    d.style.transform = `translate3d(${(x + 0.5) * T}px, ${(y + 0.3) * T}px, 0)`;
+    d.innerHTML = Array.from({ length: 7 }, (_, i) =>
+      `<i style="--aci:${Math.round((i / 7) * 360 + Math.random() * 30)}deg;--gecikme:${(Math.random() * 0.15).toFixed(2)}s"></i>`).join('')
+      + Array.from({ length: 5 }, () => `<b style="--x:${(Math.random() - 0.5).toFixed(2)};--gecikme:${(0.1 + Math.random() * 0.3).toFixed(2)}s"></b>`).join('');
+    figurKatmani.appendChild(d);
+    setTimeout(() => d.remove(), 1300);
   }
 
   // Uzaktan vuruş: ok, ışık, sihir ya da alev, vuranın karosundan vurulanınkine uçar.
@@ -614,6 +653,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     el.setAttribute('aria-hidden', 'true');
     const sure = Math.max(90, mesafe(bas, son) * MERMI_HIZI);
     el.style.transitionDuration = `${sure}ms`;
+    el.innerHTML = '<span class="mermi-izi"></span>';
     el.style.transform = `translate3d(${a.x}px, ${a.y}px, 0) rotate(${aci}rad)`;
     figurKatmani.appendChild(el);
     void el.getBoundingClientRect();
@@ -628,9 +668,11 @@ export function gezintiEkrani(kap, depo, secenekler) {
     titret(el, 'hamle', 260);
   }
 
-  // Vuruşun görüntüsü: uzaktan mermi, yakından hamle; vurulanda yıldız, sarsılma ve hasar sayısı.
+  // Vuruşun görüntüsü: uzaktan mermi, yakından hamle ve kılıç izi; vurulanda kıvılcım,
+  // geri itilme, beyaz parlama ve hasar sayısı.
   function vurusuGoster({ vuranEl, vurulanEl, bas, son, mermi, olay, oyuncudan }) {
-    if (mermi && mesafe(bas, son) > 1) {
+    const uzaktan = mermi && mesafe(bas, son) > 1;
+    if (uzaktan) {
       mermiAt(bas, son, mermi);
       sesCal('atis');
     } else {
@@ -644,7 +686,11 @@ export function gezintiEkrani(kap, depo, secenekler) {
         return;
       }
       sesCal(olay.kritik ? 'kritik' : oyuncudan ? 'vurus' : 'dusmanVurusu');
-      vurusGoster(vurulanEl);
+      vurusGoster(vurulanEl, { mermi: uzaktan ? mermi : null, kritik: olay.kritik });
+      if (!uzaktan) kesikGoster(vurulanEl, Math.sign(son.x - bas.x) || 1);
+      // Vurulan, vuranın tersine doğru bir an geri itilir ve beyaza parlar
+      vurulanEl.style.setProperty('--geri-x', `${Math.sign(son.x - bas.x) * 0.16 * T}px`);
+      vurulanEl.style.setProperty('--geri-y', `${Math.sign(son.y - bas.y) * 0.1 * T}px`);
       titret(vurulanEl, 'vuruldu', 420);
       yaziUcur(vurulanEl, `-${olay.hasar}${olay.kritik ? '!' : ''}`, olay.kritik ? 'kritik' : 'hasar');
       if (olay.ekHasar) yaziUcur(vurulanEl, S.sahne.ekHasar, 'bilgi');
@@ -891,6 +937,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
       dusmanFigurleri.delete(kayit.id);
       el.classList.add('dagiliyor');
       setTimeout(() => el.remove(), 900);
+      dagilmaDumani(kayit.x, kayit.y);
     }
     if (g.hedefId === kayit.id) {
       g.hedefId = null;
