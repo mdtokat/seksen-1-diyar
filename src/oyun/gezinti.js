@@ -301,17 +301,20 @@ export function ilHaritasiUret(plaka) {
   }
 
   // 5. Evler: meydanın çevresinde, çimenlik karolarda. Kalabalık illerde mahalle büyür.
+  // Her ev 2×2 karo kaplar (yiğitten büyük görünsün); sol üst karosu `x, y`dir.
   const evSayisi = evSayisiHesapla(il, doga);
   const mahalle = 5 + Math.floor(evSayisi / 6);
-  let ev = 0;
-  for (let deneme = 0; deneme < 60 * evSayisi && ev < evSayisi; deneme++) {
+  const evler = [];
+  for (let deneme = 0; deneme < 60 * evSayisi && evler.length < evSayisi; deneme++) {
     const x = tamSayi(rng, meydan.x1 - mahalle, meydan.x2 + mahalle);
     const y = tamSayi(rng, meydan.y1 - mahalle, meydan.y2 + mahalle);
-    if (x < 2 || y < 2 || x > G - 3 || y > Y - 3) continue;
-    if (al(x, y) !== KARO.CIM) continue;
-    if (x >= meydan.x1 - 1 && x <= meydan.x2 + 1 && y >= meydan.y1 - 1 && y <= meydan.y2 + 1) continue;
-    koy(x, y, KARO.EV);
-    ev++;
+    if (x < 2 || y < 2 || x + 1 > G - 3 || y + 1 > Y - 3) continue;
+    if ([[0, 0], [1, 0], [0, 1], [1, 1]].some(([dx, dy]) => al(x + dx, y + dy) !== KARO.CIM)) continue;
+    // Evler arasında en az bir karo boşluk: çatılar birbirinin cephesini örtmesin
+    if (evler.some((e) => Math.abs(e.x - x) < 3 && Math.abs(e.y - y) < 3)) continue;
+    if (x + 1 >= meydan.x1 - 1 && x <= meydan.x2 + 1 && y + 1 >= meydan.y1 - 1 && y <= meydan.y2 + 1) continue;
+    for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) koy(x + dx, y + dy, KARO.EV);
+    evler.push({ x, y });
   }
 
   // 6. Meydandaki yapılar
@@ -334,7 +337,7 @@ export function ilHaritasiUret(plaka) {
   const dogus = { x: merkez.x, y: merkez.y + 1 };
 
   // 7. Bağlantı: meydandan yürünerek ulaşılamayan açık alanlar engelle doldurulur
-  const harita = { plaka, bolge: il.bolge, genislik: G, yukseklik: Y, karolar: k, kapilar, meydan, dogus, tezgah, cesme, tabela, dukkan, kervansaray, muhtar, ahiBaba };
+  const harita = { plaka, bolge: il.bolge, genislik: G, yukseklik: Y, karolar: k, kapilar, meydan, dogus, evler, tezgah, cesme, tabela, dukkan, kervansaray, muhtar, ahiBaba };
   const ulasilan = ulasilabilir(harita, dogus, yurunurMu);
   for (let y = 0; y < Y; y++) {
     for (let x = 0; x < G; x++) {

@@ -1834,6 +1834,42 @@ h3 {
   height: 100%;
 }
 
+/* Uzun yapıların (ağaç tepesi, ev çatısı) taban satırının üstünde kalan kısmı: figürlerin
+   üstüne çizilir ki yiğit arkalarına geçebilsin. Yiğidi ya da hedefi örten yapı saydamlaşır. */
+.ust-katman {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 500;
+  pointer-events: none;
+}
+
+.ust-katman use {
+  transition: opacity 0.25s;
+}
+
+.ust-katman use.saydam {
+  opacity: 0.42;
+}
+
+/* Yerdeki izler ve toz (figürlerin altında); duman, kelebek, bulut gölgesi (her şeyin üstünde). */
+.yer-katmani,
+.hava-katmani {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.yer-katmani {
+  z-index: 5;
+}
+
+.hava-katmani {
+  z-index: 600;
+  overflow: hidden;
+}
+
 /* Atmosfer: dünyanın üstünde, arayüzün altında duran ışık ve renk katmanı. Sol üstten
    ılık güneş vurur, sağ alt serin gölgede kalır, kenarlar hafifçe kararır; ::before her
    bölgenin havasını (Karadeniz nemli ve serin, Güneydoğu sıcak, Doğu Anadolu soğuk)

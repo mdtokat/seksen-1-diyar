@@ -54,7 +54,7 @@ import { sablon, kacis, bildirimGoster, degerCubugu, parilti } from './bilesenle
 import { yuvaDugmeleri } from './kisayolYuvalari.js';
 import { kartliZaferMi, zaferKartiHtml } from './zaferKarti.js';
 import { karakterDugmesiniCiz } from './karakterDugmesi.js';
-import { haritaKatmani, kapiKatmani, KARO_BOYU } from './cizimler/karolar.js';
+import { haritaKatmanlari, kapiKatmani, KARO_BOYU } from './cizimler/karolar.js';
 import { oyuncuCizimi, halkCizimi, tuccarCizimi } from './cizimler/karakterler.js';
 import { dusmanCizimi } from './cizimler/dusmanlar.js';
 import { verenIsareti } from '../oyun/gorevler.js';
@@ -128,6 +128,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
   g.siradakiEylem ??= null;
   const il = ilHaritasi.get(g.plaka);
   const bolge = bolgeHaritasi.get(il.bolge);
+  const katmanlar = haritaKatmanlari(harita);
   const sinif = depo.al().oyuncu.sinif;
   const SINIF = siniflar[sinif];
 
@@ -148,11 +149,16 @@ export function gezintiEkrani(kap, depo, secenekler) {
       <div class="gezinti-alani" role="application" aria-label="${kacis(sablon(M.alanEtiketi, { il: il.ad }))}">
         <div class="dunya">
           <svg class="karo-katmani" viewBox="0 0 ${GENISLIK * KARO_BOYU} ${YUKSEKLIK * KARO_BOYU}" aria-hidden="true">
-            ${haritaKatmani(harita)}
-            <g class="kapilar"></g>
+            ${katmanlar.alt}
           </svg>
           <div class="hedef-isareti" hidden></div>
+          <div class="yer-katmani" aria-hidden="true"></div>
           <div class="figur-katmani"></div>
+          <svg class="ust-katman" viewBox="0 0 ${GENISLIK * KARO_BOYU} ${YUKSEKLIK * KARO_BOYU}" aria-hidden="true">
+            ${katmanlar.ust}
+            <g class="kapilar"></g>
+          </svg>
+          <div class="hava-katmani" aria-hidden="true"></div>
         </div>
         <div class="atmosfer" data-bolge="${il.bolge}" aria-hidden="true"></div>
         <div class="durum-gostergesi" aria-live="off"><div class="gosterge-cubuklari"></div><ul class="etki-listesi"></ul></div>
@@ -180,7 +186,8 @@ export function gezintiEkrani(kap, depo, secenekler) {
   const alan = ekran.querySelector('.gezinti-alani');
   const dunya = ekran.querySelector('.dunya');
   const svg = ekran.querySelector('.karo-katmani');
-  const kapiKatmaniG = svg.querySelector('.kapilar');
+  const ustKatman = ekran.querySelector('.ust-katman');
+  const kapiKatmaniG = ustKatman.querySelector('.kapilar');
   const figurKatmani = ekran.querySelector('.figur-katmani');
   const hedefIsareti = ekran.querySelector('.hedef-isareti');
   const yonTuslari = ekran.querySelector('.yon-tuslari');
@@ -309,6 +316,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
       can.firstElementChild.style.width = `${Math.round((100 * d.dusman.can) / d.dusman.canEnCok)}%`;
       figurKonumla(el, d.x, d.y);
     }
+    ortuleniSaydamla();
   }
 
   function halkiCiz() {
@@ -376,6 +384,36 @@ export function gezintiEkrani(kap, depo, secenekler) {
     oyuncuFiguru.classList.toggle('dokunulmaz', g.dokunulmaz > 0);
     figurKonumla(oyuncuFiguru, g.oyuncu.x, g.oyuncu.y);
     yoldasiCiz();
+    ortuleniSaydamla();
+  }
+
+  // ── Derinlik ──
+  // Üst katmandaki bir yapı (ağaç tepesi, ev çatısı) yiğidi ya da hedefteki düşmanı
+  // örtüyorsa yarı saydam olur ki arkada kalan görünsün. Yapılar taban satırlarına göre
+  // dizinlenir; bir figürü yalnız 0–3 satır önündeki yapılar örtebilir.
+  const ustKullanimlari = new Map([...ustKatman.querySelectorAll('use[data-n]')].map((u) => [Number(u.dataset.n), u]));
+  const satirdakiYapilar = new Map();
+  for (const o of katmanlar.nesneler) {
+    if (!satirdakiYapilar.has(o.cizgi)) satirdakiYapilar.set(o.cizgi, []);
+    satirdakiYapilar.get(o.cizgi).push(o);
+  }
+  let saydamlar = new Set();
+  function ortenler(f) {
+    const kutu = { x0: f.x + 0.15, x1: f.x + 0.85, y0: f.y - 0.6, y1: f.y + 0.85 };
+    const sonuc = [];
+    for (let r = f.y; r <= f.y + 3; r++) {
+      for (const o of satirdakiYapilar.get(r) ?? []) {
+        if (o.x0 < kutu.x1 && o.x1 > kutu.x0 && o.ust < kutu.y1 && o.cizgi > kutu.y0) sonuc.push(o.n);
+      }
+    }
+    return sonuc;
+  }
+  function ortuleniSaydamla() {
+    const hedef = g.hedefId != null && g.dusmanlar.find((d) => d.id === g.hedefId);
+    const yeni = new Set([...ortenler(g.oyuncu), ...(hedef ? ortenler(hedef) : [])]);
+    for (const n of saydamlar) if (!yeni.has(n)) ustKullanimlari.get(n)?.classList.remove('saydam');
+    for (const n of yeni) ustKullanimlari.get(n)?.classList.add('saydam');
+    saydamlar = yeni;
   }
 
   // Yoldaşın figürü: yiğidin bir önceki karosunda (uzak kaldıysa yanına gelir); uçan yoldaş

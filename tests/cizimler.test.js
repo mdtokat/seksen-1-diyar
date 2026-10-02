@@ -3,8 +3,8 @@ import { sinifCizimi, oyuncuCizimi, ekipmanGorunumu, SINIF_CIZIMLERI, halkCizimi
 import { karistir, acik, koyu, renkFarki, svgSar, hacim, konturla, kontur } from '../src/arayuz/cizimler/ortak.js';
 import { esyalar } from '../src/veri/esyalar.js';
 import { yoldasCizimi, YOLDAS_CIZIMLERI } from '../src/arayuz/cizimler/yoldaslar.js';
-import { haritaKatmani, bolgeKonturu } from '../src/arayuz/cizimler/karolar.js';
-import { ilHaritasiUret } from '../src/oyun/gezinti.js';
+import { haritaKatmani, haritaKatmanlari, bolgeKonturu, evleriBul } from '../src/arayuz/cizimler/karolar.js';
+import { ilHaritasiUret, KARO } from '../src/oyun/gezinti.js';
 import { dusmanCizimi, DUSMAN_CIZIMLERI } from '../src/arayuz/cizimler/dusmanlar.js';
 import { bolgeArkaPlani, ARKA_PLAN_BOLGELERI } from '../src/arayuz/cizimler/arkaplanlar.js';
 import { ilSinirlari } from '../src/veri/ilSinirlari.js';
@@ -130,6 +130,35 @@ describe('il haritası karoları', () => {
   it('aynı il her açılışta aynı çizilir (kimlik ön ekleri dışında)', () => {
     const sade = (s) => s.replace(/c[0-9a-z]+-/g, '');
     expect(sade(haritaKatmani(ilHaritasiUret(6)))).toBe(sade(haritaKatmani(ilHaritasiUret(6))));
+  });
+});
+
+describe('derinlik katmanları', () => {
+  it('üst katman, alt katmanda tanımlı uzun yapılara ve kendi kırpmalarına başvurur', () => {
+    for (const plaka of [61, 45, 63, 25]) {
+      const k = haritaKatmanlari(ilHaritasiUret(plaka));
+      const altKimlik = new Set([...k.alt.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
+      const ustKimlik = new Set([...k.ust.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
+      const basvurular = [...k.ust.matchAll(/href="#([^"]+)"/g)].map((m) => m[1]);
+      expect(basvurular.length, String(plaka)).toBe(k.nesneler.length);
+      for (const b of basvurular) expect(altKimlik.has(b), b).toBe(true);
+      for (const [, c] of k.ust.matchAll(/url\(#([^)]+)\)/g)) expect(ustKimlik.has(c), c).toBe(true);
+      expect(k.ust).not.toContain('#@');
+    }
+  });
+
+  it('evler 2×2 karo kaplar, birbirine bitişmez; bacalı evlerin dumanı tüter', () => {
+    const h = ilHaritasiUret(34);
+    const evler = evleriBul(h);
+    expect(evler.length).toBeGreaterThan(5);
+    expect(h.karolar.filter((t) => t === KARO.EV)).toHaveLength(evler.length * 4);
+    for (const a of evler) {
+      for (const b of evler) if (a !== b) expect(Math.abs(a.x - b.x) >= 3 || Math.abs(a.y - b.y) >= 3).toBe(true);
+    }
+    expect(haritaKatmanlari(h).bacalar).toHaveLength(evler.length);
+    // Kayıtlı ev listesi olmayan haritada ev karoları taranarak bulunur
+    const sirala = (l) => [...l].sort((a, b) => a.y - b.y || a.x - b.x);
+    expect(evleriBul({ ...h, evler: undefined })).toEqual(sirala(evler));
   });
 });
 

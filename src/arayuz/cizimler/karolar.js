@@ -22,13 +22,13 @@ const T = KARO_BOYU;
 // agac: 'yuvarlak' | 'zeytin' | 'cam' | 'koknar' | 'karli' | 'cali'
 // kaya: 'kaya' | 'peri'; ev: 'ev' | 'ahsap' | 'kumbet'; cicek: zemindeki çiçek renkleri
 const PALET = {
-  marmara: { zemin: '#a9c98f', benek: '#98ba7d', yol: '#e6d6ab', yabani: '#5f8a4a', agac: 'yuvarlak', agacRenk: '#3f7a4a', kaya: 'kaya', kayaRenk: '#9a958a', su: '#3b8fb0', ev: 'ev', duvar: '#f7efdc', cati: '#c9483b', cicek: ['#d9483b', '#f2c94c', '#ffffff'] },
-  ege: { zemin: '#c3cc8a', benek: '#b3bd79', yol: '#eadcb3', yabani: '#7b8a45', agac: 'zeytin', agacRenk: '#8a9a5b', kaya: 'kaya', kayaRenk: '#b0a896', su: '#3b7dc4', ev: 'ev', duvar: '#ffffff', cati: '#c9772f', cicek: ['#d9483b', '#ffffff', '#b36ae0'] },
-  akdeniz: { zemin: '#d4c386', benek: '#c6b476', yol: '#efdfb4', yabani: '#8a8a3f', agac: 'cam', agacRenk: '#3f6232', kaya: 'kaya', kayaRenk: '#b08a6a', su: '#2a8fb8', ev: 'ev', duvar: '#fbf1d8', cati: '#d9483b', cicek: ['#e07ab0', '#f08a2a', '#ffffff'] },
-  ic_anadolu: { zemin: '#dcc896', benek: '#cfb986', yol: '#ecdcb6', yabani: '#b09456', agac: 'cali', agacRenk: '#7a8a4a', kaya: 'peri', kayaRenk: '#e3c9a1', su: '#3b8fb0', ev: 'ev', duvar: '#efe0c0', cati: '#8a6a4a', cicek: ['#b36ae0', '#f2c94c', '#d9483b'] },
-  karadeniz: { zemin: '#7fae6a', benek: '#72a05e', yol: '#d9c9a0', yabani: '#3f6a3a', agac: 'koknar', agacRenk: '#2f5a3a', kaya: 'kaya', kayaRenk: '#8f958a', su: '#3b8fb0', ev: 'ahsap', duvar: '#9e6b3a', cati: '#5b3a24', cicek: ['#e07ab0', '#ffffff', '#f2c94c'] },
-  guneydogu: { zemin: '#e3c58f', benek: '#d8b87e', yol: '#f0dfb8', yabani: '#a88a4a', agac: 'cali', agacRenk: '#8a8a3f', kaya: 'kaya', kayaRenk: '#b8a07a', su: '#3b8fb0', ev: 'kumbet', duvar: '#e3c9a1', cati: '#b08a5a', cicek: ['#d9483b', '#f2c94c', '#ffffff'] },
-  dogu_anadolu: { zemin: '#e8eef2', benek: '#d8e0e6', yol: '#d6cfc0', yabani: '#8fa39a', agac: 'karli', agacRenk: '#2f5a3a', kaya: 'kaya', kayaRenk: '#8f9fb6', su: '#3b6fa8', ev: 'ahsap', duvar: '#b08a6a', cati: '#6a4c93', cicek: ['#3b7dc4', '#ffffff', '#b36ae0'] },
+  marmara: { zemin: '#a9c98f', benek: '#98ba7d', yol: '#e6d6ab', yabani: '#5f8a4a', agac: 'yuvarlak', agacRenk: '#3f7a4a', kaya: 'kaya', kayaRenk: '#9a958a', su: '#3b8fb0', ev: 'ev', duvar: '#f7efdc', cati: '#c9483b', cicek: ['#d9483b', '#f2c94c', '#ffffff'], panjur: '#3f7a4a' },
+  ege: { zemin: '#c3cc8a', benek: '#b3bd79', yol: '#eadcb3', yabani: '#7b8a45', agac: 'zeytin', agacRenk: '#8a9a5b', kaya: 'kaya', kayaRenk: '#b0a896', su: '#3b7dc4', ev: 'ev', duvar: '#ffffff', cati: '#c9772f', cicek: ['#d9483b', '#ffffff', '#b36ae0'], panjur: '#2f6fb0' },
+  akdeniz: { zemin: '#d4c386', benek: '#c6b476', yol: '#efdfb4', yabani: '#8a8a3f', agac: 'cam', agacRenk: '#3f6232', kaya: 'kaya', kayaRenk: '#b08a6a', su: '#2a8fb8', ev: 'ev', duvar: '#fbf1d8', cati: '#d9483b', cicek: ['#e07ab0', '#f08a2a', '#ffffff'], panjur: '#2a8fb8' },
+  ic_anadolu: { zemin: '#dcc896', benek: '#cfb986', yol: '#ecdcb6', yabani: '#b09456', agac: 'cali', agacRenk: '#7a8a4a', kaya: 'peri', kayaRenk: '#e3c9a1', su: '#3b8fb0', ev: 'ev', duvar: '#efe0c0', cati: '#8a6a4a', cicek: ['#b36ae0', '#f2c94c', '#d9483b'], panjur: '#8a5a3a' },
+  karadeniz: { zemin: '#7fae6a', benek: '#72a05e', yol: '#d9c9a0', yabani: '#3f6a3a', agac: 'koknar', agacRenk: '#2f5a3a', kaya: 'kaya', kayaRenk: '#8f958a', su: '#3b8fb0', ev: 'ahsap', duvar: '#9e6b3a', cati: '#5b3a24', cicek: ['#e07ab0', '#ffffff', '#f2c94c'], panjur: '#5b3a24' },
+  guneydogu: { zemin: '#e3c58f', benek: '#d8b87e', yol: '#f0dfb8', yabani: '#a88a4a', agac: 'cali', agacRenk: '#8a8a3f', kaya: 'kaya', kayaRenk: '#b8a07a', su: '#3b8fb0', ev: 'kumbet', duvar: '#e3c9a1', cati: '#b08a5a', cicek: ['#d9483b', '#f2c94c', '#ffffff'], panjur: '#7b5236' },
+  dogu_anadolu: { zemin: '#e8eef2', benek: '#d8e0e6', yol: '#d6cfc0', yabani: '#8fa39a', agac: 'karli', agacRenk: '#2f5a3a', kaya: 'kaya', kayaRenk: '#8f9fb6', su: '#3b6fa8', ev: 'ahsap', duvar: '#b08a6a', cati: '#6a4c93', cicek: ['#3b7dc4', '#ffffff', '#b36ae0'], panjur: '#5b3a24' },
 };
 
 const LACI = '#1b2a5c';
@@ -36,6 +36,7 @@ const LACI = '#1b2a5c';
 const CIZGI = 'stroke="@k" stroke-width="0.7" stroke-linejoin="round"';
 const INCE = 'stroke="@k" stroke-width="0.5" stroke-linejoin="round"';
 const GOLGE = '#231c2a';
+const ALTIN_KAPI = '#d4a537';
 
 // Konuma bağlı, her açılışta aynı kalan sözde rastgele sayı (0 ≤ n < 1).
 const karma = (x, y, tohum = 0) => {
@@ -106,7 +107,7 @@ const golge = (cx, cy, rx, ry = rx * 0.38, boy = 0) => {
 function agac(p, x, y) {
   const cx = x + T / 2;
   const alt = y + T - 2;
-  const o = 0.88 + karma(x, y, 1) * 0.24; // boy farkı
+  const o = 1.12 + karma(x, y, 1) * 0.3; // boy farkı (ağaçlar yiğitten uzundur)
   const renk = karma(x, y, 2) < 0.5 ? p.agacRenk : karistirAgac(p.agacRenk, karma(x, y, 3));
   const sar = (ic) => `<g transform="translate(${cx} ${alt}) scale(${s1(o * 100) / 100})">${ic}</g>`;
   const govde = (h = 6, r = '#6e5b45') => `<path d="M-1.2 0 L-1 ${-h} L1 ${-h} L1.2 0 Z" fill="${r}" ${INCE}/>`;
@@ -176,36 +177,91 @@ function kaya(p, x, y) {
     <path d="M${x + 7} ${y + 9} l-1 3 l1.5 2" fill="none" stroke="${LACI}" stroke-width=".5" opacity=".5"/>`;
 }
 
+// Ev: 2×2 karo kaplar, (x, y) sol üst karonun köşesidir. Kuşbakışına yakın 3/4
+// görünüş: önde güneye bakan cephe, üstte çatının dört yüzü (kuzey yüzü ve batı
+// kırması ışık alır, doğu kırması gölgededir). Bacanın ağzı `baca` olarak döner ki
+// dumanı orada tütsün. Döner: { cizim, baca } (baca yoksa null).
 function ev(p, x, y) {
-  const pencere = (wx, wy, w = 2.8, h = 2.8) =>
-    `<rect x="${wx}" y="${wy}" width="${w}" height="${h}" fill="#f2d98a" ${INCE}/><path d="M${wx + w / 2} ${wy} v${h}" stroke="${LACI}" stroke-width=".4"/>`;
+  const E = 2 * T; // evin eni ve derinliği
+  const yer = y + E - 1; // ön cephenin zemine değdiği çizgi
+  const pencere = (wx, wy, w = 4.2, h = 5.2) => `
+    <rect x="${wx - 1.4}" y="${wy}" width="1.4" height="${h}" fill="${hacim(p.panjur)}" ${INCE}/>
+    <rect x="${wx + w}" y="${wy}" width="1.4" height="${h}" fill="${hacim(p.panjur)}" ${INCE}/>
+    <rect x="${wx}" y="${wy}" width="${w}" height="${h}" fill="${hacim('#2f3d4f')}" ${INCE}/>
+    <path d="M${wx + w / 2} ${wy} v${h} M${wx} ${wy + h / 2} h${w}" stroke="${acik(p.duvar, 0.2)}" stroke-width=".5"/>
+    <path d="M${wx + 0.6} ${wy + 0.8} l1.4 1.6" stroke="#fff" stroke-width=".5" opacity=".6"/>
+    <rect x="${wx - 0.6}" y="${wy + h}" width="${w + 1.2}" height="1" fill="${acik(p.duvar, 0.3)}" ${INCE}/>`;
   if (p.ev === 'kumbet') {
-    return `${golge(x + 9, y + T - 0.5, 7.5, 2.6, 18)}
-      <path d="M${x + 2} ${y + T - 1} L${x + 2} ${y + 8} Q${x + 2} ${y - 2} ${x + 8} ${y - 4} Q${x + 14} ${y - 2} ${x + 14} ${y + 8} L${x + 14} ${y + T - 1} Z" fill="${hacim(p.duvar)}" ${CIZGI}/>
-      <path d="M${x + 8.5} ${y - 3.8} Q${x + 14} ${y - 2} ${x + 14} ${y + 8} L${x + 14} ${y + T - 1} L${x + 11} ${y + T - 1} Q${x + 13} ${y + 4} ${x + 8.5} ${y - 3.8} Z" fill="${koyu(p.duvar, 0.15)}" opacity=".6"/>
-      <path d="M${x + 3} ${y + 4} Q${x + 8} ${y + 2} ${x + 13} ${y + 4} M${x + 4.5} ${y} Q${x + 8} ${y - 1.5} ${x + 11.5} ${y}" fill="none" stroke="${p.cati}" stroke-width=".7"/>
-      <path d="M${x + 6} ${y + T - 1} L${x + 6} ${y + 10} Q${x + 8} ${y + 8} ${x + 10} ${y + 10} L${x + 10} ${y + T - 1} Z" fill="#6e4a34" ${INCE}/>`;
+    // Harran'ın kerpiç kümbet evleri: yan yana iki külah kubbe, aralarında alçak bir duvar.
+    const kubbe = (cx, ust, kapi) => `
+      <path d="M${cx - 7} ${yer} L${cx - 7} ${ust + 15} Q${cx - 7} ${ust + 3} ${cx} ${ust} Q${cx + 7} ${ust + 3} ${cx + 7} ${ust + 15} L${cx + 7} ${yer} Z" fill="${hacim(p.duvar)}" ${CIZGI}/>
+      <path d="M${cx + 1} ${ust + 0.4} Q${cx + 7} ${ust + 3} ${cx + 7} ${ust + 15} L${cx + 7} ${yer} L${cx + 3.5} ${yer} Q${cx + 5} ${ust + 10} ${cx + 1} ${ust + 0.4} Z" fill="${koyu(p.duvar, 0.18)}" opacity=".6"/>
+      <path d="M${cx - 6.6} ${ust + 16} Q${cx} ${ust + 14.4} ${cx + 6.6} ${ust + 16} M${cx - 5.6} ${ust + 10} Q${cx} ${ust + 8.6} ${cx + 5.6} ${ust + 10} M${cx - 3.6} ${ust + 5} Q${cx} ${ust + 4} ${cx + 3.6} ${ust + 5}" fill="none" stroke="${koyu(p.duvar, 0.22)}" stroke-width=".6"/>
+      <circle cx="${cx}" cy="${ust + 0.6}" r="1.3" fill="${hacim(koyu(p.duvar, 0.1))}" ${INCE}/>
+      ${kapi ? `<path d="M${cx - 2.4} ${yer} L${cx - 2.4} ${yer - 7} Q${cx} ${yer - 9.6} ${cx + 2.4} ${yer - 7} L${cx + 2.4} ${yer} Z" fill="${hacim('#5b3a24')}" ${INCE}/>`
+    : `<rect x="${cx - 1.2}" y="${yer - 12}" width="2.4" height="2.8" rx="1" fill="#3a2516"/>`}`;
+    return {
+      cizim: `${golge(x + 17, yer, 15, 3, 24)}
+        <rect x="${x + 8}" y="${yer - 6}" width="16" height="6" fill="${hacim(koyu(p.duvar, 0.05))}" ${CIZGI}/>
+        ${kubbe(x + 9, y + 3, true)}${kubbe(x + 23, y + 6, false)}`,
+      baca: null,
+    };
   }
   if (p.ev === 'ahsap') {
-    return `${golge(x + 9, y + T - 0.5, 8.5, 2.6, 16)}
-      <rect x="${x + 1.5}" y="${y + 12}" width="13" height="3.5" fill="${hacim('#9a958a')}" ${INCE}/>
-      <rect x="${x + 2}" y="${y + 4.5}" width="12" height="7.5" fill="${hacim(p.duvar)}" ${CIZGI}/>
-      <path d="M${x + 2} ${y + 7} h12 M${x + 2} ${y + 9.5} h12" stroke="${koyu(p.duvar, 0.3)}" stroke-width=".5"/>
-      <rect x="${x + 10}" y="${y + 4.5}" width="4" height="7.5" fill="${koyu(p.duvar, 0.2)}" opacity=".5"/>
-      <path d="M${x - 0.5} ${y + 5.5} L${x + 8} ${y - 2.5} L${x + 16.5} ${y + 5.5} Z" fill="${hacim(p.cati)}" ${CIZGI}/>
-      <path d="M${x + 8} ${y - 2.5} L${x + 16.5} ${y + 5.5} L${x + 12} ${y + 5.5} Z" fill="${koyu(p.cati, 0.25)}" opacity=".6"/>
-      ${p.agac === 'karli' ? `<path d="M${x + 1} ${y + 4.5} L${x + 8} ${y - 2} L${x + 15} ${y + 4.5} L${x + 12} ${y + 3.5} L${x + 8} ${y + 0.5} L${x + 4} ${y + 3.5} Z" fill="#fff"/>` : ''}
-      ${pencere(x + 3.5, y + 6.5)}<rect x="${x + 8}" y="${y + 8}" width="3" height="4" fill="#4a2e1c"/>`;
+    // Karadeniz ve Doğu Anadolu: taş temel üstünde ahşap ev, sırtı cepheye koşut beşik çatı.
+    const karli = p.agac === 'karli';
+    const tahta = [16, 18.5, 21].map((dy) => `M${x + 3} ${y + dy}h26`).join('');
+    const kar = karli
+      ? `<path d="M${x - 0.5} ${y - 5} h33 v8 h-33 Z" fill="${hacim('#f4f8fb')}"/>
+         <path d="M${x - 0.5} ${y + 3} h33 v2.6 q-3 2 -6 .4 q-4 2.2 -8 .2 q-4 2 -8 0 q-3 1.8 -6 .2 q-3 1.6 -5 0 Z" fill="#f4f8fb"/>
+         <path d="M${x - 0.5} ${y + 14} h33 v1.6 h-33 Z" fill="#f4f8fb"/>`
+      : '';
+    return {
+      cizim: `${golge(x + 17, yer, 16, 3, 24)}
+        <rect x="${x + 2.5}" y="${y + 24}" width="27" height="7" fill="${hacim('#9a958a')}" ${CIZGI}/>
+        <path d="M${x + 2.5} ${y + 27.5} h27 M${x + 9} ${y + 24} v3.5 M${x + 17} ${y + 24} v3.5 M${x + 25} ${y + 24} v3.5 M${x + 6} ${y + 27.5} v3.5 M${x + 13} ${y + 27.5} v3.5 M${x + 21} ${y + 27.5} v3.5" stroke="${koyu('#9a958a', 0.3)}" stroke-width=".5"/>
+        <rect x="${x + 3}" y="${y + 13.5}" width="26" height="10.5" fill="${hacim(p.duvar)}" ${CIZGI}/>
+        <path d="${tahta}" stroke="${koyu(p.duvar, 0.3)}" stroke-width=".5"/>
+        <rect x="${x + 3}" y="${y + 13.5}" width="26" height="2.4" fill="${GOLGE}" opacity=".25"/>
+        ${pencere(x + 6.5, y + 16.4, 4, 4.6)}${pencere(x + 21.5, y + 16.4, 4, 4.6)}
+        <rect x="${x + 14}" y="${y + 18}" width="4.6" height="${yer - y - 18}" fill="${hacim('#4a2e1c')}" ${INCE}/>
+        <circle cx="${x + 17.6}" cy="${y + 25}" r=".5" fill="${ALTIN_KAPI}"/>
+        <rect x="${x + 6.5}" y="${y - 9}" width="4" height="9" fill="${hacim('#8f8a80')}" ${CIZGI}/>
+        <rect x="${x + 6}" y="${y - 10}" width="5" height="1.6" fill="${hacim('#6e6a62')}" ${INCE}/>
+        <path d="M${x - 0.5} ${y - 5} L${x + 32.5} ${y - 5} L${x + 32.5} ${y + 3} L${x - 0.5} ${y + 3} Z" fill="${hacim(acik(p.cati, 0.12))}" ${CIZGI}/>
+        <path d="M${x - 0.5} ${y + 3} L${x + 32.5} ${y + 3} L${x + 32.5} ${y + 14.5} L${x - 0.5} ${y + 14.5} Z" fill="${hacim(p.cati)}" ${CIZGI}/>
+        <path d="M${x - 0.5} ${y - 1} h33 M${x - 0.5} ${y + 7} h33 M${x - 0.5} ${y + 11} h33" stroke="${koyu(p.cati, 0.3)}" stroke-width=".5"/>
+        <path d="M${x - 0.5} ${y + 3} h33" stroke="${koyu(p.cati, 0.45)}" stroke-width="1"/>
+        <rect x="${x + 26}" y="${y + 3}" width="6.5" height="11.5" fill="${koyu(p.cati, 0.3)}" opacity=".35"/>
+        ${kar}`,
+      baca: [x + 8.5, y - 10],
+    };
   }
-  return `${golge(x + 9, y + T - 0.5, 8.5, 2.6, 16)}
-    <rect x="${x + 2}" y="${y + 5}" width="12" height="${T - 6}" fill="${hacim(p.duvar)}" ${CIZGI}/>
-    <rect x="${x + 10.5}" y="${y + 5}" width="3.5" height="${T - 6}" fill="${koyu(p.duvar, 0.15)}" opacity=".6"/>
-    <rect x="${x + 11}" y="${y - 1}" width="2.4" height="4" fill="${hacim('#9a958a')}" ${INCE}/>
-    <path d="M${x} ${y + 6} L${x + 8} ${y - 2} L${x + 16} ${y + 6} Z" fill="${hacim(p.cati)}" ${CIZGI}/>
-    <path d="M${x + 8} ${y - 2} L${x + 16} ${y + 6} L${x + 11.5} ${y + 6} Z" fill="${koyu(p.cati, 0.25)}" opacity=".55"/>
-    <path d="M${x + 3} ${y + 4} h10 M${x + 5.5} ${y + 1.5} h5" stroke="${koyu(p.cati, 0.3)}" stroke-width=".5"/>
-    <rect x="${x + 7}" y="${y + 10}" width="3" height="5" fill="#5b3a24" ${INCE}/>
-    ${pencere(x + 3.5, y + 8)}`;
+  // Marmara, Ege, Akdeniz, İç Anadolu: sıvalı ya da badanalı ev, kiremit kırma çatı.
+  const sira = (yy, sol, sag) => `M${s1(sol)} ${yy} L${s1(sag)} ${yy}`;
+  // Ön yüzün sol/sağ kenarı (sırt 4 → saçak 16.5 arasında)
+  const onSol = (yy) => x + 11 - (10.5 * (yy - (y + 4))) / 12.5;
+  const onSag = (yy) => x + 21 + (10.5 * (yy - (y + 4))) / 12.5;
+  return {
+    cizim: `${golge(x + 17, yer, 16, 3, 26)}
+      <rect x="${x + 3}" y="${y + 14}" width="26" height="${yer - y - 14}" fill="${hacim(p.duvar)}" ${CIZGI}/>
+      <rect x="${x + 3}" y="${yer - 2.6}" width="26" height="2.6" fill="${hacim('#a8a296')}" ${INCE}/>
+      <rect x="${x + 3}" y="${y + 14}" width="26" height="3" fill="${GOLGE}" opacity=".22"/>
+      ${pencere(x + 6.4, y + 19)}${pencere(x + 21.4, y + 19)}
+      <path d="M${x + 13.5} ${yer} L${x + 13.5} ${y + 22.5} Q${x + 16} ${y + 19.5} ${x + 18.5} ${y + 22.5} L${x + 18.5} ${yer} Z" fill="${hacim('#6e4a2a')}" ${INCE}/>
+      <path d="M${x + 16} ${y + 21} v${yer - y - 21}" stroke="${koyu('#6e4a2a', 0.35)}" stroke-width=".5"/>
+      <rect x="${x + 12.5}" y="${yer - 0.8}" width="7" height="1.6" fill="${hacim('#a8a296')}" ${INCE}/>
+      <rect x="${x + 22.5}" y="${y - 7}" width="3.6" height="8" fill="${hacim(koyu(p.duvar, 0.06))}" ${CIZGI}/>
+      <rect x="${x + 22}" y="${y - 8}" width="4.6" height="1.6" fill="${hacim(p.cati)}" ${INCE}/>
+      <path d="M${x + 0.5} ${y - 5} L${x + 31.5} ${y - 5} L${x + 21} ${y + 4} L${x + 11} ${y + 4} Z" fill="${hacim(acik(p.cati, 0.16))}" ${CIZGI}/>
+      <path d="M${x + 11} ${y + 4} L${x + 21} ${y + 4} L${x + 31.5} ${y + 16.5} L${x + 0.5} ${y + 16.5} Z" fill="${hacim(p.cati)}" ${CIZGI}/>
+      <path d="M${x + 0.5} ${y - 5} L${x + 11} ${y + 4} L${x + 0.5} ${y + 16.5} Z" fill="${hacim(acik(p.cati, 0.28))}" ${CIZGI}/>
+      <path d="M${x + 31.5} ${y - 5} L${x + 21} ${y + 4} L${x + 31.5} ${y + 16.5} Z" fill="${hacim(koyu(p.cati, 0.28))}" ${CIZGI}/>
+      <path d="${sira(y + 8, onSol(y + 8), onSag(y + 8))}${sira(y + 12, onSol(y + 12), onSag(y + 12))}${sira(y - 1, x + 5.2, x + 26.8)}" stroke="${koyu(p.cati, 0.3)}" stroke-width=".6"/>
+      <path d="M${x + 11} ${y + 4} h10" stroke="${koyu(p.cati, 0.4)}" stroke-width="1.1"/>
+      <path d="M${x + 2.5} ${y + 15.5} h27" stroke="${acik(p.cati, 0.35)}" stroke-width=".6" opacity=".7"/>`,
+    baca: [x + 24.3, y - 8],
+  };
 }
 
 // Uzun otlar: iki tonlu tutamlar, arada bir çiçek.
@@ -412,8 +468,37 @@ export function bolgeKonturu(uye, G, Y, { R = 6.5, pay = 0 } = {}) {
 
 // ── Katmanlar ───────────────────────────────────────────
 
-// Haritanın sabit katmanı (zemin, yol, su, meydan, doğa, yapılar) — SVG içeriği.
+// Ev karolarının sol üst köşeleri: harita üretimi 2×2 evleri `harita.evler` olarak verir;
+// verilmemişse karolar satır satır taranır (ilk rastlanan ev karosu bir evin sol üstüdür).
+export function evleriBul(harita) {
+  if (harita.evler) return harita.evler;
+  const { genislik: G, yukseklik: Y, karolar } = harita;
+  const alinan = new Set();
+  const evler = [];
+  for (let y = 0; y < Y; y++) {
+    for (let x = 0; x < G; x++) {
+      if (karolar[y * G + x] !== KARO.EV || alinan.has(y * G + x)) continue;
+      evler.push({ x, y });
+      for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) alinan.add((y + dy) * G + x + dx);
+    }
+  }
+  return evler;
+}
+
+// Haritanın sabit katmanı — yalnız SVG içeriği (geriye dönük; testler ve önizleme için).
 export function haritaKatmani(harita) {
+  return haritaKatmanlari(harita).alt;
+}
+
+// Haritanın iki katmanı:
+//   alt: zemin, yol, su, meydan ve bütün yapılar (figürlerin altında).
+//   ust: uzun yapıların (ağaç, ev, meydan binaları) kendi taban satırının üstünde kalan
+//        kısmı; figürlerin üstüne çizilir. Böylece yiğit bir ağacın ya da evin arkasına
+//        geçtiğinde onun ardında kalır. İki katman aynı çizimi `<use>` ile paylaşır.
+//   nesneler: üst katmandaki yapıların kutuları (karo birimiyle) — kimin ardında
+//        kalındığını bulmak ve yakındaki ağaçları rüzgârda sallamak için.
+//   bacalar: dumanı tüten bacaların ağızları (karo birimiyle).
+export function haritaKatmanlari(harita) {
   const p = PALET[harita.bolge];
   const { genislik: G, yukseklik: Y } = harita;
   const karo = (x, y) => (x < 0 || y < 0 || x >= G || y >= Y ? null : harita.karolar[y * G + x]);
@@ -423,7 +508,21 @@ export function haritaKatmani(harita) {
   const lekeler = new Map(); // renk → yumuşak leke daireleri
   const ciceklar = p.cicek.map(() => []);
   const parcalar = [];
-  const ustler = []; // ağaç, kaya, ev gibi karonun üstüne taşan çizimler (y sırasıyla)
+  const ustler = []; // ağaç, kaya, ev gibi karonun üstüne taşan çizimler: { sira, cizim }
+  const tanimlar = []; // üst katmanla paylaşılan uzun yapıların çizimleri
+  const nesneler = [];
+  const bacalar = [];
+  // Yapıyı ekler. `taban`: yapının zemine değdiği satır (çizim sırası ona göre: arkadaki
+  // önce). `uzun` verilirse yapı üst katmana da girer: { x0, x1, ust } birim cinsinden kutu.
+  const yapiEkle = (cizim, x, taban, uzun = null) => {
+    const sira = taban * G + x;
+    if (!uzun) return ustler.push({ sira, cizim });
+    const n = nesneler.length;
+    tanimlar.push(`<g id="@n${n}">${cizim}</g>`);
+    const gecikme = s1(-karma(x, taban, 30) * 4);
+    ustler.push({ sira, cizim: `<use href="#@n${n}" data-n="${n}"${uzun.agac ? ` class="agac" style="animation-delay:${gecikme}s"` : ''}/>` });
+    nesneler.push({ n, agac: Boolean(uzun.agac), x, y: taban, x0: uzun.x0 / T, x1: uzun.x1 / T, ust: uzun.ust / T, cizgi: taban });
+  };
   const kare = (px, py) => `M${px} ${py}h${T}v${T}h${-T}z`;
   for (let y = 0; y < Y; y++) {
     for (let x = 0; x < G; x++) {
@@ -442,18 +541,26 @@ export function haritaKatmani(harita) {
       } else if (t === KARO.YABANI) {
         parcalar.push(yabani(p, px, py));
       }
-      if (t === KARO.AGAC) ustler.push(agac(p, px, py));
-      else if (t === KARO.KAYA) ustler.push(kaya(p, px, py));
-      else if (t === KARO.EV) ustler.push(ev(p, px, py));
-      else if (t === KARO.CESME) ustler.push(cesme(px, py));
-      else if (t === KARO.TEZGAH) ustler.push(tezgah(px, py));
-      else if (t === KARO.TABELA) ustler.push(tabela(px, py));
-      else if (t === KARO.DUKKAN) ustler.push(dukkan(px, py));
-      else if (t === KARO.KERVANSARAY) ustler.push(kervansaray(px, py));
-      else if (t === KARO.MUHTAR) ustler.push(muhtarCizimi(px, py));
-      else if (t === KARO.AHI_BABA) ustler.push(ahiBabaCizimi(px, py));
+      const meydanYapisi = { x0: px - 2, x1: px + T + 2, ust: py - 10 };
+      if (t === KARO.AGAC) yapiEkle(agac(p, px, py), x, y, p.agac === 'cali' ? null : { x0: px - 5, x1: px + T + 5, ust: py - 18, agac: true });
+      else if (t === KARO.KAYA) yapiEkle(kaya(p, px, py), x, y, p.kaya === 'peri' ? { x0: px, x1: px + T, ust: py - 8 } : null);
+      else if (t === KARO.CESME) yapiEkle(cesme(px, py), x, y);
+      else if (t === KARO.TEZGAH) yapiEkle(tezgah(px, py), x, y);
+      else if (t === KARO.TABELA) yapiEkle(tabela(px, py), x, y);
+      else if (t === KARO.DUKKAN) yapiEkle(dukkan(px, py), x, y, meydanYapisi);
+      else if (t === KARO.KERVANSARAY) yapiEkle(kervansaray(px, py), x, y, meydanYapisi);
+      else if (t === KARO.MUHTAR) yapiEkle(muhtarCizimi(px, py), x, y, meydanYapisi);
+      else if (t === KARO.AHI_BABA) yapiEkle(ahiBabaCizimi(px, py), x, y, meydanYapisi);
     }
   }
+  for (const e of evleriBul(harita)) {
+    const px = e.x * T;
+    const py = e.y * T;
+    const { cizim, baca } = ev(p, px, py);
+    yapiEkle(cizim, e.x, e.y + 1, { x0: px - 1, x1: px + 2 * T + 1, ust: py - 10 });
+    if (baca) bacalar.push({ x: baca[0] / T, y: baca[1] / T });
+  }
+  ustler.sort((a, b) => a.sira - b.sira);
   // Zeminin büyük ölçekli renk değişimi: üç karoluk ızgarada yumuşak kenarlı lekeler
   // (açık ve koyu çimen, kuru ot, toprak). Tek desenin tekrarını gözden saklar.
   const lekeRenkleri = [acik(p.zemin, 0.2), koyu(p.zemin, 0.16), karistir(p.zemin, '#c9a65e', 0.45), karistir(p.zemin, p.yol, 0.65)];
@@ -511,13 +618,23 @@ export function haritaKatmani(harita) {
     <rect x="${mx}" y="${my}" width="${mg}" height="${myk}" fill="none" stroke="#f7efdc" stroke-width=".6" stroke-dasharray="2 4"/>${baklava}`);
   const bolge = bolgeler.find((b) => b.anahtar === harita.bolge);
   if (harita.in && harita.plaka === final.il) {
-    ustler.push(kaleCizimi(harita.in.x * T, (harita.in.y - 1) * T));
+    ustler.push({ sira: Infinity, cizim: kaleCizimi(harita.in.x * T, (harita.in.y - 1) * T) });
   } else if (harita.in && (bolge.bossIli === harita.plaka || bolge.miniBossIlleri.includes(harita.plaka))) {
     parcalar.push(inCizimi(p, harita.in.x * T, harita.in.y * T));
   }
-  const c = boyalariCoz(konturla(desenler(p) + zemin.join('') + parcalar.join('') + ustler.join('')));
-  return `<defs>${c.tanimlar}</defs>${c.icerik}`;
+  // Üst katman: her uzun yapı, taban satırının üst kenarından yukarısı kırpılarak bir daha
+  // çizilir (aynı satırdakiler aynı kırpmayı paylaşır).
+  const satirlar = [...new Set(nesneler.map((o) => o.cizgi))];
+  const kirpmalar = satirlar.map((r) => `<clipPath id="@s${r}"><rect x="${-2 * T}" y="${-4 * T}" width="${(G + 4) * T}" height="${(r + 4) * T}"/></clipPath>`).join('');
+  const ust = `<defs>${kirpmalar}</defs>${nesneler.map((o) => `<use href="#@n${o.n}" data-n="${o.n}" clip-path="url(#@s${o.cizgi})"${
+    o.agac ? ` class="agac" style="animation-delay:${s1(-karma(o.x, o.y, 30) * 4)}s"` : ''}/>`).join('')}`;
+  const onEk = `c${(++katmanSayaci).toString(36)}h-`;
+  const c = boyalariCoz(konturla(`<defs>${tanimlar.join('')}</defs>${desenler(p)}${zemin.join('')}${parcalar.join('')}${ustler.map((u) => u.cizim).join('')}`), onEk);
+  const u = boyalariCoz(ust, onEk);
+  return { alt: `<defs>${c.tanimlar}</defs>${c.icerik}`, ust: u.icerik, nesneler, bacalar };
 }
+
+let katmanSayaci = 0;
 
 // Çıkış yolları: kapı taşları ve komşu ilin adı. Kilitli bölgeye giden yol sihirli bir
 // engelle kapalı çizilir. `acikMi(plaka)` → yol açık mı.
