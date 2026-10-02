@@ -332,6 +332,14 @@ export function gezintiEkrani(kap, depo, secenekler) {
         halkFigurleri.set(h.id, el);
       }
       el.classList.toggle('sola', h.yon === -1);
+      // Yer değiştiren köylü bir an adım atar
+      const yer = `${h.x},${h.y}`;
+      if (el.dataset.yer && el.dataset.yer !== yer) {
+        el.classList.add('yuruyor');
+        clearTimeout(el.adimZamani);
+        el.adimZamani = setTimeout(() => el.classList.remove('yuruyor'), 700);
+      }
+      el.dataset.yer = yer;
       figurKonumla(el, h.x, h.y);
     }
   }
@@ -383,6 +391,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
 
   function oyuncuyuCiz() {
     oyuncuFiguru.classList.toggle('sola', g.yon === -1);
+    oyuncuFiguru.classList.toggle('kuzey', Boolean(g.kuzey));
     oyuncuFiguru.classList.toggle('dokunulmaz', g.dokunulmaz > 0);
     figurKonumla(oyuncuFiguru, g.oyuncu.x, g.oyuncu.y);
     yoldasiCiz();
@@ -755,6 +764,10 @@ export function gezintiEkrani(kap, depo, secenekler) {
     if (hedef) {
       g.dokunulmaz = 0; // saldıran yiğidin soluklanması biter
       g.hedefId = hedef.id;
+      if (g.kuzey) {
+        g.kuzey = false; // vuran yiğit hedefine döner
+        oyuncuyuCiz();
+      }
       // Akın Hamlesi: yiğit hedefin yanına atılır
       const yer = yetenek?.atilma ? atilmaYeri(harita, g.oyuncu, hedef, yetenek.menzil, engeller()) : null;
       if (yer) {
@@ -1062,9 +1075,11 @@ export function gezintiEkrani(kap, depo, secenekler) {
         if (tur) etkiles(tur);
       }
       oyuncuFiguru.classList.remove('yuruyor');
+      yoldasFiguru.classList.remove('yuruyor');
       return false;
     }
     if (yon.dx) g.yon = yon.dx;
+    g.kuzey = yon.dy < 0; // yukarı yürüyen yiğidin sırtı görünür
     const hedef = { x: g.oyuncu.x + yon.dx, y: g.oyuncu.y + yon.dy };
     if (tuccarKonumdaMi(g.tuccar, hedef)) {
       // Tüccarın üstünden geçilmez; değmek alışveriş ekranını açar
@@ -1097,8 +1112,12 @@ export function gezintiEkrani(kap, depo, secenekler) {
     g.oyuncu = hedef;
     if (g.dokunulmaz > 0) g.dokunulmaz--;
     oyuncuFiguru.classList.add('yuruyor');
+    yoldasFiguru.classList.add('yuruyor');
     clearTimeout(yuruyorZaman);
-    yuruyorZaman = setTimeout(() => oyuncuFiguru.classList.remove('yuruyor'), ADIM_MS * 2);
+    yuruyorZaman = setTimeout(() => {
+      oyuncuFiguru.classList.remove('yuruyor');
+      yoldasFiguru.classList.remove('yuruyor');
+    }, ADIM_MS * 2);
     oyuncuyuCiz();
     kamera();
     yenidenDogur();
