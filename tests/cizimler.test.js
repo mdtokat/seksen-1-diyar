@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { sinifCizimi, oyuncuCizimi, ekipmanGorunumu, SINIF_CIZIMLERI, halkCizimi, tuccarCizimi } from '../src/arayuz/cizimler/karakterler.js';
-import { karistir, acik, koyu, renkFarki, svgSar, hacim } from '../src/arayuz/cizimler/ortak.js';
+import { karistir, acik, koyu, renkFarki, svgSar, hacim, konturla, kontur } from '../src/arayuz/cizimler/ortak.js';
 import { esyalar } from '../src/veri/esyalar.js';
 import { yoldasCizimi, YOLDAS_CIZIMLERI } from '../src/arayuz/cizimler/yoldaslar.js';
-import { haritaKatmani } from '../src/arayuz/cizimler/karolar.js';
-import { ilHaritasiUret } from '../src/oyun/gezinti.js';
+import { haritaKatmani, haritaKatmanlari, bolgeKonturu, evleriBul } from '../src/arayuz/cizimler/karolar.js';
+import { ilHaritasiUret, KARO } from '../src/oyun/gezinti.js';
 import { dusmanCizimi, DUSMAN_CIZIMLERI } from '../src/arayuz/cizimler/dusmanlar.js';
 import { bolgeArkaPlani, ARKA_PLAN_BOLGELERI } from '../src/arayuz/cizimler/arkaplanlar.js';
 import { ilSinirlari } from '../src/veri/ilSinirlari.js';
@@ -44,6 +44,21 @@ describe('ortak çizim araçları', () => {
     const kb = boyalarCozulmus(b, 'b').kimlikler;
     expect(ka.size).toBe(1);
     expect([...ka].some((k) => kb.has(k))).toBe(false);
+  });
+});
+
+describe('dış çizgiler', () => {
+  it('dış çizgi parçanın kendi renginin koyusudur', () => {
+    const svg = konturla(`<rect fill="#3f7a4a" stroke="@k"/><circle fill="${hacim('#d9483b')}"/>`, { otomatik: true });
+    expect(svg).toContain(`stroke="${kontur('#3f7a4a')}"`);
+    expect(svg).toContain(`stroke="${kontur('#d9483b')}"`);
+    expect(renkFarki(kontur('#d9483b'), '#d9483b')).toBeGreaterThan(90);
+  });
+
+  it('kendi çizgisi ya da dolgusu olan parçalara dokunulmaz', () => {
+    const ic = '<path d="M0 0" fill="none"/><rect fill="#fff" stroke="none"/><ellipse fill="url(#@p10183a)"/>';
+    expect(konturla(ic, { otomatik: true })).toBe(ic);
+    expect(konturla('<rect fill="#fff"/>')).toBe('<rect fill="#fff"/>');
   });
 });
 
@@ -115,6 +130,58 @@ describe('il haritası karoları', () => {
   it('aynı il her açılışta aynı çizilir (kimlik ön ekleri dışında)', () => {
     const sade = (s) => s.replace(/c[0-9a-z]+-/g, '');
     expect(sade(haritaKatmani(ilHaritasiUret(6)))).toBe(sade(haritaKatmani(ilHaritasiUret(6))));
+  });
+});
+
+describe('derinlik katmanları', () => {
+  it('üst katman, alt katmanda tanımlı uzun yapılara ve kendi kırpmalarına başvurur', () => {
+    for (const plaka of [61, 45, 63, 25]) {
+      const k = haritaKatmanlari(ilHaritasiUret(plaka));
+      const altKimlik = new Set([...k.alt.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
+      const ustKimlik = new Set([...k.ust.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
+      const basvurular = [...k.ust.matchAll(/href="#([^"]+)"/g)].map((m) => m[1]);
+      expect(basvurular.length, String(plaka)).toBe(k.nesneler.length);
+      for (const b of basvurular) expect(altKimlik.has(b), b).toBe(true);
+      for (const [, c] of k.ust.matchAll(/url\(#([^)]+)\)/g)) expect(ustKimlik.has(c), c).toBe(true);
+      expect(k.ust).not.toContain('#@');
+    }
+  });
+
+  it('evler 2×2 karo kaplar, birbirine bitişmez; bacalı evlerin dumanı tüter', () => {
+    const h = ilHaritasiUret(34);
+    const evler = evleriBul(h);
+    expect(evler.length).toBeGreaterThan(5);
+    expect(h.karolar.filter((t) => t === KARO.EV)).toHaveLength(evler.length * 4);
+    for (const a of evler) {
+      for (const b of evler) if (a !== b) expect(Math.abs(a.x - b.x) >= 3 || Math.abs(a.y - b.y) >= 3).toBe(true);
+    }
+    expect(haritaKatmanlari(h).bacalar).toHaveLength(evler.length);
+    // Kayıtlı ev listesi olmayan haritada ev karoları taranarak bulunur
+    const sirala = (l) => [...l].sort((a, b) => a.y - b.y || a.x - b.x);
+    expect(evleriBul({ ...h, evler: undefined })).toEqual(sirala(evler));
+  });
+});
+
+describe('bölge konturu', () => {
+  const izgara = (satirlar) => (x, y) => satirlar[y]?.[x] === '#';
+  const halkalar = (d) => d.split('M').filter(Boolean);
+
+  it('her ayrı öbek için tek bir kapalı, yuvarlatılmış halka çizer', () => {
+    const d = bolgeKonturu(izgara(['##..', '#...', '...#']), 4, 3);
+    expect(halkalar(d)).toHaveLength(2);
+    expect(halkalar(d).every((h) => h.endsWith('Z'))).toBe(true);
+    expect(d).toContain('Q');
+    expect(d).not.toMatch(/NaN|undefined/);
+  });
+
+  it('düz giden kenarları birleştirir: dikdörtgende yalnız dört köşe kalır', () => {
+    const d = bolgeKonturu(izgara(['###', '###']), 3, 2);
+    expect(halkalar(d)).toHaveLength(1);
+    expect(d.match(/Q/g)).toHaveLength(4);
+  });
+
+  it('içindeki boşluk ayrı bir halka olarak çizilir', () => {
+    expect(halkalar(bolgeKonturu(izgara(['###', '#.#', '###']), 3, 3))).toHaveLength(2);
   });
 });
 
@@ -258,5 +325,15 @@ describe('yoldaş çizimleri', () => {
       expect(svg, a).not.toMatch(/undefined|NaN/);
       boyalarCozulmus(svg, a);
     }
+  });
+});
+
+describe('yöresel bahçe ve tarla', () => {
+  it('tarlası olan ilde tarla deseni, bahçesi olan ilde meyve ağacı çizilir', () => {
+    const konya = haritaKatmani(ilHaritasiUret(42));
+    expect(konya).toMatch(/id="[^"]*tarla"/);
+    const malatya = haritaKatmani(ilHaritasiUret(44));
+    expect(malatya).toContain('#fff4f6'); // karda çiçek açmış kayısılar
+    expect(haritaKatmani(ilHaritasiUret(64))).not.toMatch(/id="[^"]*tarla"/);
   });
 });

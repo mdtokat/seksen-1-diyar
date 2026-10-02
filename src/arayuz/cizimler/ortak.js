@@ -1,8 +1,13 @@
 // Çizimlerin ortak parçaları. Tüm çizimler 120×120'lik bir tuvale göre yapılır;
-// zemin çizgisi y ≈ 108'dedir. Dış çizgi rengi lacivert (çini paleti). Işık sol
-// üstten gelir: hacimler üstte açık, altta koyudur; gölgeler sağ alta düşer.
+// zemin çizgisi y ≈ 108'dedir. Işık sol üstten gelir: hacimler üstte açık, altta
+// koyudur; gölgeler sağ alta düşer.
+//
+// Dış çizgiler tek bir lacivert değil, her parçanın kendi renginin koyusudur
+// (konturla): yeşil yaprak koyu yeşil, kırmızı kaftan koyu kızıl çizgiyle çevrilir.
+// Böylece figürler çizgi film gibi değil, daha dolgun ve doğal görünür. Kendi
+// dolgusu olmayan ince çizgiler (kaş, ağız, kıvrım) bu koyu nötr renkle çizilir.
 
-export const CIZGI = '#1b2a5c';
+export const CIZGI = '#2b2433';
 
 // ── Renk yardımcıları ───────────────────────────────────
 
@@ -26,6 +31,9 @@ export function renkFarki(a, b) {
   const y = rgb(b);
   return Math.hypot(...x.map((v, i) => v - y[i]));
 }
+
+// Bir rengin dış çizgisi: aynı tonun belirgin biçimde koyusu.
+export const kontur = (renk) => karistir(renk, '#1c1622', 0.6);
 
 // Açık ton beyaza, koyu ton laciverte doğru gider (gölgeler soğuk ve çini paletinde kalır).
 export const acik = (renk, oran = 0.3) => karistir(renk, '#fffaf0', oran);
@@ -71,12 +79,49 @@ export function boyalariCoz(icerik, onEk = `c${(++sayac).toString(36)}-`) {
   return { tanimlar, icerik: icerik.replaceAll('#@', `#${onEk}`).replaceAll('id="@', `id="${onEk}`) };
 }
 
+// Dış çizgileri parçanın kendi dolgusuna göre renklendirir. `stroke="@k"` yer tutucusu
+// dolgunun koyusuna çevrilir; `otomatik` ise kendi çizgisi olmayan dolgulu parçalara da
+// çizgi eklenir (svgSar'daki figürler). Dolgusu bir renk ya da boya (`url(#@h…)`) değilse
+// yer tutucu ortak çizgi rengini alır, otomatik çizgi eklenmez.
+const SEKIL = /<(path|rect|circle|ellipse|polygon)\b([^>]*?)(\/?)>/g;
+const dolguRengi = (oz) => {
+  const m = oz.match(/\sfill="(?:#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})|url\(#@[hkm]([0-9a-f]{6})\))"/);
+  return m ? `#${m[1] ?? m[2]}` : null;
+};
+export function konturla(icerik, { otomatik = false } = {}) {
+  return icerik.replace(SEKIL, (butun, ad, oz, kapanis) => {
+    if (oz.includes('stroke="@k"')) {
+      const renk = dolguRengi(oz);
+      return `<${ad}${oz.replace('stroke="@k"', `stroke="${renk ? kontur(renk) : CIZGI}"`)}${kapanis}>`;
+    }
+    if (!otomatik || /\sstroke="/.test(oz)) return butun;
+    const renk = dolguRengi(oz);
+    return renk ? `<${ad}${oz} stroke="${kontur(renk)}"${kapanis}>` : butun;
+  });
+}
+
+// Tek bir şeklin `opacity`si, dolgu ve çizgi saydamlığına (fill-opacity, stroke-opacity)
+// çevrilir. Görünüş neredeyse aynıdır (yalnız aynı şeklin dolgusuyla çizgisinin
+// kesiştiği ince şerit biraz koyulaşır); ama tarayıcı her `opacity` için ayrı bir efekt
+// katmanı ve boyama parçası açar. Haritada binlerce gölge ve leke olduğundan bu fark
+// her yeniden boyamada katlanır. Gruplara (<g>) dokunulmaz.
+const SAYDAM = /<(path|rect|circle|ellipse|polygon)\b([^>]*?)\sopacity="([\d.]+)"([^>]*?)(\/?)>/g;
+export function saydamligiYay(icerik) {
+  return icerik.replace(SAYDAM, (butun, ad, once, deger, sonra, kapanis) => {
+    const oz = once + sonra;
+    if (/\s(fill|stroke)-opacity="/.test(oz)) return butun;
+    const dolgu = !/\sfill="none"/.test(oz);
+    const cizgi = /\sstroke="(?!none)/.test(oz);
+    return `<${ad}${oz}${dolgu ? ` fill-opacity="${deger}"` : ''}${cizgi ? ` stroke-opacity="${deger}"` : ''}${kapanis}>`;
+  });
+}
+
 // Çizimi SVG kabına sarar. `sinif` CSS sınıfı, `etiket` ekran okuyucu metni.
 export function svgSar(icerik, { sinif = 'cizim', etiket = '' } = {}) {
   const erisim = etiket ? `role="img" aria-label="${etiket}"` : 'aria-hidden="true"';
-  const c = boyalariCoz(icerik);
+  const c = boyalariCoz(saydamligiYay(konturla(icerik, { otomatik: true })));
   return `<svg class="${sinif}" viewBox="0 0 120 120" ${erisim}>${c.tanimlar ? `<defs>${c.tanimlar}</defs>` : ''}
-    <g stroke="${CIZGI}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">${c.icerik}</g>
+    <g stroke="${CIZGI}" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">${c.icerik}</g>
   </svg>`;
 }
 

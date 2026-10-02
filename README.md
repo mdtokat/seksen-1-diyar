@@ -37,6 +37,9 @@ Her yeni yolculuk **başka bir bölgeden** başlar: Marmara'dan hiç başlanmaz,
 - Alttaki dört **kısayol yuvası** savaşta kullanılır (bkz. Savaş).
 - **Klavye kısayolları:** `M` harita · `B` heybe (çanta) · `K` karakter · `G` görev günlüğü · `L` il bilgisi · `?` kısayol listesi · `1`–`4` kısayol yuvaları · `Boşluk` en yakın düşmanı hedef al. Açık ekranın tuşuna yeniden basınca gezintiye dönülür; `Esc` geri götürür.
 - **İller gerçek boyutlarıyla orantılıdır:** il haritasının büyüklüğü yüzölçümüyle, en-boy oranı ilin şekliyle belirlenir. Konya en geniş, Yalova en küçük haritadır. Evler ve meydanda dolaşan halk nüfusla artar; İstanbul en kalabalık ildir. İl bilgisinde ve Türkiye haritasındaki il kartında yüzölçümü, nüfus ve sıralamaları görünür.
+- **Her il kendi yöresine benzer:** evler bölgenin mimarisiyle çizilir (Marmara'da ve Safranbolu'da konaklar, İç Anadolu'da kerpiç ve toprak dam, Mardin'de kesme taş, Harran'da kümbetler, Karadeniz'de ahşap, Doğu'da karlı toprak damlar). Bahçelerde ilin meyvesi (Malatya'da kayısı, Antep'te fıstık, Karadeniz'de fındık), tarlalarda ilin ekini (İç Anadolu'da buğday, Rize'de çay, Trakya'da ayçiçeği) görünür. 37 ilde meydanın yakınında ilin simgesi durur (saat kulesi, kale, Galata Kulesi, taş köprü); dokununca adını söyler.
+- **Tepeler:** bazı yerler yüksek düzlüktür. Güneye bakan kaya duvarı aşılmaz ve görüşü kapatır; tepeye kuzeyden, doğudan ya da batıdan yürüyerek, ya da duvarı yaran yollardan çıkılır. Ağaçların ve evlerin arkasına geçebilirsin; seni örten yapı saydamlaşır.
+- **Gün ve hava:** oyunun bir günü 16 dakika sürer (şafak, gündüz, akşam, gece). Gece pencereler, meşaleler ve yiğidin çevresi aydınlıktır. Hava ilin bölgesine göre değişir: Doğu Anadolu'da kar, Karadeniz'de yağmur ve sis, Güneydoğu'da sıcak hava. Cihazında hareketi azaltma ayarı açıksa yağan kar ve yağmur çizilmez, ışıklar titremez.
 
 ### Savaş
 Savaş ayrı bir ekranda değil, **il haritasında, gerçek zamanlı** geçer.

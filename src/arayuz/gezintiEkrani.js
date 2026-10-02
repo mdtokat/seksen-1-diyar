@@ -54,7 +54,9 @@ import { sablon, kacis, bildirimGoster, degerCubugu, parilti } from './bilesenle
 import { yuvaDugmeleri } from './kisayolYuvalari.js';
 import { kartliZaferMi, zaferKartiHtml } from './zaferKarti.js';
 import { karakterDugmesiniCiz } from './karakterDugmesi.js';
-import { haritaKatmani, kapiKatmani, KARO_BOYU } from './cizimler/karolar.js';
+import { haritaKatmanlari, kapiKatmani, KARO_BOYU } from './cizimler/karolar.js';
+import { ortamKur } from './ortam.js';
+import { gokyuzuKur } from './gokyuzuKatmani.js';
 import { oyuncuCizimi, halkCizimi, tuccarCizimi } from './cizimler/karakterler.js';
 import { dusmanCizimi } from './cizimler/dusmanlar.js';
 import { verenIsareti } from '../oyun/gorevler.js';
@@ -128,6 +130,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
   g.siradakiEylem ??= null;
   const il = ilHaritasi.get(g.plaka);
   const bolge = bolgeHaritasi.get(il.bolge);
+  const katmanlar = haritaKatmanlari(harita);
   const sinif = depo.al().oyuncu.sinif;
   const SINIF = siniflar[sinif];
 
@@ -148,12 +151,21 @@ export function gezintiEkrani(kap, depo, secenekler) {
       <div class="gezinti-alani" role="application" aria-label="${kacis(sablon(M.alanEtiketi, { il: il.ad }))}">
         <div class="dunya">
           <svg class="karo-katmani" viewBox="0 0 ${GENISLIK * KARO_BOYU} ${YUKSEKLIK * KARO_BOYU}" aria-hidden="true">
-            ${haritaKatmani(harita)}
-            <g class="kapilar"></g>
+            ${katmanlar.alt}
           </svg>
           <div class="hedef-isareti" hidden></div>
+          <div class="yer-katmani" aria-hidden="true"></div>
           <div class="figur-katmani"></div>
+          <svg class="ust-katman" viewBox="0 0 ${GENISLIK * KARO_BOYU} ${YUKSEKLIK * KARO_BOYU}" aria-hidden="true">
+            ${katmanlar.ustTanimlar}
+            <g class="yakin-yapilar"></g>
+            <g class="kapilar"></g>
+          </svg>
+          <div class="hava-katmani" aria-hidden="true"></div>
         </div>
+        <canvas class="hava-tuvali" aria-hidden="true"></canvas>
+        <canvas class="isik-tuvali" aria-hidden="true"></canvas>
+        <div class="atmosfer" data-bolge="${il.bolge}" aria-hidden="true"></div>
         <div class="durum-gostergesi" aria-live="off"><div class="gosterge-cubuklari"></div><ul class="etki-listesi"></ul></div>
         <div class="gezinti-araclari">
           ${[['harita', '🗺️', M.harita], ['heybe', '🎒', M.heybe], ['gunluk', '📜', M.gunluk], ['bilgi', 'ℹ️', M.ilBilgisi]]
@@ -179,7 +191,8 @@ export function gezintiEkrani(kap, depo, secenekler) {
   const alan = ekran.querySelector('.gezinti-alani');
   const dunya = ekran.querySelector('.dunya');
   const svg = ekran.querySelector('.karo-katmani');
-  const kapiKatmaniG = svg.querySelector('.kapilar');
+  const ustKatman = ekran.querySelector('.ust-katman');
+  const kapiKatmaniG = ustKatman.querySelector('.kapilar');
   const figurKatmani = ekran.querySelector('.figur-katmani');
   const hedefIsareti = ekran.querySelector('.hedef-isareti');
   const yonTuslari = ekran.querySelector('.yon-tuslari');
@@ -199,6 +212,8 @@ export function gezintiEkrani(kap, depo, secenekler) {
   let tutulanYon = null; // basılı tutulan yön tuşu
   let mesgul = false; // başka ile geçerken, bayılınca ya da zafer kartı açıkken oyun durur
   let yuruyorZaman = null;
+  let ortam = null; // haritanın kıpırtısı (ortam.js); ekran kurulunca başlar
+  let gokyuzu = null; // günün ışığı ve hava (gokyuzuKatmani.js)
   const zamanlayicilar = [];
 
   // ── Figürler ──
@@ -308,6 +323,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
       can.firstElementChild.style.width = `${Math.round((100 * d.dusman.can) / d.dusman.canEnCok)}%`;
       figurKonumla(el, d.x, d.y);
     }
+    ortuleniSaydamla();
   }
 
   function halkiCiz() {
@@ -372,9 +388,60 @@ export function gezintiEkrani(kap, depo, secenekler) {
 
   function oyuncuyuCiz() {
     oyuncuFiguru.classList.toggle('sola', g.yon === -1);
+    oyuncuFiguru.classList.toggle('kuzey', Boolean(g.kuzey));
     oyuncuFiguru.classList.toggle('dokunulmaz', g.dokunulmaz > 0);
     figurKonumla(oyuncuFiguru, g.oyuncu.x, g.oyuncu.y);
     yoldasiCiz();
+    ortam?.konum(g.oyuncu);
+    ustKatmaniYenile();
+    ortuleniSaydamla();
+  }
+
+  // ── Derinlik ──
+  // Üst katmandaki bir yapı (ağaç tepesi, ev çatısı) yiğidi ya da hedefteki düşmanı
+  // örtüyorsa yarı saydam olur ki arkada kalan görünsün. Yapılar taban satırlarına göre
+  // dizinlenir; bir figürü yalnız 0–3 satır önündeki yapılar örtebilir.
+  // Üst katmanda yalnız yiğidin yakınındaki ev, simge ve meydan binaları durur (ağaçlar
+  // yakında salınan ağaç olarak figür katmanındadır, ortam.js). Yiğit birkaç karo
+  // uzaklaşınca yenilenir.
+  const yakinYapilarG = ustKatman.querySelector('.yakin-yapilar');
+  const yapilar = katmanlar.nesneler.filter((o) => !o.agac);
+  let ustKullanimlari = new Map();
+  let ustMerkez = null;
+  function ustKatmaniYenile() {
+    if (ustMerkez && Math.abs(ustMerkez.x - g.oyuncu.x) + Math.abs(ustMerkez.y - g.oyuncu.y) < 3) return;
+    ustMerkez = { ...g.oyuncu };
+    const yakin = azHareket
+      ? katmanlar.nesneler // salınım yoksa ağaçlar da burada
+      : yapilar;
+    yakinYapilarG.innerHTML = katmanlar.ustKullanim(yakin.filter((o) => Math.abs(o.x - g.oyuncu.x) <= 10 && Math.abs(o.y - g.oyuncu.y) <= 12));
+    ustKullanimlari = new Map([...yakinYapilarG.querySelectorAll('use[data-n]')].map((u) => [Number(u.dataset.n), u]));
+    saydamlar = new Set();
+  }
+  const satirdakiYapilar = new Map();
+  for (const o of katmanlar.nesneler) {
+    if (!satirdakiYapilar.has(o.cizgi)) satirdakiYapilar.set(o.cizgi, []);
+    satirdakiYapilar.get(o.cizgi).push(o);
+  }
+  let saydamlar = new Set();
+  function ortenler(f) {
+    const kutu = { x0: f.x + 0.15, x1: f.x + 0.85, y0: f.y - 0.6, y1: f.y + 0.85 };
+    const sonuc = [];
+    for (let r = f.y; r <= f.y + 3; r++) {
+      for (const o of satirdakiYapilar.get(r) ?? []) {
+        if (o.x0 < kutu.x1 && o.x1 > kutu.x0 && o.ust < kutu.y1 && o.cizgi > kutu.y0) sonuc.push(o.n);
+      }
+    }
+    return sonuc;
+  }
+  function ortuleniSaydamla() {
+    const hedef = g.hedefId != null && g.dusmanlar.find((d) => d.id === g.hedefId);
+    const yeni = new Set([...ortenler(g.oyuncu), ...(hedef ? ortenler(hedef) : [])]);
+    // Salınan ağaçlar figür katmanındadır (ortam.js); onlar da saydamlaşır
+    const agac = (n) => figurKatmani.querySelector(`.sallanan-agac[data-n="${n}"]`);
+    for (const n of saydamlar) if (!yeni.has(n)) [ustKullanimlari.get(n), agac(n)].forEach((e) => e?.classList.remove('saydam'));
+    for (const n of yeni) [ustKullanimlari.get(n), agac(n)].forEach((e) => e?.classList.add('saydam'));
+    saydamlar = yeni;
   }
 
   // Yoldaşın figürü: yiğidin bir önceki karosunda (uzak kaldıysa yanına gelir); uçan yoldaş
@@ -406,7 +473,9 @@ export function gezintiEkrani(kap, depo, secenekler) {
     const x = sinirla((g.oyuncu.x + 0.5) * T - r.width / 2, dunyaG, r.width);
     const y = sinirla((g.oyuncu.y + 0.5) * T - r.height / 2, dunyaY, r.height);
     dunya.style.transform = `translate3d(${-x}px, ${-y}px, 0)`;
+    kameraKutusu = { x, y, w: r.width, h: r.height };
   }
+  let kameraKutusu = { x: 0, y: 0, w: 0, h: 0 };
 
   function boyutla() {
     const r = alan.getBoundingClientRect();
@@ -415,6 +484,8 @@ export function gezintiEkrani(kap, depo, secenekler) {
     dunya.style.height = `${YUKSEKLIK * T}px`;
     ekran.style.setProperty('--karo', `${T}px`);
     dunya.classList.add('anlik');
+    ortam?.yenile();
+    gokyuzu?.boyut();
     oyuncuyuCiz();
     dusmanlariCiz();
     halkiCiz();
@@ -470,6 +541,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     if (tur === 'tuccar') return secenekler.tuccarGoster?.(g.tuccar);
     if (tur === 'muhtar' || tur === 'ahi_baba') return secenekler.gorevVerenGoster?.(tur);
     if (tur === 'cesme') return bildirimGoster(ekran, M.cesme);
+    if (tur === 'simge') return bildirimGoster(ekran, sablon(M.simge, { ad: harita.simge.ad }));
   }
 
   function kapidanGec(kapi) {
@@ -540,12 +612,51 @@ export function gezintiEkrani(kap, depo, secenekler) {
     setTimeout(() => y.remove(), 1100);
   }
 
-  function vurusGoster(el) {
+  // Vuruşun izi: vurulanın üstünde dört bir yana saçılan kıvılcımlar (sihirde ışık
+  // zerreleri), kritikte daha çok ve iri. Hareket azaltılmışsa eski yıldız gösterilir.
+  const KIVILCIM_RENGI = { isik: '#ffe8a3', sihir: '#cfa8ff', alev: '#ffb347' };
+  function vurusGoster(el, { mermi = null, kritik = false } = {}) {
     const v = document.createElement('span');
-    v.className = 'vurus';
-    v.innerHTML = VURUS;
+    if (azHareket) {
+      v.className = 'vurus';
+      v.innerHTML = VURUS;
+    } else {
+      const sayi = kritik ? 12 : 8;
+      v.className = `kivilcimlar${kritik ? ' kritik' : ''}${KIVILCIM_RENGI[mermi] ? ' isikli' : ''}`;
+      v.style.setProperty('--renk', KIVILCIM_RENGI[mermi] ?? '#fff4c2');
+      v.innerHTML = Array.from({ length: sayi }, (_, i) => {
+        const aci = ((i + Math.random() * 0.6) / sayi) * 360;
+        const uzak = 0.35 + Math.random() * 0.35;
+        return `<i style="--aci:${aci.toFixed(0)}deg;--uzak:${uzak.toFixed(2)}"></i>`;
+      }).join('');
+    }
     el.appendChild(v);
-    setTimeout(() => v.remove(), 450);
+    setTimeout(() => v.remove(), 520);
+  }
+
+  // Yakın dövüşte vurulanın üstünde kılıç (ya da pençe) izi: hızla çizilip sönen bir yay.
+  function kesikGoster(el, yon) {
+    if (azHareket) return;
+    const k = document.createElement('span');
+    k.className = 'kesik';
+    k.style.setProperty('--aci', `${Math.round(-35 + Math.random() * 30)}deg`);
+    k.style.setProperty('--ayna', String(yon < 0 ? -1 : 1));
+    el.appendChild(k);
+    setTimeout(() => k.remove(), 320);
+  }
+
+  // Yenilen düşman dağılır: yerinde duman bulutçukları ve sönen ışık zerreleri kalır.
+  function dagilmaDumani(x, y) {
+    if (azHareket) return;
+    const d = document.createElement('div');
+    d.className = 'dagilma';
+    d.setAttribute('aria-hidden', 'true');
+    d.style.transform = `translate3d(${(x + 0.5) * T}px, ${(y + 0.3) * T}px, 0)`;
+    d.innerHTML = Array.from({ length: 7 }, (_, i) =>
+      `<i style="--aci:${Math.round((i / 7) * 360 + Math.random() * 30)}deg;--gecikme:${(Math.random() * 0.15).toFixed(2)}s"></i>`).join('')
+      + Array.from({ length: 5 }, () => `<b style="--x:${(Math.random() - 0.5).toFixed(2)};--gecikme:${(0.1 + Math.random() * 0.3).toFixed(2)}s"></b>`).join('');
+    figurKatmani.appendChild(d);
+    setTimeout(() => d.remove(), 1300);
   }
 
   // Uzaktan vuruş: ok, ışık, sihir ya da alev, vuranın karosundan vurulanınkine uçar.
@@ -560,6 +671,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     el.setAttribute('aria-hidden', 'true');
     const sure = Math.max(90, mesafe(bas, son) * MERMI_HIZI);
     el.style.transitionDuration = `${sure}ms`;
+    el.innerHTML = '<span class="mermi-izi"></span>';
     el.style.transform = `translate3d(${a.x}px, ${a.y}px, 0) rotate(${aci}rad)`;
     figurKatmani.appendChild(el);
     void el.getBoundingClientRect();
@@ -574,9 +686,11 @@ export function gezintiEkrani(kap, depo, secenekler) {
     titret(el, 'hamle', 260);
   }
 
-  // Vuruşun görüntüsü: uzaktan mermi, yakından hamle; vurulanda yıldız, sarsılma ve hasar sayısı.
+  // Vuruşun görüntüsü: uzaktan mermi, yakından hamle ve kılıç izi; vurulanda kıvılcım,
+  // geri itilme, beyaz parlama ve hasar sayısı.
   function vurusuGoster({ vuranEl, vurulanEl, bas, son, mermi, olay, oyuncudan }) {
-    if (mermi && mesafe(bas, son) > 1) {
+    const uzaktan = mermi && mesafe(bas, son) > 1;
+    if (uzaktan) {
       mermiAt(bas, son, mermi);
       sesCal('atis');
     } else {
@@ -590,7 +704,11 @@ export function gezintiEkrani(kap, depo, secenekler) {
         return;
       }
       sesCal(olay.kritik ? 'kritik' : oyuncudan ? 'vurus' : 'dusmanVurusu');
-      vurusGoster(vurulanEl);
+      vurusGoster(vurulanEl, { mermi: uzaktan ? mermi : null, kritik: olay.kritik });
+      if (!uzaktan) kesikGoster(vurulanEl, Math.sign(son.x - bas.x) || 1);
+      // Vurulan, vuranın tersine doğru bir an geri itilir ve beyaza parlar
+      vurulanEl.style.setProperty('--geri-x', `${Math.sign(son.x - bas.x) * 0.16 * T}px`);
+      vurulanEl.style.setProperty('--geri-y', `${Math.sign(son.y - bas.y) * 0.1 * T}px`);
       titret(vurulanEl, 'vuruldu', 420);
       yaziUcur(vurulanEl, `-${olay.hasar}${olay.kritik ? '!' : ''}`, olay.kritik ? 'kritik' : 'hasar');
       if (olay.ekHasar) yaziUcur(vurulanEl, S.sahne.ekHasar, 'bilgi');
@@ -710,6 +828,10 @@ export function gezintiEkrani(kap, depo, secenekler) {
     if (hedef) {
       g.dokunulmaz = 0; // saldıran yiğidin soluklanması biter
       g.hedefId = hedef.id;
+      if (g.kuzey) {
+        g.kuzey = false; // vuran yiğit hedefine döner
+        oyuncuyuCiz();
+      }
       // Akın Hamlesi: yiğit hedefin yanına atılır
       const yer = yetenek?.atilma ? atilmaYeri(harita, g.oyuncu, hedef, yetenek.menzil, engeller()) : null;
       if (yer) {
@@ -833,6 +955,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
       dusmanFigurleri.delete(kayit.id);
       el.classList.add('dagiliyor');
       setTimeout(() => el.remove(), 900);
+      dagilmaDumani(kayit.x, kayit.y);
     }
     if (g.hedefId === kayit.id) {
       g.hedefId = null;
@@ -1017,9 +1140,11 @@ export function gezintiEkrani(kap, depo, secenekler) {
         if (tur) etkiles(tur);
       }
       oyuncuFiguru.classList.remove('yuruyor');
+      yoldasFiguru.classList.remove('yuruyor');
       return false;
     }
     if (yon.dx) g.yon = yon.dx;
+    g.kuzey = yon.dy < 0; // yukarı yürüyen yiğidin sırtı görünür
     const hedef = { x: g.oyuncu.x + yon.dx, y: g.oyuncu.y + yon.dy };
     if (tuccarKonumdaMi(g.tuccar, hedef)) {
       // Tüccarın üstünden geçilmez; değmek alışveriş ekranını açar
@@ -1048,11 +1173,16 @@ export function gezintiEkrani(kap, depo, secenekler) {
       return false;
     }
     g.yoldasYeri = { ...g.oyuncu };
+    ortam?.adim(g.oyuncu, hedef);
     g.oyuncu = hedef;
     if (g.dokunulmaz > 0) g.dokunulmaz--;
     oyuncuFiguru.classList.add('yuruyor');
+    yoldasFiguru.classList.add('yuruyor');
     clearTimeout(yuruyorZaman);
-    yuruyorZaman = setTimeout(() => oyuncuFiguru.classList.remove('yuruyor'), ADIM_MS * 2);
+    yuruyorZaman = setTimeout(() => {
+      oyuncuFiguru.classList.remove('yuruyor');
+      yoldasFiguru.classList.remove('yuruyor');
+    }, ADIM_MS * 2);
     oyuncuyuCiz();
     kamera();
     yenidenDogur();
@@ -1327,12 +1457,16 @@ export function gezintiEkrani(kap, depo, secenekler) {
   }
   const aboneliktenCik = depo.abone(ustCubuguCiz);
   ustCubuguCiz(depo.al());
+  ortam = ortamKur({ ekran, harita, katmanlar, T: () => T, kamera: () => kameraKutusu, azHareket });
+  gokyuzu = gokyuzuKur({ ekran, harita, katmanlar, T: () => T, oyuncuEl: oyuncuFiguru, dusmanlar: () => g.dusmanlar, azHareket });
   const gozlemci = new ResizeObserver(boyutla);
   gozlemci.observe(alan);
   boyutla();
   zamanlayicilar.push(setInterval(adim, ADIM_MS), setInterval(dusmanTuru, DUSMAN_MS));
 
   return () => {
+    ortam.kapat();
+    gokyuzu.kapat();
     zamanlayicilar.forEach(clearInterval);
     clearTimeout(yuruyorZaman);
     gozlemci.disconnect();

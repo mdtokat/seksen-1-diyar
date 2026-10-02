@@ -95,7 +95,8 @@ const cizme = (x, renk) => `
   <path d="M${x + 1.5} 95 h6" stroke="${acik(renk, 0.4)}" stroke-width="1.4" opacity=".7"/>`;
 
 // Baş: yüz, kulak, kaş, göz, burun ve yanak. `sac` ensedeki saç rengi;
-// `biyik`, `sakal` isteğe bağlıdır.
+// `biyik`, `sakal` isteğe bağlıdır. Ense (saçlı başın arkası) gizlidir; yiğit kuzeye
+// yürürken (arkası dönükken) görünür ve yüzü örter (ana.css → .kuzey .ense).
 function bas({ sac = '#3a2a1e', biyik = false, sakal = false, kas = '#3a2a1e' } = {}) {
   const sakalCiz = sakal
     ? `<path d="M52 37 Q53 48 62 49 Q71 48 72 39 Q66 44 60 42 Q55 41 52 37 Z" fill="${hacim(sac)}"/>`
@@ -115,7 +116,9 @@ function bas({ sac = '#3a2a1e', biyik = false, sakal = false, kas = '#3a2a1e' } 
     <path d="M73 34 q1.8 2.4 -.3 3.4" fill="none" stroke="${koyu(TEN, 0.35)}" stroke-width="1.2"/>
     <ellipse cx="67" cy="37.5" rx="2.6" ry="1.4" fill="#e0786a" stroke="none" opacity=".35"/>
     <path d="M66 41 q2.4 1.1 4.4 -.3" fill="none" stroke="${koyu(TEN, 0.45)}" stroke-width="1.1"/>
-    ${sakalCiz}${biyikCiz}`;
+    ${sakalCiz}${biyikCiz}
+    <g class="ense" visibility="hidden"><circle cx="61" cy="33" r="12.8" fill="${kure(sac)}"/>
+      <path d="M52 40 Q61 46 70 40" fill="none" stroke="${koyu(sac, 0.35)}" stroke-width="1.2"/></g>`;
 }
 
 // Ortak gövde: şalvar, çizme, kaftan (kenar şeritli), kaytan düğmeler ve kuşak.
@@ -124,10 +127,10 @@ function bas({ sac = '#3a2a1e', biyik = false, sakal = false, kas = '#3a2a1e' } 
 function govde({ kaftan, kaftanKoyu, kusak: sinifKusagi, cizme: cizmeRenk = '#5b3a24', ic = '#f7efdc', serit = ALTIN, salvar, ekipman = {} }) {
   const s = salvar ?? kaftanKoyu;
   const kusak = ekipman.aksesuar ? ayrisan(ekipman.aksesuar.renk, kaftan) : sinifKusagi;
+  // Bacaklar ayrı gruplardır: yürürken kalçadan salınırlar (ana.css → .bacak).
   return `
-    <path d="M46 82 Q43 90 47 95 L57 95 Q59 88 58 82 Z" fill="${hacim(s)}"/>
-    <path d="M63 82 Q62 88 63.5 95 L73.5 95 Q77 90 74 82 Z" fill="${hacim(s)}"/>
-    ${cizme(46, cizmeRenk)}${cizme(63, cizmeRenk)}
+    <g class="bacak bacak-arka"><path d="M46 82 Q43 90 47 95 L57 95 Q59 88 58 82 Z" fill="${hacim(s)}"/>${cizme(46, cizmeRenk)}</g>
+    <g class="bacak bacak-on"><path d="M63 82 Q62 88 63.5 95 L73.5 95 Q77 90 74 82 Z" fill="${hacim(s)}"/>${cizme(63, cizmeRenk)}</g>
     <path d="M43 53 Q46 45 60 44 Q74 45 77 53 L83 89 Q72 94 60 94 Q48 94 37 89 Z" fill="${hacim(kaftan)}"/>
     <path d="M57.5 73 L54 93.5 Q60 95 66 93.5 L62.5 73 Z" fill="${hacim(ic)}"/>
     <path d="M57.5 73 L54 93.5 M62.5 73 L66 93.5" fill="none" stroke="${serit}" stroke-width="1.6"/>

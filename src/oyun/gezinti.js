@@ -17,6 +17,7 @@ import { bossDurumu, miniBossVarMi, finalDurumu } from './ilerleme.js';
 import { rastgeleUreteci, tamSayi, sans } from './rastgele.js';
 import { gezginBossUret, GEZGIN_BOSS } from './gezginBoss.js';
 import { ilSeviyesi, bolgeSeviyesi, durumRotasi } from './rota.js';
+import { BOLGE_EVI, BOLGE_BAHCESI, yoresel, SIMGE_BOYU } from '../veri/yoresel.js';
 
 // Harita boyutu: karo sayısı = TEMEL_KARO × (yüzölçümü / TEMEL_ALAN)^ALAN_USSU.
 // Gerçek oranla (Konya/Yalova ≈ 51 kat) oynanabilir kalmayacağı için alan bir
@@ -48,7 +49,22 @@ export const KARO = {
   KERVANSARAY: 13,
   MUHTAR: 14, // köy muhtarı: görev verir, ulaştırılan yemeği teslim alır, hediye verir
   AHI_BABA: 15, // Ahi esnafı olan illerde dükkânın yanında durur, görev verir
+  SIMGE: 16, // ilin simgesi (saat kulesi, kale, kule, taş köprü); sol üst köşesi harita.simge
+  YAMAC: 17, // yüksek düzlüğün güney yüzündeki kaya duvar: geçilmez, görüşü kapatır
 };
+
+// İlin yöresel görünüşü (veri/yoresel.js): bölge varsayılanları ile ile özgü ayrıntılar.
+// { ev, agac: [tür, oran] | null, tarla: tür | null, simge: { tur, ad } | null }
+export function yoreselGorunum(plaka, bolge) {
+  const il = yoresel[plaka] ?? {};
+  const bahce = BOLGE_BAHCESI[bolge];
+  return {
+    ev: il.ev ?? BOLGE_EVI[bolge],
+    agac: il.agac ?? bahce.agac,
+    tarla: il.tarla === undefined ? bahce.tarla : il.tarla,
+    simge: il.simge ?? null,
+  };
+}
 
 const OYUNCU_YURUR = new Set([KARO.CIM, KARO.YOL, KARO.YABANI, KARO.MEYDAN, KARO.KAPI]);
 const DUSMAN_YURUR = new Set([KARO.CIM, KARO.YOL, KARO.YABANI]); // meydan ve çıkışlar güvenli
@@ -58,14 +74,15 @@ const GORUS_GECER = new Set([KARO.CIM, KARO.YOL, KARO.YABANI, KARO.SU, KARO.MEYD
 
 // Bölgeye göre doğa: kaç öbek ağaç, kaya, çalılık, su ve kaç ev.
 // Kenar: haritayı çevreleyen engel türü.
+// tepe: kaç yüksek düzlük (dağlık bölgelerde çok, ovalarda az).
 const BOLGE_DOGASI = {
-  marmara: { agac: 10, kaya: 3, yabani: 8, su: 2, ev: 6, kenar: KARO.AGAC },
-  ege: { agac: 12, kaya: 5, yabani: 6, su: 1, ev: 6, kenar: KARO.AGAC },
-  akdeniz: { agac: 10, kaya: 6, yabani: 6, su: 1, ev: 5, kenar: KARO.AGAC },
-  ic_anadolu: { agac: 2, kaya: 10, yabani: 9, su: 0, ev: 5, kenar: KARO.KAYA },
-  karadeniz: { agac: 18, kaya: 3, yabani: 6, su: 2, ev: 5, kenar: KARO.AGAC },
-  guneydogu: { agac: 2, kaya: 8, yabani: 5, su: 0, ev: 7, kenar: KARO.KAYA },
-  dogu_anadolu: { agac: 6, kaya: 9, yabani: 6, su: 2, ev: 4, kenar: KARO.KAYA },
+  marmara: { agac: 10, kaya: 3, yabani: 8, su: 2, ev: 6, tepe: 1, kenar: KARO.AGAC },
+  ege: { agac: 12, kaya: 5, yabani: 6, su: 1, ev: 6, tepe: 2, kenar: KARO.AGAC },
+  akdeniz: { agac: 10, kaya: 6, yabani: 6, su: 1, ev: 5, tepe: 2, kenar: KARO.AGAC },
+  ic_anadolu: { agac: 2, kaya: 10, yabani: 9, su: 0, ev: 5, tepe: 1, kenar: KARO.KAYA },
+  karadeniz: { agac: 18, kaya: 3, yabani: 6, su: 2, ev: 5, tepe: 3, kenar: KARO.AGAC },
+  guneydogu: { agac: 2, kaya: 8, yabani: 5, su: 0, ev: 7, tepe: 1, kenar: KARO.KAYA },
+  dogu_anadolu: { agac: 6, kaya: 9, yabani: 6, su: 2, ev: 4, tepe: 3, kenar: KARO.KAYA },
 };
 
 const KAPI_ARALIGI = 4; // iki çıkış arasındaki en az karo
@@ -261,6 +278,32 @@ export function ilHaritasiUret(plaka) {
   obek(KARO.AGAC, kac(doga.agac), 1, 2);
   obek(KARO.KAYA, kac(doga.kaya), 0, 1);
 
+  // 1b. Yükselti: yüksek düzlükler (tepeler). Düzlüğün karoları `yukselti`de 1'dir ve
+  // olduğu gibi kalır (ağaç, kaya, su…); güney kenarının hemen altındaki karolar kaya
+  // duvardır (YAMAC). Kuzey, doğu ve batıdan yamaçla çıkılır; yollar duvarı yarar (rampa).
+  // Ayrı bir tohum kullanılır ki haritanın geri kalanı değişmesin. Meydanın çevresi düzdür.
+  const yukselti = new Uint8Array(G * Y);
+  const trng = rastgeleUreteci(((plaka * 2654435761) ^ 0x9e3779b9) >>> 0);
+  const orta = { x: (G - 1) / 2, y: (Y - 1) / 2 };
+  for (let n = 0, deneme = 0; n < kac(doga.tepe) && deneme < 60; deneme++) {
+    const rx = tamSayi(trng, 3, 6);
+    const ry = tamSayi(trng, 2, 4);
+    const cx = tamSayi(trng, rx + 3, G - rx - 4);
+    const cy = tamSayi(trng, ry + 3, Y - ry - 4);
+    if (Math.abs(cx - orta.x) < rx + 8 && Math.abs(cy - orta.y) < ry + 7) continue;
+    for (let dy = -ry; dy <= ry; dy++) {
+      for (let dx = -rx; dx <= rx; dx++) {
+        if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1 + trng() * 0.25) yukselti[(cy + dy) * G + cx + dx] = 1;
+      }
+    }
+    n++;
+  }
+  for (let y = 1; y < Y; y++) {
+    for (let x = 0; x < G; x++) {
+      if (!yukselti[y * G + x] && yukselti[(y - 1) * G + x] && al(x, y) !== KARO.SU) koy(x, y, KARO.YAMAC);
+    }
+  }
+
   // 2. Kenar
   for (let x = 0; x < G; x++) {
     koy(x, 0, doga.kenar);
@@ -300,18 +343,41 @@ export function ilHaritasiUret(plaka) {
     }
   }
 
+  // 4b. İlin simgesi: meydana yakın, çimenlik bir alanda (yolları kesmez).
+  const simgeVerisi = yoreselGorunum(plaka, il.bolge).simge;
+  let simge = null;
+  if (simgeVerisi) {
+    const { g: sg, y: sy } = SIMGE_BOYU[simgeVerisi.tur];
+    for (let deneme = 0; deneme < 400 && !simge; deneme++) {
+      const uzak = 4 + Math.floor(deneme / 40);
+      const x = tamSayi(rng, meydan.x1 - uzak, meydan.x2 + uzak);
+      const y = tamSayi(rng, meydan.y1 - uzak, meydan.y2 + uzak);
+      if (x < 2 || y < 2 || x + sg > G - 2 || y + sy > Y - 2) continue;
+      if (x + sg >= meydan.x1 - 1 && x <= meydan.x2 + 1 && y + sy >= meydan.y1 - 1 && y <= meydan.y2 + 1) continue;
+      let uygun = true;
+      for (let dy = 0; dy < sy && uygun; dy++) for (let dx = 0; dx < sg; dx++) if (al(x + dx, y + dy) !== KARO.CIM) uygun = false;
+      if (!uygun) continue;
+      for (let dy = 0; dy < sy; dy++) for (let dx = 0; dx < sg; dx++) koy(x + dx, y + dy, KARO.SIMGE);
+      simge = { x, y, ...simgeVerisi };
+    }
+  }
+
   // 5. Evler: meydanın çevresinde, çimenlik karolarda. Kalabalık illerde mahalle büyür.
+  // Her ev 2×2 karo kaplar (yiğitten büyük görünsün); sol üst karosu `x, y`dir.
   const evSayisi = evSayisiHesapla(il, doga);
   const mahalle = 5 + Math.floor(evSayisi / 6);
-  let ev = 0;
-  for (let deneme = 0; deneme < 60 * evSayisi && ev < evSayisi; deneme++) {
+  const evler = [];
+  for (let deneme = 0; deneme < 60 * evSayisi && evler.length < evSayisi; deneme++) {
     const x = tamSayi(rng, meydan.x1 - mahalle, meydan.x2 + mahalle);
     const y = tamSayi(rng, meydan.y1 - mahalle, meydan.y2 + mahalle);
-    if (x < 2 || y < 2 || x > G - 3 || y > Y - 3) continue;
-    if (al(x, y) !== KARO.CIM) continue;
-    if (x >= meydan.x1 - 1 && x <= meydan.x2 + 1 && y >= meydan.y1 - 1 && y <= meydan.y2 + 1) continue;
-    koy(x, y, KARO.EV);
-    ev++;
+    if (x < 2 || y < 2 || x + 1 > G - 3 || y + 1 > Y - 3) continue;
+    if ([[0, 0], [1, 0], [0, 1], [1, 1]].some(([dx, dy]) => al(x + dx, y + dy) !== KARO.CIM)) continue;
+    // Evler arasında en az bir karo boşluk: çatılar birbirinin cephesini örtmesin
+    if (evler.some((e) => Math.abs(e.x - x) < 3 && Math.abs(e.y - y) < 3)) continue;
+    if (simge && x + 2 >= simge.x - 1 && x <= simge.x + SIMGE_BOYU[simge.tur].g && y + 2 >= simge.y - 1 && y <= simge.y + SIMGE_BOYU[simge.tur].y) continue;
+    if (x + 1 >= meydan.x1 - 1 && x <= meydan.x2 + 1 && y + 1 >= meydan.y1 - 1 && y <= meydan.y2 + 1) continue;
+    for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) koy(x + dx, y + dy, KARO.EV);
+    evler.push({ x, y });
   }
 
   // 6. Meydandaki yapılar
@@ -334,7 +400,7 @@ export function ilHaritasiUret(plaka) {
   const dogus = { x: merkez.x, y: merkez.y + 1 };
 
   // 7. Bağlantı: meydandan yürünerek ulaşılamayan açık alanlar engelle doldurulur
-  const harita = { plaka, bolge: il.bolge, genislik: G, yukseklik: Y, karolar: k, kapilar, meydan, dogus, tezgah, cesme, tabela, dukkan, kervansaray, muhtar, ahiBaba };
+  const harita = { plaka, bolge: il.bolge, genislik: G, yukseklik: Y, karolar: k, yukselti, kapilar, meydan, dogus, evler, simge, tezgah, cesme, tabela, dukkan, kervansaray, muhtar, ahiBaba };
   const ulasilan = ulasilabilir(harita, dogus, yurunurMu);
   for (let y = 0; y < Y; y++) {
     for (let x = 0; x < G; x++) {
@@ -421,6 +487,7 @@ export function etkilesimTuru(harita, x, y) {
     [KARO.KERVANSARAY]: 'kervansaray',
     [KARO.MUHTAR]: 'muhtar',
     [KARO.AHI_BABA]: 'ahi_baba',
+    [KARO.SIMGE]: 'simge',
   }[karo(harita, x, y)] ?? null;
 }
 

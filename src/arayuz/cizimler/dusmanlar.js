@@ -2,16 +2,16 @@
 // ayrıntılar düşmana göre değişir. Figürler sola (oyuncuya) dönüktür.
 // Kırmızı çizgiler (plan.md Bölüm 2): kan, vahşet ve müstehcenlik yoktur;
 // mahlûklar ürkütücü değil, masalsı görünür.
-import { svgSar, golge, hale, hacim, kure, metal, isilti, acik, koyu, parlak, leke, parlakGoz } from './ortak.js';
+import { svgSar, kontur, golge, hale, hacim, kure, metal, isilti, acik, koyu, parlak, leke, parlakGoz } from './ortak.js';
 import { yankesiciBedeni } from './karakterler.js';
 
 const LACI = '#1b2a5c';
 const ALTIN = '#d4a537';
 const KREM = '#f7efdc';
 
-// Kalın, dış çizgili bir kıvrım (boyun, kuyruk, yılan gövdesi).
+// Kalın, dış çizgili bir kıvrım (boyun, kuyruk, yılan gövdesi). Dış çizgi kendi renginin koyusudur.
 const kivrim = (d, renk, kalinlik) => `
-  <path d="${d}" fill="none" stroke="${LACI}" stroke-width="${kalinlik + 4}"/>
+  <path d="${d}" fill="none" stroke="${kontur(renk)}" stroke-width="${kalinlik + 3.4}"/>
   <path d="${d}" fill="none" stroke="${renk}" stroke-width="${kalinlik}"/>`;
 
 // Çizgisiz, saydam süs (doku, tüy, duman).
@@ -177,9 +177,9 @@ function yilan(r, { tac = false } = {}) {
     : '';
   const govdeYolu = 'M80 92 Q88 74 72 63 Q54 52 58 38 Q60 30 52 25';
   return `${golge(40)}
-    <ellipse cx="62" cy="96" rx="30" ry="8.5" fill="none" stroke="${LACI}" stroke-width="17"/>
+    <ellipse cx="62" cy="96" rx="30" ry="8.5" fill="none" stroke="${kontur(r.ana)}" stroke-width="16.4"/>
     <ellipse cx="62" cy="96" rx="30" ry="8.5" fill="none" stroke="${koyu(r.ana, 0.25)}" stroke-width="13"/>
-    <path d="M32 96 Q33 106 62 106 Q91 106 92 96" fill="none" stroke="${LACI}" stroke-width="17"/>
+    <path d="M32 96 Q33 106 62 106 Q91 106 92 96" fill="none" stroke="${kontur(r.ana)}" stroke-width="16.4"/>
     <path d="M32 96 Q33 106 62 106 Q91 106 92 96" fill="none" stroke="${r.ana}" stroke-width="13"/>
     <path d="M36 100 Q46 104.5 62 104.5" fill="none" stroke="${r.acik}" stroke-width="3" opacity=".7"/>
     <path d="M32 96 Q33 106 62 106 Q91 106 92 96" fill="none" stroke="${r.koyu}" stroke-width="9" stroke-dasharray="2.5 7" opacity=".7"/>
