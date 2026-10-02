@@ -6,9 +6,15 @@
 // karoları desen dolgulu tek birer yola birleştirilir; kıyı köpüğü ve yol kenarları
 // da tek yoldur. Ağaç, ev ve kaya gibi yapılar sol üstten ışık alır, gölgeleri sağ
 // alta düşer; ağaçlar konumlarına göre boy ve ton bakımından hafifçe değişir.
+//
+// Gerçekçilik için: dış çizgiler parçanın kendi renginin koyusudur (konturla); çimen
+// büyük, yumuşak renk lekeleriyle (kuru ot, nemli toprak) ve ikinci bir seyrek desenle
+// bezenir ki tekrar göze batmasın; su ve yolların kenarı karo karo değil, köşeleri
+// yuvarlatılmış tek bir çizgiyle (bolgeKonturu) çizilir; gölgeler zeminin tonunu
+// koyulaştırır ve uzun yapılarda sağ alta doğru uzar.
 import { KARO } from '../../oyun/gezinti.js';
 import { bolgeler, final } from '../../veri/bolgeler.js';
-import { boyalariCoz, hacim, kure, metal, isilti, acik, koyu } from './ortak.js';
+import { boyalariCoz, konturla, hacim, kure, metal, isilti, acik, koyu, karistir } from './ortak.js';
 
 export const KARO_BOYU = 16;
 const T = KARO_BOYU;
@@ -26,8 +32,10 @@ const PALET = {
 };
 
 const LACI = '#1b2a5c';
-const CIZGI = `stroke="${LACI}" stroke-width="0.8" stroke-linejoin="round"`;
-const INCE = `stroke="${LACI}" stroke-width="0.6" stroke-linejoin="round"`;
+// Dış çizgi rengi dolgudan türetilir (konturla, `@k` yer tutucusu).
+const CIZGI = 'stroke="@k" stroke-width="0.7" stroke-linejoin="round"';
+const INCE = 'stroke="@k" stroke-width="0.5" stroke-linejoin="round"';
+const GOLGE = '#231c2a';
 
 // Konuma bağlı, her açılışta aynı kalan sözde rastgele sayı (0 ≤ n < 1).
 const karma = (x, y, tohum = 0) => {
@@ -51,21 +59,27 @@ function desenler(p) {
     .map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${r > 2 ? acik(p.zemin, 0.12) : p.benek}"/>`).join('');
   const cakil = [[5, 6, 1.4], [20, 12, 1], [27, 25, 1.6], [10, 22, 1.1], [16, 4, .8], [3, 28, 1], [24, 2, 1.2]]
     .map(([x, y, r], i) => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * 0.75}" fill="${i % 2 ? acik(p.yol, 0.35) : koyu(p.yol, 0.18)}"/>`).join('');
+  // İkinci, seyrek desen (48'in katı değil): birincinin tekrarını bozar.
+  const seyrek = [[11, 7, 0], [52, 15, 1], [30, 40, 0], [64, 52, 1], [8, 61, 1], [45, 66, 0]]
+    .map(([x, y, i]) => tutam(x, y, i ? koyu(p.zemin, 0.2) : acik(p.zemin, 0.2))).join('')
+    + [[22, 24, 1.3], [58, 33, 0.9], [37, 58, 1.1], [70, 8, 0.8]]
+      .map(([x, y, r], i) => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * 0.7}" fill="${i % 2 ? koyu(p.zemin, 0.22) : karistir(p.zemin, p.yol, 0.6)}"/>`).join('');
   const meydan = '#ddd3bf';
   return `
     <pattern id="@cim" width="48" height="48" patternUnits="userSpaceOnUse">
       <rect width="48" height="48" fill="${p.zemin}"/>${nokta}${cim}
     </pattern>
+    <pattern id="@cim2" width="72" height="72" patternUnits="userSpaceOnUse">${seyrek}</pattern>
     <pattern id="@yol" width="32" height="32" patternUnits="userSpaceOnUse">
       <rect width="32" height="32" fill="${p.yol}"/>
       <path d="M0 9 q8 -2 16 0 t16 0 M0 25 q8 2 16 0 t16 0" fill="none" stroke="${koyu(p.yol, 0.08)}" stroke-width="2.4" opacity=".6"/>
       ${cakil}
     </pattern>
-    <pattern id="@su" width="32" height="32" patternUnits="userSpaceOnUse">
-      <rect width="32" height="32" fill="${p.su}"/>
-      <rect y="16" width="32" height="16" fill="${koyu(p.su, 0.08)}"/>
-      <path d="M3 7 q2.5 -2.2 5 0 q2.5 2.2 5 0 M19 15 q2.5 -2.2 5 0 q2.5 2.2 5 0 M6 25 q2.5 -2.2 5 0" fill="none" stroke="${acik(p.su, 0.6)}" stroke-width=".8" stroke-linecap="round"/>
-      <circle cx="26" cy="5" r=".8" fill="#fff" opacity=".8"/><circle cx="14" cy="21" r=".6" fill="#fff" opacity=".7"/>
+    <pattern id="@su" width="56" height="56" patternUnits="userSpaceOnUse">
+      <rect width="56" height="56" fill="${koyu(p.su, 0.14)}"/>
+      <path d="M4 9 q3 -1.6 6 0 q3 1.6 6 0 M31 5 q2.5 -1.4 5 0 M22 21 q3 -1.6 6 0 q3 1.6 6 0 M44 30 q2.5 -1.4 5 0 q2.5 1.4 5 0 M7 37 q3 -1.6 6 0 M27 47 q3 -1.6 6 0 q3 1.6 6 0" fill="none" stroke="${acik(p.su, 0.4)}" stroke-width=".7" stroke-linecap="round" opacity=".7"/>
+      <path d="M14 27 q2.5 1.4 5 0 M40 14 q2.5 1.4 5 0 M48 46 q2 1.2 4 0 M2 50 q2 1.2 4 0" fill="none" stroke="${koyu(p.su, 0.3)}" stroke-width=".7" stroke-linecap="round" opacity=".5"/>
+      <circle cx="38" cy="8" r=".7" fill="#fff" opacity=".75"/><circle cx="16" cy="40" r=".55" fill="#fff" opacity=".6"/><circle cx="50" cy="24" r=".5" fill="#fff" opacity=".6"/>
     </pattern>
     <pattern id="@meydan" width="16" height="16" patternUnits="userSpaceOnUse">
       <rect width="16" height="16" fill="${meydan}"/>
@@ -79,9 +93,15 @@ function desenler(p) {
 
 // ── Doğa ────────────────────────────────────────────────
 
-// Gölge: yapının sağ altına düşen yumuşak leke.
-const golge = (cx, cy, rx, ry = rx * 0.38) =>
-  `<ellipse cx="${s1(cx)}" cy="${s1(cy)}" rx="${s1(rx)}" ry="${s1(ry)}" fill="${LACI}" opacity=".2"/>`;
+// Gölge: yapının dibinde koyu bir temas gölgesi. `boy` verilirse (yapının yüksekliği)
+// ışığın tersine, sağ alta doğru uzanan yumuşak kenarlı bir düşen gölge de eklenir.
+const golge = (cx, cy, rx, ry = rx * 0.38, boy = 0) => {
+  const temas = `<ellipse cx="${s1(cx)}" cy="${s1(cy)}" rx="${s1(rx)}" ry="${s1(ry)}" fill="${GOLGE}" opacity=".24"/>`;
+  if (!boy) return temas;
+  const gx = s1(cx + boy * 0.42);
+  const gy = s1(cy + boy * 0.08);
+  return `<ellipse cx="${gx}" cy="${gy}" rx="${s1(rx * 0.7 + boy * 0.42)}" ry="${s1(ry * 1.15)}" transform="rotate(22 ${gx} ${gy})" fill="${isilti(GOLGE)}" opacity=".36"/>${temas}`;
+};
 
 function agac(p, x, y) {
   const cx = x + T / 2;
@@ -92,7 +112,7 @@ function agac(p, x, y) {
   const govde = (h = 6, r = '#6e5b45') => `<path d="M-1.2 0 L-1 ${-h} L1 ${-h} L1.2 0 Z" fill="${r}" ${INCE}/>`;
   switch (p.agac) {
     case 'cam':
-      return golge(cx + 2.5, alt, 7) + sar(`${govde(6)}
+      return golge(cx + 1, alt, 5, 2, 21 * o) + sar(`${govde(6)}
         <path d="M0 -21 L7 -9 L4.5 -9 L8.5 -3 L-8.5 -3 L-4.5 -9 L-7 -9 Z" fill="${hacim(renk)}" ${CIZGI}/>
         <path d="M0 -21 L7 -9 L4.5 -9 L8.5 -3 L0 -3 Z" fill="${koyu(renk, 0.25)}" opacity=".6"/>
         <path d="M-2 -15 L0 -19" stroke="#fff" stroke-width=".8" opacity=".35"/>`);
@@ -101,25 +121,25 @@ function agac(p, x, y) {
       const kar = p.agac === 'karli'
         ? `<path d="M0 -23 L3.2 -17.5 L-3.2 -17.5 Z M-4 -13 L4 -13 L6 -10 L-6 -10 Z M-5.5 -7 L5.5 -7 L7.5 -4.5 L-7.5 -4.5 Z" fill="#fff"/>`
         : '';
-      return golge(cx + 2.5, alt, 7) + sar(`${govde(4, '#5b3a24')}
+      return golge(cx + 1, alt, 5, 2, 23 * o) + sar(`${govde(4, '#5b3a24')}
         <path d="M0 -23 L5 -14 L3 -14 L6.5 -8 L4.5 -8 L8 -2.5 L-8 -2.5 L-4.5 -8 L-6.5 -8 L-3 -14 L-5 -14 Z" fill="${hacim(renk)}" ${CIZGI}/>
         <path d="M0 -23 L5 -14 L3 -14 L6.5 -8 L4.5 -8 L8 -2.5 L0 -2.5 Z" fill="${koyu(renk, 0.3)}" opacity=".55"/>${kar}`);
     }
     case 'cali':
-      return golge(cx + 2, alt, 7) + sar(`
+      return golge(cx + 1, alt, 6, 2.2, 10 * o) + sar(`
         <circle cx="-3.2" cy="-5" r="4.4" fill="${hacim(renk)}" ${CIZGI}/>
         <circle cx="3.4" cy="-4.2" r="4.2" fill="${hacim(koyu(renk, 0.1))}" ${CIZGI}/>
         <circle cx="0" cy="-8" r="4" fill="${hacim(renk)}" ${CIZGI}/>
         <circle cx="-1.5" cy="-9.4" r="1.4" fill="#fff" opacity=".22"/>
         ${karma(x, y, 4) < 0.4 ? `<circle cx="-4" cy="-4" r=".9" fill="#d9483b"/><circle cx="3" cy="-6" r=".9" fill="#d9483b"/>` : ''}`);
     case 'zeytin':
-      return golge(cx + 3, alt, 8) + sar(`
+      return golge(cx + 1, alt, 5, 2, 18 * o) + sar(`
         <path d="M-1.5 0 Q-2 -4 -0.5 -7 Q-2.5 -9 -3 -10 L-1 -10 Q0 -8.5 1 -9.5 L2 -9.5 Q1 -7 1.5 0 Z" fill="#6e5b45" ${INCE}/>
         <ellipse cx="0" cy="-13" rx="8.6" ry="6.2" fill="${hacim(renk)}" ${CIZGI}/>
         <ellipse cx="-3.5" cy="-15" rx="3.6" ry="2.4" fill="${acik(renk, 0.3)}" opacity=".7"/>
         <circle cx="-3.5" cy="-11.5" r="1" fill="#3f4a2a"/><circle cx="3" cy="-12.5" r="1" fill="#3f4a2a"/><circle cx="0" cy="-9.8" r=".9" fill="#3f4a2a"/>`);
     default:
-      return golge(cx + 3, alt, 8) + sar(`${govde(7)}
+      return golge(cx + 1, alt, 5, 2, 20 * o) + sar(`${govde(7)}
         <circle cx="-3.4" cy="-10" r="5" fill="${hacim(koyu(renk, 0.08))}" ${CIZGI}/>
         <circle cx="3.6" cy="-10.5" r="5" fill="${hacim(koyu(renk, 0.12))}" ${CIZGI}/>
         <circle cx="0" cy="-14.5" r="6" fill="${hacim(renk)}" ${CIZGI}/>
@@ -136,7 +156,7 @@ function karistirAgac(renk, n) {
 function kaya(p, x, y) {
   const cx = x + T / 2;
   if (p.kaya === 'peri') {
-    return `${golge(cx + 3, y + T - 1, 7)}
+    return `${golge(cx + 1.5, y + T - 1, 5.5, 2, 18)}
       <path d="M${cx - 5} ${y + T - 1} Q${cx - 4} ${y + 4} ${cx - 2} ${y - 2} L${cx + 2} ${y - 2} Q${cx + 4} ${y + 4} ${cx + 5} ${y + T - 1} Z" fill="${hacim(p.kayaRenk)}" ${CIZGI}/>
       <path d="M${cx + 1} ${y - 2} Q${cx + 3.5} ${y + 5} ${cx + 5} ${y + T - 1} L${cx + 2} ${y + T - 1} Z" fill="${koyu(p.kayaRenk, 0.2)}" opacity=".6"/>
       <path d="M${cx - 1.4} ${y + 9} v-2.4 q1.4 -2 2.8 0 v2.4 z" fill="#6e4a34"/>
@@ -149,7 +169,7 @@ function kaya(p, x, y) {
   const ust = k
     ? `M${x + 2.5} ${y + 7} L${x + 7} ${y + 3} L${x + 12} ${y + 5} L${x + 8} ${y + 8} Z`
     : `M${x + 3} ${y + 8} L${x + 6} ${y + 5} L${x + 10} ${y + 4} L${x + 13.5} ${y + 8} L${x + 8} ${y + 9.5} Z`;
-  return `${golge(x + 10, y + T - 1.5, 7.5, 2.4)}
+  return `${golge(x + 9, y + T - 1.5, 7, 2.4, 8)}
     <path d="${d}" fill="${hacim(p.kayaRenk)}" ${CIZGI}/>
     <path d="${ust}" fill="${acik(p.kayaRenk, 0.35)}"/>
     <path d="M${x + 8} ${y + 9} L${x + 14.5} ${y + T - 2} L${x + 9} ${y + T - 2} Z" fill="${koyu(p.kayaRenk, 0.25)}" opacity=".55"/>
@@ -160,14 +180,14 @@ function ev(p, x, y) {
   const pencere = (wx, wy, w = 2.8, h = 2.8) =>
     `<rect x="${wx}" y="${wy}" width="${w}" height="${h}" fill="#f2d98a" ${INCE}/><path d="M${wx + w / 2} ${wy} v${h}" stroke="${LACI}" stroke-width=".4"/>`;
   if (p.ev === 'kumbet') {
-    return `${golge(x + 10, y + T - 0.5, 8, 2.6)}
+    return `${golge(x + 9, y + T - 0.5, 7.5, 2.6, 18)}
       <path d="M${x + 2} ${y + T - 1} L${x + 2} ${y + 8} Q${x + 2} ${y - 2} ${x + 8} ${y - 4} Q${x + 14} ${y - 2} ${x + 14} ${y + 8} L${x + 14} ${y + T - 1} Z" fill="${hacim(p.duvar)}" ${CIZGI}/>
       <path d="M${x + 8.5} ${y - 3.8} Q${x + 14} ${y - 2} ${x + 14} ${y + 8} L${x + 14} ${y + T - 1} L${x + 11} ${y + T - 1} Q${x + 13} ${y + 4} ${x + 8.5} ${y - 3.8} Z" fill="${koyu(p.duvar, 0.15)}" opacity=".6"/>
       <path d="M${x + 3} ${y + 4} Q${x + 8} ${y + 2} ${x + 13} ${y + 4} M${x + 4.5} ${y} Q${x + 8} ${y - 1.5} ${x + 11.5} ${y}" fill="none" stroke="${p.cati}" stroke-width=".7"/>
       <path d="M${x + 6} ${y + T - 1} L${x + 6} ${y + 10} Q${x + 8} ${y + 8} ${x + 10} ${y + 10} L${x + 10} ${y + T - 1} Z" fill="#6e4a34" ${INCE}/>`;
   }
   if (p.ev === 'ahsap') {
-    return `${golge(x + 10, y + T - 0.5, 9, 2.6)}
+    return `${golge(x + 9, y + T - 0.5, 8.5, 2.6, 16)}
       <rect x="${x + 1.5}" y="${y + 12}" width="13" height="3.5" fill="${hacim('#9a958a')}" ${INCE}/>
       <rect x="${x + 2}" y="${y + 4.5}" width="12" height="7.5" fill="${hacim(p.duvar)}" ${CIZGI}/>
       <path d="M${x + 2} ${y + 7} h12 M${x + 2} ${y + 9.5} h12" stroke="${koyu(p.duvar, 0.3)}" stroke-width=".5"/>
@@ -177,7 +197,7 @@ function ev(p, x, y) {
       ${p.agac === 'karli' ? `<path d="M${x + 1} ${y + 4.5} L${x + 8} ${y - 2} L${x + 15} ${y + 4.5} L${x + 12} ${y + 3.5} L${x + 8} ${y + 0.5} L${x + 4} ${y + 3.5} Z" fill="#fff"/>` : ''}
       ${pencere(x + 3.5, y + 6.5)}<rect x="${x + 8}" y="${y + 8}" width="3" height="4" fill="#4a2e1c"/>`;
   }
-  return `${golge(x + 10, y + T - 0.5, 9, 2.6)}
+  return `${golge(x + 9, y + T - 0.5, 8.5, 2.6, 16)}
     <rect x="${x + 2}" y="${y + 5}" width="12" height="${T - 6}" fill="${hacim(p.duvar)}" ${CIZGI}/>
     <rect x="${x + 10.5}" y="${y + 5}" width="3.5" height="${T - 6}" fill="${koyu(p.duvar, 0.15)}" opacity=".6"/>
     <rect x="${x + 11}" y="${y - 1}" width="2.4" height="4" fill="${hacim('#9a958a')}" ${INCE}/>
@@ -328,6 +348,68 @@ function kaleCizimi(x, y) {
     <path d="M${cx - 6} ${y + 1} q6 -8 12 0" fill="none" stroke="#b36ae0" stroke-width="1" opacity=".8"/>`;
 }
 
+// ── Bölge konturu ───────────────────────────────────────
+
+// `uye(x, y)` karolarının birleşiminin sınırını köşeleri yuvarlatılmış yollar olarak
+// çizer (su birikintileri, yol ağı). Önce her üye karonun üye olmayan komşuya bakan
+// kenarları saat yönünde toplanır, uç uca eklenip kapalı halkalara dönüştürülür; düz
+// giden kenarlar tek bir kenara indirgenir ve her köşe en çok `R` birimlik bir eğriyle
+// yuvarlatılır. Böylece çizgi karo karo basamaklı değil, doğal ve akışkan görünür.
+// `pay` 1 ise haritanın bir karo dışı da taranır (kenara değen yollar dışarı taşar).
+export function bolgeKonturu(uye, G, Y, { R = 6.5, pay = 0 } = {}) {
+  const ici = (x, y) => x >= -pay && y >= -pay && x < G + pay && y < Y + pay && uye(x, y);
+  const cikan = new Map(); // "x,y" köşesinden çıkan kenarlar
+  const ekle = (ax, ay, bx, by) => {
+    const a = `${ax},${ay}`;
+    if (!cikan.has(a)) cikan.set(a, []);
+    cikan.get(a).push({ ax, ay, bx, by, dx: bx - ax, dy: by - ay, kullanildi: false });
+  };
+  for (let y = -pay; y < Y + pay; y++) {
+    for (let x = -pay; x < G + pay; x++) {
+      if (!ici(x, y)) continue;
+      if (!ici(x, y - 1)) ekle(x, y, x + 1, y);
+      if (!ici(x + 1, y)) ekle(x + 1, y, x + 1, y + 1);
+      if (!ici(x, y + 1)) ekle(x + 1, y + 1, x, y + 1);
+      if (!ici(x - 1, y)) ekle(x, y + 1, x, y);
+    }
+  }
+  const yollar = [];
+  for (const liste of cikan.values()) {
+    for (const ilk of liste) {
+      if (ilk.kullanildi) continue;
+      // Halkayı izle; çapraz değen karolarda sağa dönen kenar seçilir (karolar ayrı kalır).
+      const koseler = [];
+      let k = ilk;
+      while (k && !k.kullanildi) {
+        k.kullanildi = true;
+        koseler.push([k.ax, k.ay, k.dx, k.dy]);
+        const secenek = (cikan.get(`${k.bx},${k.by}`) ?? []).filter((e) => !e.kullanildi);
+        k = secenek.find((e) => e.dx === -k.dy && e.dy === k.dx) ?? secenek[0];
+      }
+      // Yön değiştirmeyen köşeleri at: yalnız gerçek köşeler kalır.
+      const n = koseler.length;
+      const nokta = koseler
+        .filter(([, , dx, dy], i) => { const o = koseler[(i - 1 + n) % n]; return o[2] !== dx || o[3] !== dy; })
+        .map(([x, y]) => [x * T, y * T]);
+      const m = nokta.length;
+      if (m < 3) continue;
+      const parca = nokta.map((c, i) => {
+        const once = nokta[(i - 1 + m) % m];
+        const sonra = nokta[(i + 1) % m];
+        const lo = Math.hypot(once[0] - c[0], once[1] - c[1]);
+        const ls = Math.hypot(sonra[0] - c[0], sonra[1] - c[1]);
+        const r = Math.min(R, lo / 2, ls / 2);
+        const a = [c[0] + ((once[0] - c[0]) / lo) * r, c[1] + ((once[1] - c[1]) / lo) * r];
+        const b = [c[0] + ((sonra[0] - c[0]) / ls) * r, c[1] + ((sonra[1] - c[1]) / ls) * r];
+        return { a, c, b };
+      });
+      const yaz = ([x, y]) => `${s1(x)} ${s1(y)}`;
+      yollar.push(`M${yaz(parca[0].a)}${parca.map((q, i) => `${i ? `L${yaz(q.a)}` : ''}Q${yaz(q.c)} ${yaz(q.b)}`).join('')}Z`);
+    }
+  }
+  return yollar.join('');
+}
+
 // ── Katmanlar ───────────────────────────────────────────
 
 // Haritanın sabit katmanı (zemin, yol, su, meydan, doğa, yapılar) — SVG içeriği.
@@ -337,50 +419,25 @@ export function haritaKatmani(harita) {
   const karo = (x, y) => (x < 0 || y < 0 || x >= G || y >= Y ? null : harita.karolar[y * G + x]);
   const YOLSU = new Set([KARO.YOL, KARO.KAPI]);
   const MEYDANLIK = new Set([KARO.MEYDAN, KARO.DUKKAN, KARO.KERVANSARAY, KARO.CESME, KARO.TEZGAH, KARO.TABELA, KARO.MUHTAR, KARO.AHI_BABA]);
-  const yollar = [];
-  const sular = [];
   const meydanlar = [];
-  const yolKenari = [];
-  const kiyi = [];
-  const kiyiKoyu = [];
+  const lekeler = new Map(); // renk → yumuşak leke daireleri
   const ciceklar = p.cicek.map(() => []);
-  const lekeler = [];
   const parcalar = [];
   const ustler = []; // ağaç, kaya, ev gibi karonun üstüne taşan çizimler (y sırasıyla)
   const kare = (px, py) => `M${px} ${py}h${T}v${T}h${-T}z`;
-  // Komşusu `uygun` olmayan kenarlar için bir çizgi parçası ekler (içe `ic` kadar kaydırılmış).
-  const kenarlar = (x, y, uygun, liste, ic) => {
-    const px = x * T;
-    const py = y * T;
-    const k = (nx, ny) => { const t = karo(nx, ny); return t === null || uygun(t); };
-    if (!k(x, y - 1)) liste.push(`M${px} ${py + ic}h${T}`);
-    if (!k(x, y + 1)) liste.push(`M${px} ${py + T - ic}h${T}`);
-    if (!k(x - 1, y)) liste.push(`M${px + ic} ${py}v${T}`);
-    if (!k(x + 1, y)) liste.push(`M${px + T - ic} ${py}v${T}`);
-  };
   for (let y = 0; y < Y; y++) {
     for (let x = 0; x < G; x++) {
       const t = karo(x, y);
       const px = x * T;
       const py = y * T;
-      if (t === KARO.YOL || t === KARO.KAPI) {
-        yollar.push(kare(px, py));
-        kenarlar(x, y, (n) => YOLSU.has(n) || MEYDANLIK.has(n), yolKenari, 0);
-      } else if (t === KARO.SU) {
-        sular.push(kare(px, py));
-        kenarlar(x, y, (n) => n === KARO.SU, kiyiKoyu, 0);
-        kenarlar(x, y, (n) => n === KARO.SU, kiyi, 1.6);
-      } else if (MEYDANLIK.has(t)) {
+      if (MEYDANLIK.has(t)) {
         meydanlar.push(kare(px, py));
       } else if (t === KARO.CIM) {
-        const n = karma(x, y, 8);
-        if (n < 0.07) {
+        if (karma(x, y, 8) < 0.07) {
           const i = Math.floor(karma(x, y, 9) * ciceklar.length);
           const cx = px + 3 + karma(x, y, 10) * 10;
           const cy = py + 3 + karma(x, y, 11) * 10;
           ciceklar[i].push(daire(cx, cy, 1.1), daire(cx + 3, cy + 1.6, 0.9));
-        } else if (n > 0.965) {
-          lekeler.push(daire(px + 8, py + 8, 9 + karma(x, y, 12) * 8));
         }
       } else if (t === KARO.YABANI) {
         parcalar.push(yabani(p, px, py));
@@ -397,15 +454,48 @@ export function haritaKatmani(harita) {
       else if (t === KARO.AHI_BABA) ustler.push(ahiBabaCizimi(px, py));
     }
   }
+  // Zeminin büyük ölçekli renk değişimi: üç karoluk ızgarada yumuşak kenarlı lekeler
+  // (açık ve koyu çimen, kuru ot, toprak). Tek desenin tekrarını gözden saklar.
+  const lekeRenkleri = [acik(p.zemin, 0.2), koyu(p.zemin, 0.16), karistir(p.zemin, '#c9a65e', 0.45), karistir(p.zemin, p.yol, 0.65)];
+  for (let gy = 0; gy < Y; gy += 3) {
+    for (let gx = 0; gx < G; gx += 3) {
+      if (karma(gx, gy, 20) < 0.35) continue;
+      const n = karma(gx, gy, 21);
+      const renk = lekeRenkleri[n < 0.38 ? 0 : n < 0.76 ? 1 : n < 0.92 ? 2 : 3];
+      const r = 22 + karma(gx, gy, 22) * 30;
+      const cx = (gx + karma(gx, gy, 23) * 3) * T;
+      const cy = (gy + karma(gx, gy, 24) * 3) * T;
+      if (!lekeler.has(renk)) lekeler.set(renk, []);
+      lekeler.get(renk).push(`<ellipse cx="${s1(cx)}" cy="${s1(cy)}" rx="${s1(r)}" ry="${s1(r * (0.6 + karma(gx, gy, 25) * 0.4))}"/>`);
+    }
+  }
+  // Su ve yol: köşeleri yuvarlatılmış kontur. Suyun kıyıya yakın yeri açık (sığ),
+  // ortası koyudur (derin): kıyı çizgisinin suya düşen yarısı üst üste incelen
+  // saydam şeritlerle boyanır. Yol ağı meydanla birleşik çizilir ki
+  // yol meydana yumuşak bir ağızla açılsın; meydanın taşları üstüne döşenir.
+  const su = bolgeKonturu((x, y) => karo(x, y) === KARO.SU, G, Y, { R: 7 });
+  const yolUye = (x, y) => {
+    const t = karo(Math.max(0, Math.min(G - 1, x)), Math.max(0, Math.min(Y - 1, y)));
+    return YOLSU.has(t) || MEYDANLIK.has(t);
+  };
+  const yol = bolgeKonturu(yolUye, G, Y, { R: 6, pay: 1 });
+  const kum = karistir(p.zemin, p.yol, 0.55);
   const zemin = [
     `<rect width="${G * T}" height="${Y * T}" fill="url(#@cim)"/>`,
-    lekeler.length ? `<path d="${lekeler.join('')}" fill="${acik(p.zemin, 0.14)}" opacity=".45"/>` : '',
+    [...lekeler].map(([renk, l]) => `<g fill="${isilti(renk)}" opacity=".7">${l.join('')}</g>`).join(''),
+    `<rect width="${G * T}" height="${Y * T}" fill="url(#@cim2)"/>`,
     ciceklar.map((d, i) => (d.length ? `<path d="${d.join('')}" fill="${p.cicek[i]}"/>` : '')).join(''),
-    sular.length ? `<path d="${kiyiKoyu.join('')}" fill="none" stroke="${koyu(p.zemin, 0.3)}" stroke-width="3.2" stroke-linecap="round"/>` : '',
-    sular.length ? `<path d="${sular.join('')}" fill="url(#@su)"/>` : '',
-    kiyi.length ? `<path d="${kiyi.join('')}" fill="none" stroke="#eaf7fb" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="5 2" opacity=".85"/>` : '',
-    yolKenari.length ? `<path d="${yolKenari.join('')}" fill="none" stroke="${koyu(p.zemin, 0.25)}" stroke-width="2.6" stroke-linecap="round" opacity=".45"/>` : '',
-    yollar.length ? `<path d="${yollar.join('')}" fill="url(#@yol)"/>` : '',
+    su ? `<clipPath id="@suKes"><path d="${su}"/></clipPath>
+      <path d="${su}" fill="${kum}" stroke="${kum}" stroke-width="7" stroke-linejoin="round" opacity=".9"/>
+      <path d="${su}" fill="none" stroke="${koyu(kum, 0.35)}" stroke-width="3.2" stroke-linejoin="round" opacity=".7"/>
+      <path d="${su}" fill="url(#@su)"/>
+      <g clip-path="url(#@suKes)" fill="none" stroke-linejoin="round">
+        ${[30, 25, 20, 16, 12, 9, 6, 3.5].map((g) => `<path d="${su}" stroke="${acik(p.su, 0.3)}" stroke-width="${g}" opacity=".16"/>`).join('')}
+        <path d="${su}" stroke="#f4fbfd" stroke-width="1.6" opacity=".8"/>
+      </g>` : '',
+    yol ? `<path d="${yol}" fill="none" stroke="${koyu(p.zemin, 0.3)}" stroke-width="2.8" stroke-linejoin="round" opacity=".4"/>
+      <path d="${yol}" fill="url(#@yol)"/>
+      <path d="${yol}" fill="none" stroke="${koyu(p.yol, 0.12)}" stroke-width="1" stroke-linejoin="round" opacity=".5"/>` : '',
     meydanlar.length ? `<path d="${meydanlar.join('')}" fill="url(#@meydan)"/>` : '',
   ];
   // Meydanın çini kenarı: lacivert ve turkuaz çift şerit, köşelerde altın baklava.
@@ -425,7 +515,7 @@ export function haritaKatmani(harita) {
   } else if (harita.in && (bolge.bossIli === harita.plaka || bolge.miniBossIlleri.includes(harita.plaka))) {
     parcalar.push(inCizimi(p, harita.in.x * T, harita.in.y * T));
   }
-  const c = boyalariCoz(desenler(p) + zemin.join('') + parcalar.join('') + ustler.join(''));
+  const c = boyalariCoz(konturla(desenler(p) + zemin.join('') + parcalar.join('') + ustler.join('')));
   return `<defs>${c.tanimlar}</defs>${c.icerik}`;
 }
 
@@ -451,7 +541,7 @@ export function kapiKatmani(harita, adlar, acikMi) {
     const lx = k.x === 0 ? T + 2 : k.x === GENISLIK - 1 ? (GENISLIK - 1) * T - 2 : (k.ix + (k.ix - k.x)) * T + T / 2;
     const ly = (k.iy + (k.iy - k.y)) * T + T / 2 + 3;
     const hiza = k.x === 0 ? 'start' : k.x === GENISLIK - 1 ? 'end' : 'middle';
-    return `<g class="kapi${acik ? '' : ' kilitli'}">${tas}${engel}
-      <text x="${lx}" y="${ly}" class="kapi-adi" text-anchor="${hiza}">${adlar[k.plaka]}</text></g>`;
+    return konturla(`<g class="kapi${acik ? '' : ' kilitli'}">${tas}${engel}
+      <text x="${lx}" y="${ly}" class="kapi-adi" text-anchor="${hiza}">${adlar[k.plaka]}</text></g>`);
   }).join('');
 }

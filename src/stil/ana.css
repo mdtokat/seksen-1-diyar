@@ -1834,6 +1834,38 @@ h3 {
   height: 100%;
 }
 
+/* Atmosfer: dünyanın üstünde, arayüzün altında duran ışık ve renk katmanı. Sol üstten
+   ılık güneş vurur, sağ alt serin gölgede kalır, kenarlar hafifçe kararır; ::before her
+   bölgenin havasını (Karadeniz nemli ve serin, Güneydoğu sıcak, Doğu Anadolu soğuk)
+   yumuşak ışık karışımıyla verir. z-index almaz ki karışım alttaki haritaya uygulansın. */
+.atmosfer {
+  --isik: rgb(255 228 172 / 0.16);
+  --serin: rgb(36 46 90 / 0.14);
+  --ton: rgb(255 240 210 / 0.18);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 125% 95% at 50% 46%, transparent 58%, rgb(24 18 34 / 0.32) 100%),
+    linear-gradient(135deg, var(--isik), transparent 48%, var(--serin));
+}
+
+.atmosfer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--ton);
+  mix-blend-mode: soft-light;
+}
+
+.atmosfer[data-bolge='marmara'] { --ton: rgb(150 185 205 / 0.22); }
+.atmosfer[data-bolge='ege'] { --ton: rgb(255 226 170 / 0.22); }
+.atmosfer[data-bolge='akdeniz'] { --isik: rgb(255 222 160 / 0.2); --ton: rgb(255 200 125 / 0.26); }
+.atmosfer[data-bolge='ic_anadolu'] { --ton: rgb(225 185 125 / 0.3); }
+.atmosfer[data-bolge='karadeniz'] { --isik: rgb(225 240 232 / 0.1); --serin: rgb(24 50 60 / 0.2); --ton: rgb(70 125 135 / 0.32); }
+.atmosfer[data-bolge='guneydogu'] { --isik: rgb(255 214 140 / 0.22); --ton: rgb(255 175 95 / 0.32); }
+.atmosfer[data-bolge='dogu_anadolu'] { --isik: rgb(236 242 255 / 0.12); --serin: rgb(30 44 100 / 0.18); --ton: rgb(140 170 225 / 0.32); }
+
 .kapi-adi {
   font-family: var(--font-metin);
   font-size: 6px;

@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { sinifCizimi, oyuncuCizimi, ekipmanGorunumu, SINIF_CIZIMLERI, halkCizimi, tuccarCizimi } from '../src/arayuz/cizimler/karakterler.js';
-import { karistir, acik, koyu, renkFarki, svgSar, hacim } from '../src/arayuz/cizimler/ortak.js';
+import { karistir, acik, koyu, renkFarki, svgSar, hacim, konturla, kontur } from '../src/arayuz/cizimler/ortak.js';
 import { esyalar } from '../src/veri/esyalar.js';
 import { yoldasCizimi, YOLDAS_CIZIMLERI } from '../src/arayuz/cizimler/yoldaslar.js';
-import { haritaKatmani } from '../src/arayuz/cizimler/karolar.js';
+import { haritaKatmani, bolgeKonturu } from '../src/arayuz/cizimler/karolar.js';
 import { ilHaritasiUret } from '../src/oyun/gezinti.js';
 import { dusmanCizimi, DUSMAN_CIZIMLERI } from '../src/arayuz/cizimler/dusmanlar.js';
 import { bolgeArkaPlani, ARKA_PLAN_BOLGELERI } from '../src/arayuz/cizimler/arkaplanlar.js';
@@ -44,6 +44,21 @@ describe('ortak çizim araçları', () => {
     const kb = boyalarCozulmus(b, 'b').kimlikler;
     expect(ka.size).toBe(1);
     expect([...ka].some((k) => kb.has(k))).toBe(false);
+  });
+});
+
+describe('dış çizgiler', () => {
+  it('dış çizgi parçanın kendi renginin koyusudur', () => {
+    const svg = konturla(`<rect fill="#3f7a4a" stroke="@k"/><circle fill="${hacim('#d9483b')}"/>`, { otomatik: true });
+    expect(svg).toContain(`stroke="${kontur('#3f7a4a')}"`);
+    expect(svg).toContain(`stroke="${kontur('#d9483b')}"`);
+    expect(renkFarki(kontur('#d9483b'), '#d9483b')).toBeGreaterThan(90);
+  });
+
+  it('kendi çizgisi ya da dolgusu olan parçalara dokunulmaz', () => {
+    const ic = '<path d="M0 0" fill="none"/><rect fill="#fff" stroke="none"/><ellipse fill="url(#@p10183a)"/>';
+    expect(konturla(ic, { otomatik: true })).toBe(ic);
+    expect(konturla('<rect fill="#fff"/>')).toBe('<rect fill="#fff"/>');
   });
 });
 
@@ -115,6 +130,29 @@ describe('il haritası karoları', () => {
   it('aynı il her açılışta aynı çizilir (kimlik ön ekleri dışında)', () => {
     const sade = (s) => s.replace(/c[0-9a-z]+-/g, '');
     expect(sade(haritaKatmani(ilHaritasiUret(6)))).toBe(sade(haritaKatmani(ilHaritasiUret(6))));
+  });
+});
+
+describe('bölge konturu', () => {
+  const izgara = (satirlar) => (x, y) => satirlar[y]?.[x] === '#';
+  const halkalar = (d) => d.split('M').filter(Boolean);
+
+  it('her ayrı öbek için tek bir kapalı, yuvarlatılmış halka çizer', () => {
+    const d = bolgeKonturu(izgara(['##..', '#...', '...#']), 4, 3);
+    expect(halkalar(d)).toHaveLength(2);
+    expect(halkalar(d).every((h) => h.endsWith('Z'))).toBe(true);
+    expect(d).toContain('Q');
+    expect(d).not.toMatch(/NaN|undefined/);
+  });
+
+  it('düz giden kenarları birleştirir: dikdörtgende yalnız dört köşe kalır', () => {
+    const d = bolgeKonturu(izgara(['###', '###']), 3, 2);
+    expect(halkalar(d)).toHaveLength(1);
+    expect(d.match(/Q/g)).toHaveLength(4);
+  });
+
+  it('içindeki boşluk ayrı bir halka olarak çizilir', () => {
+    expect(halkalar(bolgeKonturu(izgara(['###', '#.#', '###']), 3, 3))).toHaveLength(2);
   });
 });
 

@@ -154,6 +154,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
           <div class="hedef-isareti" hidden></div>
           <div class="figur-katmani"></div>
         </div>
+        <div class="atmosfer" data-bolge="${il.bolge}" aria-hidden="true"></div>
         <div class="durum-gostergesi" aria-live="off"><div class="gosterge-cubuklari"></div><ul class="etki-listesi"></ul></div>
         <div class="gezinti-araclari">
           ${[['harita', '🗺️', M.harita], ['heybe', '🎒', M.heybe], ['gunluk', '📜', M.gunluk], ['bilgi', 'ℹ️', M.ilBilgisi]]
