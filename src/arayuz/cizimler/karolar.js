@@ -15,7 +15,7 @@
 import { KARO, yoreselGorunum } from '../../oyun/gezinti.js';
 import { SIMGE_BOYU } from '../../veri/yoresel.js';
 import { bolgeler, final } from '../../veri/bolgeler.js';
-import { boyalariCoz, konturla, hacim, kure, metal, isilti, acik, koyu, karistir } from './ortak.js';
+import { boyalariCoz, konturla, saydamligiYay, hacim, kure, metal, isilti, acik, koyu, karistir } from './ortak.js';
 
 export const KARO_BOYU = 16;
 const T = KARO_BOYU;
@@ -125,7 +125,14 @@ const golge = (cx, cy, rx, ry = rx * 0.38, boy = 0) => {
   if (!boy) return temas;
   const gx = s1(cx + boy * 0.42);
   const gy = s1(cy + boy * 0.08);
-  return `<ellipse cx="${gx}" cy="${gy}" rx="${s1(rx * 0.7 + boy * 0.42)}" ry="${s1(ry * 1.15)}" transform="rotate(22 ${gx} ${gy})" fill="${isilti(GOLGE)}" opacity=".36"/>${temas}`;
+  // Döndürülmüş elips, dönüşüm (transform) yerine yay komutuyla çizilir: haritada yüzlerce
+  // gölge var ve her dönüşüm tarayıcıya ayrı bir boyama parçası açtırır.
+  const a = (22 * Math.PI) / 180;
+  const ex = s1(rx * 0.7 + boy * 0.42);
+  const ey = s1(ry * 1.15);
+  const dx = s1(Math.cos(a) * ex);
+  const dy = s1(Math.sin(a) * ex);
+  return `<path d="M${s1(gx - dx)} ${s1(gy - dy)}A${ex} ${ey} 22 1 0 ${s1(gx + dx)} ${s1(gy + dy)}A${ex} ${ey} 22 1 0 ${s1(gx - dx)} ${s1(gy - dy)}Z" fill="${isilti(GOLGE)}" opacity=".36"/>${temas}`;
 };
 
 // Meyve bahçesi ağaçları (veri/yoresel.js): yaprak rengi, meyve rengi, boy ve meyve sıklığı.
@@ -577,8 +584,8 @@ function cesme(x, y) {
     <path d="M${x + 5.5} ${y + 7} Q${x + 8} ${y + 4} ${x + 10.5} ${y + 7}" fill="none" stroke="#f7efdc" stroke-width=".6"/>
     <circle cx="${x + 8}" cy="${y + 8}" r=".9" fill="${metal('#d4a537')}"/>
     <path d="M${x + 8} ${y + 8.6} L${x + 8} ${y + 12}" stroke="#cfeef6" stroke-width="1"/>
-    <path class="akan-su" d="M${x + 8} ${y + 8.6} L${x + 8} ${y + 12}" stroke="#fff" stroke-width=".7" stroke-dasharray=".8 1.2" opacity=".9"/>
-    <ellipse class="su-halkasi" cx="${x + 8}" cy="${y + 12.6}" rx="1.6" ry=".6" fill="none" stroke="#fff" stroke-width=".4"/>
+    <path d="M${x + 8} ${y + 8.6} L${x + 8} ${y + 12}" stroke="#fff" stroke-width=".7" stroke-dasharray=".8 1.2" opacity=".9"/>
+    <ellipse cx="${x + 8}" cy="${y + 12.6}" rx="1.6" ry=".6" fill="none" stroke="#fff" stroke-width=".4"/>
     <rect x="${x + 2.5}" y="${y + 11.5}" width="11" height="3.2" rx=".8" fill="${hacim('#3b8fb0')}" ${CIZGI}/>
     <path d="M${x + 4} ${y + 12.6} h8" stroke="#cfeef6" stroke-width=".6"/>`;
 }
@@ -615,7 +622,7 @@ function dukkan(x, y) {
     <rect x="${x + 3}" y="${y + 1}" width="10" height="4" rx="1" fill="${hacim('#d4a537')}" ${CIZGI}/>
     <path d="M${x + 5.5} ${y + 3} l2 -1 l2 1 l2 -1" fill="none" stroke="${LACI}" stroke-width=".6"/>
     <rect x="${x + 5.5}" y="${y + 8.5}" width="4.5" height="6.5" fill="#3a2516" ${INCE}/>
-    <circle class="ocak" cx="${x + 7.75}" cy="${y + 11}" r="2.4" fill="${isilti('#f08a2a')}"/>
+    <circle cx="${x + 7.75}" cy="${y + 11}" r="2.4" fill="${isilti('#f08a2a')}"/>
     <path d="M${x + 10.5} ${y + 12} h4.5 l-1 1.6 h-.8 v1.4 h-1 v-1.4 h-.8 Z" fill="${metal('#6b7280')}" ${INCE}/>`;
 }
 
@@ -632,8 +639,8 @@ function kervansaray(x, y) {
     <path d="M${x + 4} ${y + 2} h8" stroke="#2aa7a7" stroke-width="1" stroke-dasharray="1 1"/>
     <rect x="${x - 0.5}" y="${y + 5}" width="2" height="3" rx="1" fill="#2b2620"/><rect x="${x + 14.5}" y="${y + 5}" width="2" height="3" rx="1" fill="#2b2620"/>
     ${[x + 2.6, x + 13.4].map((mx) => `<path d="M${mx} ${y + 13} v-3.4" stroke="#5b3a24" stroke-width=".8"/>
-      <circle class="mesale" cx="${mx}" cy="${y + 8.6}" r="3.4" fill="${isilti('#f5a623')}"/>
-      <path class="alev" d="M${mx - 0.8} ${y + 9.8} q-.2 -1.6 .8 -2.8 q1 1.2 .8 2.8 z" fill="#ffd36b"/>`).join('')}`;
+      <circle cx="${mx}" cy="${y + 8.6}" r="3.4" fill="${isilti('#f5a623')}"/>
+      <path d="M${mx - 0.8} ${y + 9.8} q-.2 -1.6 .8 -2.8 q1 1.2 .8 2.8 z" fill="#ffd36b"/>`).join('')}`;
 }
 
 // Görev verenler (Faz 9): stilize, edepli, sade figürler.
@@ -690,7 +697,7 @@ function kaleCizimi(x, y) {
     <rect x="${bx + 8}" y="${y - 30}" width="4" height="40" fill="${koyuTas}" opacity=".5"/>
     <path d="M${bx} ${y - 30} v-4 h3 v4 h3 v-4 h3 v4 h3 v-4" fill="none" stroke="${LACI}" stroke-width=".8"/>
     <rect x="${bx + 4}" y="${y - 20}" width="4" height="6" rx="2" fill="#f2c94c"/>
-    <circle class="mesale" cx="${bx + 6}" cy="${y - 17}" r="5" fill="${isilti('#f2c94c')}"/>
+    <circle cx="${bx + 6}" cy="${y - 17}" r="5" fill="${isilti('#f2c94c')}"/>
     <path d="M${bx + 6} ${y - 34} v-12 l9 3 l-9 3" fill="#6a4c93" stroke="${LACI}" stroke-width=".6"/>`;
   return `<ellipse cx="${cx + 3}" cy="${y + T + 2}" rx="36" ry="7" fill="${LACI}" opacity=".22"/>
     <rect x="${cx - 26}" y="${y - 18}" width="52" height="30" fill="${hacim(tas)}" ${CIZGI}/>
@@ -835,8 +842,7 @@ export function haritaKatmanlari(harita) {
     if (!uzun) return ustler.push({ sira, cizim });
     const n = nesneler.length;
     tanimlar.push(`<g id="@n${n}">${cizim}</g>`);
-    const gecikme = s1(-karma(x, taban, 30) * 4);
-    ustler.push({ sira, cizim: `<use href="#@n${n}" data-n="${n}"${uzun.agac ? ` class="agac" style="animation-delay:${gecikme}s"` : ''}/>` });
+    ustler.push({ sira, cizim: `<use href="#@n${n}" data-n="${n}"${uzun.agac ? ' class="agac"' : ''}/>` });
     nesneler.push({ n, agac: Boolean(uzun.agac), x, y: taban, x0: uzun.x0 / T, x1: uzun.x1 / T, ust: uzun.ust / T, cizgi: taban });
   };
   const kare = (px, py) => `M${px} ${py}h${T}v${T}h${-T}z`;
@@ -962,7 +968,7 @@ export function haritaKatmanlari(harita) {
       <path d="${su}" fill="${kum}" stroke="${kum}" stroke-width="7" stroke-linejoin="round" opacity=".9"/>
       <path d="${su}" fill="none" stroke="${koyu(kum, 0.35)}" stroke-width="3.2" stroke-linejoin="round" opacity=".7"/>
       <path d="${su}" fill="url(#@su)"/>
-      <g clip-path="url(#@suKes)"><path class="dalga" d="${su}" fill="url(#@dalga)" stroke="url(#@dalga)" stroke-width="12"/></g>
+      <path d="${su}" fill="url(#@dalga)"/>
       <g clip-path="url(#@suKes)" fill="none" stroke-linejoin="round">
         ${[30, 25, 20, 16, 12, 9, 6, 3.5].map((g) => `<path d="${su}" stroke="${acik(p.su, 0.3)}" stroke-width="${g}" opacity=".16"/>`).join('')}
         <path d="${su}" stroke="#f4fbfd" stroke-width="1.6" opacity=".8"/>
@@ -988,6 +994,8 @@ export function haritaKatmanlari(harita) {
   const bolge = bolgeler.find((b) => b.anahtar === harita.bolge);
   if (harita.in && harita.plaka === final.il) {
     ustler.push({ sira: Infinity, cizim: kaleCizimi(harita.in.x * T, (harita.in.y - 1) * T) });
+    // Kale burçlarının ışıklı pencereleri
+    for (const dx of [-36 + 6, 24 + 6]) isiklar.push({ x: harita.in.x + (8 + dx) / T, y: harita.in.y - 1 - 17 / T, tur: 'mesale' });
   } else if (harita.in && (bolge.bossIli === harita.plaka || bolge.miniBossIlleri.includes(harita.plaka))) {
     parcalar.push(inCizimi(p, harita.in.x * T, harita.in.y * T));
   }
@@ -995,10 +1003,11 @@ export function haritaKatmanlari(harita) {
   // çizilir (aynı satırdakiler aynı kırpmayı paylaşır).
   const satirlar = [...new Set(nesneler.map((o) => o.cizgi))];
   const kirpmalar = satirlar.map((r) => `<clipPath id="@s${r}"><rect x="${-2 * T}" y="${-4 * T}" width="${(G + 4) * T}" height="${(r + 4) * T}"/></clipPath>`).join('');
-  const ust = `<defs>${kirpmalar}</defs>${nesneler.map((o) => `<use href="#@n${o.n}" data-n="${o.n}" clip-path="url(#@s${o.cizgi})"${
-    o.agac ? ` class="agac" style="animation-delay:${s1(-karma(o.x, o.y, 30) * 4)}s"` : ''}/>`).join('')}`;
+  // Aynı satırdakiler tek bir kırpmalı grupta: her <use>'a ayrı kırpma, boyama parçalarını çoğaltırdı.
+  const ust = `<defs>${kirpmalar}</defs>${satirlar.map((r) => `<g clip-path="url(#@s${r})">${nesneler.filter((o) => o.cizgi === r)
+    .map((o) => `<use href="#@n${o.n}" data-n="${o.n}"${o.agac ? ' class="agac"' : ''}/>`).join('')}</g>`).join('')}`;
   const onEk = `c${(++katmanSayaci).toString(36)}h-`;
-  const c = boyalariCoz(konturla(`<defs>${tanimlar.join('')}</defs>${desenler(p)}${zemin.join('')}${parcalar.join('')}${ustler.map((u) => u.cizim).join('')}`), onEk);
+  const c = boyalariCoz(saydamligiYay(konturla(`<defs>${tanimlar.join('')}</defs>${desenler(p)}${zemin.join('')}${parcalar.join('')}${ustler.map((u) => u.cizim).join('')}`)), onEk);
   const u = boyalariCoz(ust, onEk);
   return { alt: `<defs>${c.tanimlar}</defs>${c.icerik}`, ust: u.icerik, nesneler, bacalar, isiklar };
 }

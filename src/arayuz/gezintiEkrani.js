@@ -336,14 +336,6 @@ export function gezintiEkrani(kap, depo, secenekler) {
         halkFigurleri.set(h.id, el);
       }
       el.classList.toggle('sola', h.yon === -1);
-      // Yer değiştiren köylü bir an adım atar
-      const yer = `${h.x},${h.y}`;
-      if (el.dataset.yer && el.dataset.yer !== yer) {
-        el.classList.add('yuruyor');
-        clearTimeout(el.adimZamani);
-        el.adimZamani = setTimeout(() => el.classList.remove('yuruyor'), 700);
-      }
-      el.dataset.yer = yer;
       figurKonumla(el, h.x, h.y);
     }
   }
@@ -399,8 +391,8 @@ export function gezintiEkrani(kap, depo, secenekler) {
     oyuncuFiguru.classList.toggle('dokunulmaz', g.dokunulmaz > 0);
     figurKonumla(oyuncuFiguru, g.oyuncu.x, g.oyuncu.y);
     yoldasiCiz();
-    ortuleniSaydamla();
     ortam?.konum(g.oyuncu);
+    ortuleniSaydamla();
   }
 
   // ── Derinlik ──
@@ -427,8 +419,10 @@ export function gezintiEkrani(kap, depo, secenekler) {
   function ortuleniSaydamla() {
     const hedef = g.hedefId != null && g.dusmanlar.find((d) => d.id === g.hedefId);
     const yeni = new Set([...ortenler(g.oyuncu), ...(hedef ? ortenler(hedef) : [])]);
-    for (const n of saydamlar) if (!yeni.has(n)) ustKullanimlari.get(n)?.classList.remove('saydam');
-    for (const n of yeni) ustKullanimlari.get(n)?.classList.add('saydam');
+    // Salınan ağaçlar figür katmanındadır (ortam.js); onlar da saydamlaşır
+    const agac = (n) => figurKatmani.querySelector(`.sallanan-agac[data-n="${n}"]`);
+    for (const n of saydamlar) if (!yeni.has(n)) [ustKullanimlari.get(n), agac(n)].forEach((e) => e?.classList.remove('saydam'));
+    for (const n of yeni) [ustKullanimlari.get(n), agac(n)].forEach((e) => e?.classList.add('saydam'));
     saydamlar = yeni;
   }
 

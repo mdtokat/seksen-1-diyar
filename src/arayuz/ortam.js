@@ -6,9 +6,10 @@
 // hareket CSS dönüşümüdür (ekran kartında oynar). `prefers-reduced-motion` açıkken
 // hiçbiri çalışmaz.
 import { KARO } from '../oyun/gezinti.js';
+import { KARO_BOYU } from './cizimler/karolar.js';
 
-const SALINIM_X = 7; // yiğitten bu kadar karo yakındaki ağaçlar salınır
-const SALINIM_Y = 9;
+const SALINIM_X = 6; // yiğitten bu kadar karo yakındaki ağaçlar salınır (görünen alan kadar)
+const SALINIM_Y = 8;
 const DUMAN_X = 9; // bu kadar yakındaki bacalar tüter
 const DUMAN_Y = 11;
 const EN_COK_IZ = 16;
@@ -17,6 +18,8 @@ const EN_COK_KELEBEK = 2;
 const KELEBEK_RENKLERI = ['#f2c94c', '#ffffff', '#e07ab0', '#b36ae0', '#f08a2a'];
 const IZ_BOLGELERI = new Set(['dogu_anadolu', 'guneydogu']); // kar ve kum: her yerde iz kalır
 const TOZ_BOLGELERI = new Set(['guneydogu', 'ic_anadolu', 'akdeniz']);
+const EN_COK_PIRILTI = 8;
+const SVG_NS = 'http://www.w3.org/2000/svg';
 const KUS = '<svg viewBox="0 0 14 8" aria-hidden="true"><path d="M0 5 Q3.5 0 7 5 Q10.5 0 14 5" fill="none" stroke="#2b2433" stroke-width="1.4" stroke-linecap="round"/></svg>';
 
 // `harita`: il haritası; `katmanlar`: haritaKatmanlari() sonucu; `T()`: karonun piksel boyu;
@@ -46,6 +49,11 @@ export function ortamKur({ ekran, harita, katmanlar, T, kamera, azHareket }) {
   let oyuncu = harita.dogus;
 
   // ── Ağaçlar ──
+  // Salınan ağaç büyük harita SVG'lerinde canlandırılmaz (her karede bütün haritayı yeniden
+  // boyatırdı). Onun yerine haritadaki iki kopyası gizlenir, figürlerin katmanına kendi
+  // küçük SVG'si konur; salınımı yalnız dönüşümdür (ekran kartında oynar). z-index'i taban
+  // satırına göredir: arkasındaki figürü örter, önündekinin ardında kalır.
+  const figurler = ekran.querySelector('.figur-katmani');
   const agacUse = new Map();
   for (const u of ekran.querySelectorAll('use.agac[data-n]')) {
     const n = Number(u.dataset.n);
@@ -53,14 +61,55 @@ export function ortamKur({ ekran, harita, katmanlar, T, kamera, azHareket }) {
     agacUse.get(n).push(u);
   }
   const agaclar = katmanlar.nesneler.filter((o) => o.agac);
-  let sallanan = new Set();
+  const sallanan = new Map(); // n → öğe
+  function agacOlustur(o) {
+    const t = T();
+    const alt = o.y + 1.3;
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('class', 'sallanan-agac');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('viewBox', `${o.x0 * KARO_BOYU} ${o.ust * KARO_BOYU} ${(o.x1 - o.x0) * KARO_BOYU} ${(alt - o.ust) * KARO_BOYU}`);
+    svg.style.cssText = `left:${o.x0 * t}px;top:${o.ust * t}px;width:${(o.x1 - o.x0) * t}px;height:${(alt - o.ust) * t}px;z-index:${10 + o.y};animation-delay:${-((o.x * 7 + o.y * 13) % 40) / 10}s`;
+    svg.dataset.n = o.n;
+    const use = document.createElementNS(SVG_NS, 'use');
+    use.setAttribute('href', agacUse.get(o.n)?.[0]?.getAttribute('href') ?? '');
+    svg.appendChild(use);
+    figurler.appendChild(svg);
+    return svg;
+  }
   function agaclariSalla() {
-    const yeni = new Set(agaclar
+    const yakin = new Set(agaclar
       .filter((o) => Math.abs(o.x - oyuncu.x) <= SALINIM_X && Math.abs(o.y - oyuncu.y) <= SALINIM_Y)
       .map((o) => o.n));
-    for (const n of sallanan) if (!yeni.has(n)) agacUse.get(n)?.forEach((u) => u.classList.remove('sallan'));
-    for (const n of yeni) if (!sallanan.has(n)) agacUse.get(n)?.forEach((u) => u.classList.add('sallan'));
-    sallanan = yeni;
+    for (const [n, el] of sallanan) {
+      if (yakin.has(n)) continue;
+      el.remove();
+      sallanan.delete(n);
+      agacUse.get(n)?.forEach((u) => u.classList.remove('gizli'));
+    }
+    for (const o of agaclar) {
+      if (!yakin.has(o.n) || sallanan.has(o.n)) continue;
+      sallanan.set(o.n, agacOlustur(o));
+      agacUse.get(o.n)?.forEach((u) => u.classList.add('gizli'));
+    }
+  }
+
+  // ── Su pırıltısı: yiğidin yakınındaki suyun yüzünde yanıp sönen ışık benekleri ──
+  const sular = [];
+  harita.karolar.forEach((t, i) => { if (t === KARO.SU) sular.push({ x: i % G, y: Math.floor(i / G) }); });
+  let piriltiMerkezi = null;
+  function sulariParlat() {
+    if (!sular.length) return;
+    if (piriltiMerkezi && Math.abs(piriltiMerkezi.x - oyuncu.x) + Math.abs(piriltiMerkezi.y - oyuncu.y) < 3) return;
+    piriltiMerkezi = { ...oyuncu };
+    for (const el of hava.querySelectorAll('.su-piriltisi')) el.remove();
+    const yakin = sular.filter((s) => Math.abs(s.x - oyuncu.x) <= 7 && Math.abs(s.y - oyuncu.y) <= 9);
+    for (let i = 0; i < Math.min(EN_COK_PIRILTI, yakin.length); i++) {
+      const s = yakin[Math.floor(Math.random() * yakin.length)];
+      const p = ekle(hava, 'su-piriltisi', (s.x + 0.15 + Math.random() * 0.7) * T(), (s.y + 0.15 + Math.random() * 0.7) * T());
+      p.style.animationDelay = `${-Math.random() * 3}s`;
+      p.style.animationDuration = `${2.4 + Math.random() * 2}s`;
+    }
   }
 
   // ── Baca dumanı ──
@@ -133,6 +182,23 @@ export function ortamKur({ ekran, harita, katmanlar, T, kamera, azHareket }) {
     sonra(7000 + Math.random() * 6000, kelebekGonder);
   }
 
+  // ── Yapıların canlı parçaları: meşale ve ocak alevi, çeşmenin akan suyu ──
+  // Harita SVG'sinde durağan çizilirler; titreşim ve akış buradaki küçük öğelerde oynar
+  // (büyük SVG'nin içindeki her hareket bütün haritayı yeniden işletirdi).
+  function canliParcalar() {
+    for (const el of hava.querySelectorAll('.alev-isigi, .cesme-akisi')) el.remove();
+    katmanlar.isiklar.forEach((l, i) => {
+      if (l.tur !== 'mesale' && l.tur !== 'ocak') return;
+      const el = ekle(hava, `alev-isigi ${l.tur}`, l.x * T(), l.y * T());
+      el.innerHTML = l.tur === 'mesale' ? '<i></i><b></b>' : '<i></i>';
+      el.style.setProperty('--gecikme', `${-(i % 7) * 0.23}s`);
+    });
+    if (harita.cesme) {
+      const c = ekle(hava, 'cesme-akisi', (harita.cesme.x + 0.5) * T(), (harita.cesme.y + 0.54) * T());
+      c.innerHTML = '<i></i><b></b>';
+    }
+  }
+
   // ── Adım: toz ve ayak izi ──
   function adim(bas, son) {
     const t = karo(bas.x, bas.y);
@@ -159,6 +225,7 @@ export function ortamKur({ ekran, harita, katmanlar, T, kamera, azHareket }) {
     oyuncu = o;
     agaclariSalla();
     dumanlariTuttur();
+    sulariParlat();
   }
 
   // Ekran boyu (karo boyu) değişince dünyaya bağlı öğeler yeniden yerleşir.
@@ -167,7 +234,16 @@ export function ortamKur({ ekran, harita, katmanlar, T, kamera, azHareket }) {
     tutenler.clear();
     for (const el of hava.querySelectorAll('.bulut-golgesi, .kelebek')) el.remove();
     yer.replaceChildren();
+    for (const [n, el] of sallanan) {
+      el.remove();
+      agacUse.get(n)?.forEach((u) => u.classList.remove('gizli'));
+    }
+    sallanan.clear();
+    piriltiMerkezi = null;
+    canliParcalar();
     dumanlariTuttur();
+    agaclariSalla();
+    sulariParlat();
   }
 
   function kapat() {
@@ -175,6 +251,7 @@ export function ortamKur({ ekran, harita, katmanlar, T, kamera, azHareket }) {
     zamanlayicilar.clear();
   }
 
+  canliParcalar();
   sonra(2500, bulutGonder);
   sonra(6000 + Math.random() * 10000, kusGonder);
   sonra(4000, kelebekGonder);

@@ -1563,7 +1563,8 @@ h3 {
 /* Bossların sihir halesi yavaşça döner. */
 .hale-halka {
   transform-origin: 60px 58px;
-  animation: hale-don 26s linear infinite;
+  /* SVG'nin içinde döndüğü için her adım sayfayı yeniden boyatır: kare kare (saniyede 2). */
+  animation: hale-don 26s steps(52) infinite;
 }
 
 @keyframes suzul {
@@ -1871,11 +1872,43 @@ h3 {
 }
 
 /* ── Kıpırdayan ortam (ortam.js) ── */
-/* Yiğidin yakınındaki ağaçlar rüzgârda salınır (alt ve üst katmandaki eşi birlikte). */
-use.agac.sallan {
+/* Yiğidin yakınındaki ağaçlar rüzgârda salınır: haritadaki kopyaları gizlenir, figür
+   katmanındaki kendi SVG'leri yalnız dönüşümle (ekran kartında) oynar. */
+.karo-katmani use.gizli,
+.ust-katman use.gizli {
+  visibility: hidden;
+}
+
+.sallanan-agac {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+  transform-origin: 50% 82%;
+  will-change: transform;
   animation: ruzgar 3.4s ease-in-out infinite alternate;
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
+  transition: opacity 0.25s;
+}
+
+.sallanan-agac.saydam {
+  opacity: 0.42;
+}
+
+/* Suyun yüzünde yanıp sönen ışık benekleri (yiğidin yakınında). */
+.su-piriltisi {
+  position: absolute;
+  width: calc(var(--karo, 36px) * 0.16);
+  height: calc(var(--karo, 36px) * 0.05);
+  margin: calc(var(--karo, 36px) * -0.025) 0 0 calc(var(--karo, 36px) * -0.08);
+  border-radius: 50%;
+  background: #f4fbff;
+  opacity: 0;
+  animation: su-piriltisi 3s ease-in-out infinite;
+}
+
+@keyframes su-piriltisi {
+  0%, 100% { opacity: 0; transform: scaleX(0.4); }
+  45% { opacity: 0.85; transform: scaleX(1); }
+  60% { opacity: 0; transform: scaleX(1.3) translateX(30%); }
 }
 
 @keyframes ruzgar {
@@ -1883,46 +1916,40 @@ use.agac.sallan {
   to { transform: skewX(1.6deg); }
 }
 
-/* Su yüzündeki dalgacıklar ağır ağır kayar; çeşmenin suyu akar, yalakta halka yayılır. */
-.karo-katmani .dalga {
-  animation: dalga 7s ease-in-out infinite alternate;
+/* Yapıların canlı parçaları (ortam.js): meşale ve ocak alevi titrer, çeşmenin suyu akar.
+   Harita SVG'sinin dışında küçük öğelerdir; yalnız saydamlık ve dönüşüm oynar. */
+.alev-isigi,
+.cesme-akisi {
+  position: absolute;
+  width: 0;
+  height: 0;
 }
 
-@keyframes dalga {
-  to { transform: translate(6px, 2px); }
+.alev-isigi i {
+  position: absolute;
+  left: calc(var(--karo, 36px) * -0.28);
+  top: calc(var(--karo, 36px) * -0.28);
+  width: calc(var(--karo, 36px) * 0.56);
+  height: calc(var(--karo, 36px) * 0.56);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 214 120 / 0.75), rgb(245 166 35 / 0.35) 40%, rgb(245 166 35 / 0) 70%);
+  animation: titresim 1.6s steps(1) var(--gecikme, 0s) infinite;
 }
 
-.akan-su {
-  animation: akan-su 0.5s linear infinite;
+.alev-isigi.ocak i {
+  background: radial-gradient(circle, rgb(255 190 110 / 0.7), rgb(240 138 42 / 0.3) 40%, rgb(240 138 42 / 0) 70%);
 }
 
-@keyframes akan-su {
-  to { stroke-dashoffset: -2; }
-}
-
-.su-halkasi {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: su-halkasi 1.3s ease-out infinite;
-}
-
-@keyframes su-halkasi {
-  from { transform: scale(0.4); opacity: 1; }
-  to { transform: scale(1.5); opacity: 0; }
-}
-
-/* Meşale, demirci ocağı ve kale pencereleri titreşir. */
-.mesale,
-.ocak {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: titresim 1.6s steps(1) infinite;
-}
-
-.alev {
-  transform-box: fill-box;
+.alev-isigi b {
+  position: absolute;
+  left: calc(var(--karo, 36px) * -0.05);
+  top: calc(var(--karo, 36px) * -0.1);
+  width: calc(var(--karo, 36px) * 0.1);
+  height: calc(var(--karo, 36px) * 0.18);
+  border-radius: 50% 50% 40% 40% / 70% 70% 30% 30%;
+  background: linear-gradient(#fff3c4, #ffb347);
   transform-origin: 50% 100%;
-  animation: alev 0.45s ease-in-out infinite alternate;
+  animation: alev 0.45s ease-in-out var(--gecikme, 0s) infinite alternate;
 }
 
 @keyframes titresim {
@@ -1936,6 +1963,49 @@ use.agac.sallan {
 @keyframes alev {
   from { transform: scaleY(0.8) skewX(-4deg); }
   to { transform: scaleY(1.15) skewX(4deg); }
+}
+
+/* Çeşme: lüleden akan ince su (içinde kayan bir parıltı) ve yalakta yayılan halka. */
+.cesme-akisi i {
+  position: absolute;
+  left: -1px;
+  top: 0;
+  width: 2px;
+  height: calc(var(--karo, 36px) * 0.22);
+  overflow: hidden;
+  border-radius: 1px;
+  background: rgb(220 244 250 / 0.85);
+}
+
+.cesme-akisi i::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -50%;
+  width: 100%;
+  height: 50%;
+  background: #fff;
+  animation: cesme-akisi 0.5s linear infinite;
+}
+
+@keyframes cesme-akisi {
+  to { transform: translateY(300%); }
+}
+
+.cesme-akisi b {
+  position: absolute;
+  left: calc(var(--karo, 36px) * -0.1);
+  top: calc(var(--karo, 36px) * 0.2);
+  width: calc(var(--karo, 36px) * 0.2);
+  height: calc(var(--karo, 36px) * 0.07);
+  border: 1px solid rgb(255 255 255 / 0.85);
+  border-radius: 50%;
+  animation: su-halkasi 1.3s ease-out infinite;
+}
+
+@keyframes su-halkasi {
+  from { transform: scale(0.4); opacity: 1; }
+  to { transform: scale(1.5); opacity: 0; }
 }
 
 /* Bacadan tüten duman: üç bulutçuk sırayla yükselip dağılır, rüzgârla sağa kayar. */
@@ -2148,13 +2218,8 @@ use.agac.sallan {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  use.agac.sallan,
-  .karo-katmani .dalga,
-  .akan-su,
-  .su-halkasi,
-  .mesale,
-  .ocak,
-  .alev {
+  .sallanan-agac,
+  .su-piriltisi {
     animation: none;
   }
 }
@@ -2172,35 +2237,29 @@ use.agac.sallan {
 
 /* Atmosfer: dünyanın üstünde, arayüzün altında duran ışık ve renk katmanı. Sol üstten
    ılık güneş vurur, sağ alt serin gölgede kalır, kenarlar hafifçe kararır; ::before her
-   bölgenin havasını (Karadeniz nemli ve serin, Güneydoğu sıcak, Doğu Anadolu soğuk)
-   yumuşak ışık karışımıyla verir. z-index almaz ki karışım alttaki haritaya uygulansın. */
+   bölgenin havasını (Karadeniz nemli ve serin, Güneydoğu sıcak, Doğu Anadolu soğuk) hafif
+   bir renk perdesiyle verir. Karışım modu kullanılmaz: her karede tam ekran harmanlama
+   telefonda pahalıdır. */
 .atmosfer {
   --isik: rgb(255 228 172 / 0.16);
   --serin: rgb(36 46 90 / 0.14);
-  --ton: rgb(255 240 210 / 0.18);
+  --ton: rgb(255 240 210 / 0.05);
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
     radial-gradient(ellipse 125% 95% at 50% 46%, transparent 58%, rgb(24 18 34 / 0.32) 100%),
-    linear-gradient(135deg, var(--isik), transparent 48%, var(--serin));
+    linear-gradient(135deg, var(--isik), transparent 48%, var(--serin)),
+    linear-gradient(var(--ton), var(--ton));
 }
 
-.atmosfer::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: var(--ton);
-  mix-blend-mode: soft-light;
-}
-
-.atmosfer[data-bolge='marmara'] { --ton: rgb(150 185 205 / 0.22); }
-.atmosfer[data-bolge='ege'] { --ton: rgb(255 226 170 / 0.22); }
-.atmosfer[data-bolge='akdeniz'] { --isik: rgb(255 222 160 / 0.2); --ton: rgb(255 200 125 / 0.26); }
-.atmosfer[data-bolge='ic_anadolu'] { --ton: rgb(225 185 125 / 0.3); }
-.atmosfer[data-bolge='karadeniz'] { --isik: rgb(225 240 232 / 0.1); --serin: rgb(24 50 60 / 0.2); --ton: rgb(70 125 135 / 0.32); }
-.atmosfer[data-bolge='guneydogu'] { --isik: rgb(255 214 140 / 0.22); --ton: rgb(255 175 95 / 0.32); }
-.atmosfer[data-bolge='dogu_anadolu'] { --isik: rgb(236 242 255 / 0.12); --serin: rgb(30 44 100 / 0.18); --ton: rgb(140 170 225 / 0.32); }
+.atmosfer[data-bolge='marmara'] { --ton: rgb(150 185 205 / 0.06); }
+.atmosfer[data-bolge='ege'] { --ton: rgb(255 226 170 / 0.06); }
+.atmosfer[data-bolge='akdeniz'] { --isik: rgb(255 222 160 / 0.2); --ton: rgb(255 200 125 / 0.07); }
+.atmosfer[data-bolge='ic_anadolu'] { --ton: rgb(225 185 125 / 0.08); }
+.atmosfer[data-bolge='karadeniz'] { --isik: rgb(225 240 232 / 0.1); --serin: rgb(24 50 60 / 0.2); --ton: rgb(70 125 135 / 0.09); }
+.atmosfer[data-bolge='guneydogu'] { --isik: rgb(255 214 140 / 0.22); --ton: rgb(255 175 95 / 0.08); }
+.atmosfer[data-bolge='dogu_anadolu'] { --isik: rgb(236 242 255 / 0.12); --serin: rgb(30 44 100 / 0.18); --ton: rgb(140 170 225 / 0.09); }
 
 .kapi-adi {
   font-family: var(--font-metin);
@@ -2292,7 +2351,10 @@ use.agac.sallan {
   50% { transform: scaleX(-1) translateY(-5%) rotate(-1.5deg); }
 }
 
-/* Adım: bacaklar kalçadan sırayla öne ve arkaya salınır (yiğit, yoldaş mürit, halk). */
+/* Adım: bacaklar kalçadan sırayla öne ve arkaya salınır (yiğit ve yoldaş mürit; meydanda
+   hep dolaşan halkta değil, her adımları sayfayı yeniden boyatırdı).
+   SVG'nin içindeki her hareket sayfayı yeniden boyatır; kare kare (steps) oynayarak
+   boyama sıklığı düşük tutulur. Haritadaki meşale, ocak ve çeşme de böyle. */
 .harita-figuru .bacak {
   transform-box: view-box;
 }
@@ -2300,12 +2362,14 @@ use.agac.sallan {
 .harita-figuru .bacak-arka { transform-origin: 52px 84px; }
 .harita-figuru .bacak-on { transform-origin: 68px 84px; }
 
-.harita-figuru.yuruyor .bacak-arka {
-  animation: adim-arka 0.34s ease-in-out infinite alternate;
+.oyuncu-figuru.yuruyor .bacak-arka,
+.yoldas-figuru.yuruyor .bacak-arka {
+  animation: adim-arka 0.34s steps(3, jump-none) infinite alternate;
 }
 
-.harita-figuru.yuruyor .bacak-on {
-  animation: adim-arka 0.34s ease-in-out infinite alternate-reverse;
+.oyuncu-figuru.yuruyor .bacak-on,
+.yoldas-figuru.yuruyor .bacak-on {
+  animation: adim-arka 0.34s steps(3, jump-none) infinite alternate-reverse;
 }
 
 @keyframes adim-arka {

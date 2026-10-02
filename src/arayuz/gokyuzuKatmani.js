@@ -69,9 +69,11 @@ export function gokyuzuKur({ ekran, harita, katmanlar, T, oyuncuEl, dusmanlar, a
     if (karanlik < 0.01 && !tonVar) {
       if (!isikBos) ic.clearRect(0, 0, isikTuvali.width, isikTuvali.height);
       isikBos = true;
+      isikTuvali.hidden = true; // boş tuval ekranda birleştirilmesin
       return;
     }
     isikBos = false;
+    isikTuvali.hidden = false;
     const s = ISIK_OLCEGI;
     const t = T();
     const w = isikTuvali.width;
@@ -155,11 +157,13 @@ export function gokyuzuKur({ ekran, harita, katmanlar, T, oyuncuEl, dusmanlar, a
     if (hava.tur === 'acik' || hava.siddet < 0.01) {
       if (!havaBos) hc.clearRect(0, 0, havaTuvali.width, havaTuvali.height);
       havaBos = true;
+      havaTuvali.hidden = true;
       taneler = [];
       sisler = [];
       return;
     }
     havaBos = false;
+    havaTuvali.hidden = false;
     const { tur, siddet } = hava;
     hc.setTransform(dpr, 0, 0, dpr, 0, 0);
     hc.clearRect(0, 0, G, Y);

@@ -100,10 +100,26 @@ export function konturla(icerik, { otomatik = false } = {}) {
   });
 }
 
+// Tek bir şeklin `opacity`si, dolgu ve çizgi saydamlığına (fill-opacity, stroke-opacity)
+// çevrilir. Görünüş neredeyse aynıdır (yalnız aynı şeklin dolgusuyla çizgisinin
+// kesiştiği ince şerit biraz koyulaşır); ama tarayıcı her `opacity` için ayrı bir efekt
+// katmanı ve boyama parçası açar. Haritada binlerce gölge ve leke olduğundan bu fark
+// her yeniden boyamada katlanır. Gruplara (<g>) dokunulmaz.
+const SAYDAM = /<(path|rect|circle|ellipse|polygon)\b([^>]*?)\sopacity="([\d.]+)"([^>]*?)(\/?)>/g;
+export function saydamligiYay(icerik) {
+  return icerik.replace(SAYDAM, (butun, ad, once, deger, sonra, kapanis) => {
+    const oz = once + sonra;
+    if (/\s(fill|stroke)-opacity="/.test(oz)) return butun;
+    const dolgu = !/\sfill="none"/.test(oz);
+    const cizgi = /\sstroke="(?!none)/.test(oz);
+    return `<${ad}${oz}${dolgu ? ` fill-opacity="${deger}"` : ''}${cizgi ? ` stroke-opacity="${deger}"` : ''}${kapanis}>`;
+  });
+}
+
 // Çizimi SVG kabına sarar. `sinif` CSS sınıfı, `etiket` ekran okuyucu metni.
 export function svgSar(icerik, { sinif = 'cizim', etiket = '' } = {}) {
   const erisim = etiket ? `role="img" aria-label="${etiket}"` : 'aria-hidden="true"';
-  const c = boyalariCoz(konturla(icerik, { otomatik: true }));
+  const c = boyalariCoz(saydamligiYay(konturla(icerik, { otomatik: true })));
   return `<svg class="${sinif}" viewBox="0 0 120 120" ${erisim}>${c.tanimlar ? `<defs>${c.tanimlar}</defs>` : ''}
     <g stroke="${CIZGI}" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">${c.icerik}</g>
   </svg>`;
