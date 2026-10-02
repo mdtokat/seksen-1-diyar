@@ -50,6 +50,7 @@ export const KARO = {
   MUHTAR: 14, // köy muhtarı: görev verir, ulaştırılan yemeği teslim alır, hediye verir
   AHI_BABA: 15, // Ahi esnafı olan illerde dükkânın yanında durur, görev verir
   SIMGE: 16, // ilin simgesi (saat kulesi, kale, kule, taş köprü); sol üst köşesi harita.simge
+  YAMAC: 17, // yüksek düzlüğün güney yüzündeki kaya duvar: geçilmez, görüşü kapatır
 };
 
 // İlin yöresel görünüşü (veri/yoresel.js): bölge varsayılanları ile ile özgü ayrıntılar.
@@ -73,14 +74,15 @@ const GORUS_GECER = new Set([KARO.CIM, KARO.YOL, KARO.YABANI, KARO.SU, KARO.MEYD
 
 // Bölgeye göre doğa: kaç öbek ağaç, kaya, çalılık, su ve kaç ev.
 // Kenar: haritayı çevreleyen engel türü.
+// tepe: kaç yüksek düzlük (dağlık bölgelerde çok, ovalarda az).
 const BOLGE_DOGASI = {
-  marmara: { agac: 10, kaya: 3, yabani: 8, su: 2, ev: 6, kenar: KARO.AGAC },
-  ege: { agac: 12, kaya: 5, yabani: 6, su: 1, ev: 6, kenar: KARO.AGAC },
-  akdeniz: { agac: 10, kaya: 6, yabani: 6, su: 1, ev: 5, kenar: KARO.AGAC },
-  ic_anadolu: { agac: 2, kaya: 10, yabani: 9, su: 0, ev: 5, kenar: KARO.KAYA },
-  karadeniz: { agac: 18, kaya: 3, yabani: 6, su: 2, ev: 5, kenar: KARO.AGAC },
-  guneydogu: { agac: 2, kaya: 8, yabani: 5, su: 0, ev: 7, kenar: KARO.KAYA },
-  dogu_anadolu: { agac: 6, kaya: 9, yabani: 6, su: 2, ev: 4, kenar: KARO.KAYA },
+  marmara: { agac: 10, kaya: 3, yabani: 8, su: 2, ev: 6, tepe: 1, kenar: KARO.AGAC },
+  ege: { agac: 12, kaya: 5, yabani: 6, su: 1, ev: 6, tepe: 2, kenar: KARO.AGAC },
+  akdeniz: { agac: 10, kaya: 6, yabani: 6, su: 1, ev: 5, tepe: 2, kenar: KARO.AGAC },
+  ic_anadolu: { agac: 2, kaya: 10, yabani: 9, su: 0, ev: 5, tepe: 1, kenar: KARO.KAYA },
+  karadeniz: { agac: 18, kaya: 3, yabani: 6, su: 2, ev: 5, tepe: 3, kenar: KARO.AGAC },
+  guneydogu: { agac: 2, kaya: 8, yabani: 5, su: 0, ev: 7, tepe: 1, kenar: KARO.KAYA },
+  dogu_anadolu: { agac: 6, kaya: 9, yabani: 6, su: 2, ev: 4, tepe: 3, kenar: KARO.KAYA },
 };
 
 const KAPI_ARALIGI = 4; // iki çıkış arasındaki en az karo
@@ -276,6 +278,32 @@ export function ilHaritasiUret(plaka) {
   obek(KARO.AGAC, kac(doga.agac), 1, 2);
   obek(KARO.KAYA, kac(doga.kaya), 0, 1);
 
+  // 1b. Yükselti: yüksek düzlükler (tepeler). Düzlüğün karoları `yukselti`de 1'dir ve
+  // olduğu gibi kalır (ağaç, kaya, su…); güney kenarının hemen altındaki karolar kaya
+  // duvardır (YAMAC). Kuzey, doğu ve batıdan yamaçla çıkılır; yollar duvarı yarar (rampa).
+  // Ayrı bir tohum kullanılır ki haritanın geri kalanı değişmesin. Meydanın çevresi düzdür.
+  const yukselti = new Uint8Array(G * Y);
+  const trng = rastgeleUreteci(((plaka * 2654435761) ^ 0x9e3779b9) >>> 0);
+  const orta = { x: (G - 1) / 2, y: (Y - 1) / 2 };
+  for (let n = 0, deneme = 0; n < kac(doga.tepe) && deneme < 60; deneme++) {
+    const rx = tamSayi(trng, 3, 6);
+    const ry = tamSayi(trng, 2, 4);
+    const cx = tamSayi(trng, rx + 3, G - rx - 4);
+    const cy = tamSayi(trng, ry + 3, Y - ry - 4);
+    if (Math.abs(cx - orta.x) < rx + 8 && Math.abs(cy - orta.y) < ry + 7) continue;
+    for (let dy = -ry; dy <= ry; dy++) {
+      for (let dx = -rx; dx <= rx; dx++) {
+        if ((dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1 + trng() * 0.25) yukselti[(cy + dy) * G + cx + dx] = 1;
+      }
+    }
+    n++;
+  }
+  for (let y = 1; y < Y; y++) {
+    for (let x = 0; x < G; x++) {
+      if (!yukselti[y * G + x] && yukselti[(y - 1) * G + x] && al(x, y) !== KARO.SU) koy(x, y, KARO.YAMAC);
+    }
+  }
+
   // 2. Kenar
   for (let x = 0; x < G; x++) {
     koy(x, 0, doga.kenar);
@@ -372,7 +400,7 @@ export function ilHaritasiUret(plaka) {
   const dogus = { x: merkez.x, y: merkez.y + 1 };
 
   // 7. Bağlantı: meydandan yürünerek ulaşılamayan açık alanlar engelle doldurulur
-  const harita = { plaka, bolge: il.bolge, genislik: G, yukseklik: Y, karolar: k, kapilar, meydan, dogus, evler, simge, tezgah, cesme, tabela, dukkan, kervansaray, muhtar, ahiBaba };
+  const harita = { plaka, bolge: il.bolge, genislik: G, yukseklik: Y, karolar: k, yukselti, kapilar, meydan, dogus, evler, simge, tezgah, cesme, tabela, dukkan, kervansaray, muhtar, ahiBaba };
   const ulasilan = ulasilabilir(harita, dogus, yurunurMu);
   for (let y = 0; y < Y; y++) {
     for (let x = 0; x < G; x++) {

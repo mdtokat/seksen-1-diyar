@@ -313,6 +313,24 @@ describe('illerin gerçek boyutu ve nüfusu', () => {
     expect(hatay.yukseklik).toBeGreaterThan(hatay.genislik);
   });
 
+  it('dağlık illerde yüksek düzlükler var: güney yüzü geçilmez kaya duvar, meydan düz', () => {
+    for (const plaka of [61, 25, 7]) {
+      const h = ilHaritasiUret(plaka);
+      const G = h.genislik;
+      const duvarlar = [];
+      h.karolar.forEach((t, i) => { if (t === KARO.YAMAC) duvarlar.push({ x: i % G, y: Math.floor(i / G) }); });
+      expect(h.yukselti.some((v) => v === 1), String(plaka)).toBe(true);
+      expect(duvarlar.length, String(plaka)).toBeGreaterThan(0);
+      for (const d of duvarlar) {
+        expect(yurunurMu(h, d.x, d.y)).toBe(false);
+        expect(h.yukselti[(d.y - 1) * G + d.x]).toBe(1); // duvarın üstü düzlüktür
+        expect(h.yukselti[d.y * G + d.x]).toBe(0);
+      }
+      const m = h.meydan;
+      for (let y = m.y1 - 1; y <= m.y2 + 1; y++) for (let x = m.x1 - 1; x <= m.x2 + 1; x++) expect(h.yukselti[y * G + x]).toBe(0);
+    }
+  });
+
   it('simgesi olan her ilde simge haritaya yerleşir; yürünmez, dokununca adı söylenir', () => {
     for (const [plaka, il] of Object.entries(yoresel)) {
       if (!il.simge) continue;

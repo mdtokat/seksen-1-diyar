@@ -922,10 +922,38 @@ export function haritaKatmanlari(harita) {
   const yol = bolgeKonturu(yolUye, G, Y, { R: 6, pay: 1 });
   const kum = karistir(p.zemin, p.yol, 0.55);
   const tarlalar = ['yatay', 'dikey'].map((yon) => bolgeKonturu((x, y) => tarlaKaro(x, y, yon), G, Y, { R: 2 }));
+  // Yükselti: düzlüğün yüzeyi kendi yerinde, bir karo aşağı kaydırılmış eşi kaya duvar
+  // olur. 3/4 bakışta yalnız güneye bakan yüz görünür; yüzey duvarın üst yarısını örter.
+  // Kuzey, doğu ve batı kenarında yumuşak bir yamaç gölgesi, kuzey kenarında ışık çizgisi.
+  const yuksek = (x, y) => harita.yukselti?.[y * G + x] === 1;
+  const tepe = harita.yukselti ? bolgeKonturu(yuksek, G, Y, { R: 7 }) : '';
+  const kayaYuzu = koyu(p.kayaRenk, 0.12);
+  const tepeKatmani = tepe ? `
+    <path d="${tepe}" transform="translate(2 ${T + 3})" fill="${GOLGE}" opacity=".22"/>
+    ${[[1, koyu(kayaYuzu, 0.3)], [0.76, koyu(kayaYuzu, 0.12)], [0.52, kayaYuzu], [0.28, acik(kayaYuzu, 0.15)]].map(([k, renk], i) => `
+      <path d="${tepe}" transform="translate(0 ${s1(T * k)})" fill="${renk}"${i ? '' : ` stroke="${koyu(kayaYuzu, 0.45)}" stroke-width="1.2" stroke-linejoin="round"`}/>
+      <path d="${tepe}" transform="translate(0 ${s1(T * k)})" fill="none" stroke="${koyu(kayaYuzu, 0.35)}" stroke-width=".6" stroke-dasharray="${5 + i} 2 ${2 + i} 4" opacity=".7"/>`).join('')}
+    <path d="${tepe}" fill="none" stroke="${GOLGE}" stroke-width="7" stroke-linejoin="round" opacity=".1"/>
+    <path d="${tepe}" fill="url(#@cim)"/>
+    <path d="${tepe}" fill="${acik(p.zemin, 0.4)}" opacity=".35"/>
+    <path d="${tepe}" fill="none" stroke="${acik(p.zemin, 0.5)}" stroke-width="1.4" stroke-linejoin="round" opacity=".7"/>` : '';
+  // Rampa: yolun kaya duvarı yardığı karolar; yukarı doğru koyulaşan bir yokuş ve basamaklar.
+  const rampalar = [];
+  if (harita.yukselti) {
+    for (let y = 1; y < Y; y++) {
+      for (let x = 0; x < G; x++) {
+        if (YOLSU.has(karo(x, y)) && !yuksek(x, y) && yuksek(x, y - 1)) {
+          rampalar.push(`<rect x="${x * T}" y="${y * T}" width="${T}" height="${T}" fill="url(#@rampa)"/>
+            ${[3.5, 7.5, 11.5].map((d) => `<path d="M${x * T} ${y * T + d} h${T}" stroke="${koyu(p.yol, 0.3)}" stroke-width=".7" opacity=".55"/><path d="M${x * T} ${y * T + d + 0.8} h${T}" stroke="${acik(p.yol, 0.5)}" stroke-width=".6" opacity=".7"/>`).join('')}`);
+        }
+      }
+    }
+  }
   const zemin = [
     `<rect width="${G * T}" height="${Y * T}" fill="url(#@cim)"/>`,
     [...lekeler].map(([renk, l]) => `<g fill="${isilti(renk)}" opacity=".7">${l.join('')}</g>`).join(''),
     `<rect width="${G * T}" height="${Y * T}" fill="url(#@cim2)"/>`,
+    tepeKatmani,
     ciceklar.map((d, i) => (d.length ? `<path d="${d.join('')}" fill="${p.cicek[i]}"/>` : '')).join(''),
     tarlalar.map((d, i) => (d ? `<path d="${d}" fill="none" stroke="${koyu(p.zemin, 0.3)}" stroke-width="2.2" opacity=".45"/>
       <path d="${d}" fill="url(#${i ? '@tarlaD' : '@tarla'})"/>
@@ -942,6 +970,8 @@ export function haritaKatmanlari(harita) {
     yol ? `<path d="${yol}" fill="none" stroke="${koyu(p.zemin, 0.3)}" stroke-width="2.8" stroke-linejoin="round" opacity=".4"/>
       <path d="${yol}" fill="url(#@yol)"/>
       <path d="${yol}" fill="none" stroke="${koyu(p.yol, 0.12)}" stroke-width="1" stroke-linejoin="round" opacity=".5"/>` : '',
+    rampalar.length ? `<linearGradient id="@rampa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${GOLGE}" stop-opacity=".32"/><stop offset="1" stop-color="${GOLGE}" stop-opacity="0"/></linearGradient>
+      <clipPath id="@yolKes"><path d="${yol}"/></clipPath><g clip-path="url(#@yolKes)">${rampalar.join('')}</g>` : '',
     meydanlar.length ? `<path d="${meydanlar.join('')}" fill="url(#@meydan)"/>` : '',
   ];
   // Meydanın çini kenarı: lacivert ve turkuaz çift şerit, köşelerde altın baklava.
