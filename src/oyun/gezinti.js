@@ -17,6 +17,7 @@ import { bossDurumu, miniBossVarMi, finalDurumu } from './ilerleme.js';
 import { rastgeleUreteci, tamSayi, sans } from './rastgele.js';
 import { gezginBossUret, GEZGIN_BOSS } from './gezginBoss.js';
 import { ilSeviyesi, bolgeSeviyesi, durumRotasi } from './rota.js';
+import { BOLGE_EVI, BOLGE_BAHCESI, yoresel, SIMGE_BOYU } from '../veri/yoresel.js';
 
 // Harita boyutu: karo sayısı = TEMEL_KARO × (yüzölçümü / TEMEL_ALAN)^ALAN_USSU.
 // Gerçek oranla (Konya/Yalova ≈ 51 kat) oynanabilir kalmayacağı için alan bir
@@ -48,7 +49,21 @@ export const KARO = {
   KERVANSARAY: 13,
   MUHTAR: 14, // köy muhtarı: görev verir, ulaştırılan yemeği teslim alır, hediye verir
   AHI_BABA: 15, // Ahi esnafı olan illerde dükkânın yanında durur, görev verir
+  SIMGE: 16, // ilin simgesi (saat kulesi, kale, kule, taş köprü); sol üst köşesi harita.simge
 };
+
+// İlin yöresel görünüşü (veri/yoresel.js): bölge varsayılanları ile ile özgü ayrıntılar.
+// { ev, agac: [tür, oran] | null, tarla: tür | null, simge: { tur, ad } | null }
+export function yoreselGorunum(plaka, bolge) {
+  const il = yoresel[plaka] ?? {};
+  const bahce = BOLGE_BAHCESI[bolge];
+  return {
+    ev: il.ev ?? BOLGE_EVI[bolge],
+    agac: il.agac ?? bahce.agac,
+    tarla: il.tarla === undefined ? bahce.tarla : il.tarla,
+    simge: il.simge ?? null,
+  };
+}
 
 const OYUNCU_YURUR = new Set([KARO.CIM, KARO.YOL, KARO.YABANI, KARO.MEYDAN, KARO.KAPI]);
 const DUSMAN_YURUR = new Set([KARO.CIM, KARO.YOL, KARO.YABANI]); // meydan ve çıkışlar güvenli
@@ -300,6 +315,25 @@ export function ilHaritasiUret(plaka) {
     }
   }
 
+  // 4b. İlin simgesi: meydana yakın, çimenlik bir alanda (yolları kesmez).
+  const simgeVerisi = yoreselGorunum(plaka, il.bolge).simge;
+  let simge = null;
+  if (simgeVerisi) {
+    const { g: sg, y: sy } = SIMGE_BOYU[simgeVerisi.tur];
+    for (let deneme = 0; deneme < 400 && !simge; deneme++) {
+      const uzak = 4 + Math.floor(deneme / 40);
+      const x = tamSayi(rng, meydan.x1 - uzak, meydan.x2 + uzak);
+      const y = tamSayi(rng, meydan.y1 - uzak, meydan.y2 + uzak);
+      if (x < 2 || y < 2 || x + sg > G - 2 || y + sy > Y - 2) continue;
+      if (x + sg >= meydan.x1 - 1 && x <= meydan.x2 + 1 && y + sy >= meydan.y1 - 1 && y <= meydan.y2 + 1) continue;
+      let uygun = true;
+      for (let dy = 0; dy < sy && uygun; dy++) for (let dx = 0; dx < sg; dx++) if (al(x + dx, y + dy) !== KARO.CIM) uygun = false;
+      if (!uygun) continue;
+      for (let dy = 0; dy < sy; dy++) for (let dx = 0; dx < sg; dx++) koy(x + dx, y + dy, KARO.SIMGE);
+      simge = { x, y, ...simgeVerisi };
+    }
+  }
+
   // 5. Evler: meydanın çevresinde, çimenlik karolarda. Kalabalık illerde mahalle büyür.
   // Her ev 2×2 karo kaplar (yiğitten büyük görünsün); sol üst karosu `x, y`dir.
   const evSayisi = evSayisiHesapla(il, doga);
@@ -312,6 +346,7 @@ export function ilHaritasiUret(plaka) {
     if ([[0, 0], [1, 0], [0, 1], [1, 1]].some(([dx, dy]) => al(x + dx, y + dy) !== KARO.CIM)) continue;
     // Evler arasında en az bir karo boşluk: çatılar birbirinin cephesini örtmesin
     if (evler.some((e) => Math.abs(e.x - x) < 3 && Math.abs(e.y - y) < 3)) continue;
+    if (simge && x + 2 >= simge.x - 1 && x <= simge.x + SIMGE_BOYU[simge.tur].g && y + 2 >= simge.y - 1 && y <= simge.y + SIMGE_BOYU[simge.tur].y) continue;
     if (x + 1 >= meydan.x1 - 1 && x <= meydan.x2 + 1 && y + 1 >= meydan.y1 - 1 && y <= meydan.y2 + 1) continue;
     for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) koy(x + dx, y + dy, KARO.EV);
     evler.push({ x, y });
@@ -337,7 +372,7 @@ export function ilHaritasiUret(plaka) {
   const dogus = { x: merkez.x, y: merkez.y + 1 };
 
   // 7. Bağlantı: meydandan yürünerek ulaşılamayan açık alanlar engelle doldurulur
-  const harita = { plaka, bolge: il.bolge, genislik: G, yukseklik: Y, karolar: k, kapilar, meydan, dogus, evler, tezgah, cesme, tabela, dukkan, kervansaray, muhtar, ahiBaba };
+  const harita = { plaka, bolge: il.bolge, genislik: G, yukseklik: Y, karolar: k, kapilar, meydan, dogus, evler, simge, tezgah, cesme, tabela, dukkan, kervansaray, muhtar, ahiBaba };
   const ulasilan = ulasilabilir(harita, dogus, yurunurMu);
   for (let y = 0; y < Y; y++) {
     for (let x = 0; x < G; x++) {
@@ -424,6 +459,7 @@ export function etkilesimTuru(harita, x, y) {
     [KARO.KERVANSARAY]: 'kervansaray',
     [KARO.MUHTAR]: 'muhtar',
     [KARO.AHI_BABA]: 'ahi_baba',
+    [KARO.SIMGE]: 'simge',
   }[karo(harita, x, y)] ?? null;
 }
 

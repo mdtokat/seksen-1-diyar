@@ -352,6 +352,7 @@ export const metinler = {
     saga: 'Sağa yürü',
     arinma: 'Arınma %{yuzde}',
     cesme: 'Çeşmenin serin suyuyla yüzünü yıkadın.',
+    simge: '{ad}, ilin simgesi. Yüzyıllardır yerinde duruyor; nice yiğitler görmüş.',
     gunluk: 'Görev günlüğü ve başarımlar',
     girisAfisi: '{il}',
     alanEtiketi: '{il} il haritası',

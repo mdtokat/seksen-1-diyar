@@ -1,3 +1,4 @@
+import { yoresel, SIMGE_BOYU } from '../src/veri/yoresel.js';
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { iller } from '../src/veri/iller.js';
@@ -329,8 +330,20 @@ describe('sınıflar', () => {
   });
 });
 
+describe('yöresel görünüş', () => {
+  it('il simgeleri bilinen türden; aralarında ibadethane, heykel ya da put yok', () => {
+    const yasak = /cami|mescit|kilise|manastır|sinagog|tapınak|türbe|heykel|(^|\s)put(\s|$)/i;
+    for (const [plaka, il] of Object.entries(yoresel)) {
+      expect(iller.some((i) => i.plaka === Number(plaka)), plaka).toBe(true);
+      if (!il.simge) continue;
+      expect(Object.keys(SIMGE_BOYU), plaka).toContain(il.simge.tur);
+      expect(il.simge.ad, plaka).not.toMatch(yasak);
+    }
+  });
+});
+
 describe('kırmızı çizgiler (plan.md Bölüm 2)', () => {
-  const tumVeri = JSON.stringify({ iller, bolgeler, final, yemekler, dusmanlar, OZEL_HAMLELER, siniflar, metinler, esyalar, gorevler, itibarKademeleri, basarimlar });
+  const tumVeri = JSON.stringify({ iller, bolgeler, final, yemekler, dusmanlar, OZEL_HAMLELER, siniflar, metinler, esyalar, gorevler, itibarKademeleri, basarimlar, yoresel });
   const kelimeler = tumVeri.toLocaleLowerCase('tr').split(/[^\p{L}]+/u).filter(Boolean);
   const metin = kelimeler.join(' ');
 

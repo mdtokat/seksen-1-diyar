@@ -1,3 +1,4 @@
+import { yoresel, SIMGE_BOYU } from '../src/veri/yoresel.js';
 import { describe, it, expect } from 'vitest';
 import {
   KARO,
@@ -310,6 +311,19 @@ describe('illerin gerçek boyutu ve nüfusu', () => {
     const hatay = haritaBoyutu(31);
     expect(ordu.genislik).toBeGreaterThan(ordu.yukseklik);
     expect(hatay.yukseklik).toBeGreaterThan(hatay.genislik);
+  });
+
+  it('simgesi olan her ilde simge haritaya yerleşir; yürünmez, dokununca adı söylenir', () => {
+    for (const [plaka, il] of Object.entries(yoresel)) {
+      if (!il.simge) continue;
+      const h = ilHaritasiUret(Number(plaka));
+      expect(h.simge, plaka).toMatchObject({ tur: il.simge.tur, ad: il.simge.ad });
+      const { g, y } = SIMGE_BOYU[il.simge.tur];
+      expect(h.karolar.filter((t) => t === KARO.SIMGE), plaka).toHaveLength(g * y);
+      expect(yurunurMu(h, h.simge.x, h.simge.y)).toBe(false);
+      expect(etkilesimTuru(h, h.simge.x, h.simge.y)).toBe('simge');
+    }
+    expect(ilHaritasiUret(64).simge).toBeNull();
   });
 
   it('İstanbul en kalabalık il: en çok ev ve en çok halk orada', () => {

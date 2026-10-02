@@ -12,7 +12,8 @@
 // bezenir ki tekrar göze batmasın; su ve yolların kenarı karo karo değil, köşeleri
 // yuvarlatılmış tek bir çizgiyle (bolgeKonturu) çizilir; gölgeler zeminin tonunu
 // koyulaştırır ve uzun yapılarda sağ alta doğru uzar.
-import { KARO } from '../../oyun/gezinti.js';
+import { KARO, yoreselGorunum } from '../../oyun/gezinti.js';
+import { SIMGE_BOYU } from '../../veri/yoresel.js';
 import { bolgeler, final } from '../../veri/bolgeler.js';
 import { boyalariCoz, konturla, hacim, kure, metal, isilti, acik, koyu, karistir } from './ortak.js';
 
@@ -181,10 +182,17 @@ function kaya(p, x, y) {
 }
 
 // Ev: 2×2 karo kaplar, (x, y) sol üst karonun köşesidir. Kuşbakışına yakın 3/4
-// görünüş: önde güneye bakan cephe, üstte çatının dört yüzü (kuzey yüzü ve batı
-// kırması ışık alır, doğu kırması gölgededir). Bacanın ağzı `baca` olarak döner ki
-// dumanı orada tütsün. Döner: { cizim, baca } (baca yoksa null).
-function ev(p, x, y) {
+// görünüş: önde güneye bakan cephe, üstte çatı ya da dam (kuzey yüzü ve batı kırması
+// ışık alır, doğu kırması gölgededir). Mimari ilin yöresine göredir (veri/yoresel.js).
+// Bacanın ağzı `baca` olarak döner ki dumanı orada tütsün; pencereler `isiklar` olarak
+// döner ki gece yansın. Döner: { cizim, baca, isiklar } (baca yoksa null).
+function ev(p, x, y, tur = p.ev) {
+  const sonuc = evCiz(p, x, y, tur);
+  sonuc.isiklar = (sonuc.isiklar ?? []).map(([ix, iy]) => ({ x: ix / T, y: iy / T }));
+  return sonuc;
+}
+
+function evCiz(p, x, y, tur) {
   const E = 2 * T; // evin eni ve derinliği
   const yer = y + E - 1; // ön cephenin zemine değdiği çizgi
   const pencere = (wx, wy, w = 4.2, h = 5.2) => `
@@ -194,7 +202,8 @@ function ev(p, x, y) {
     <path d="M${wx + w / 2} ${wy} v${h} M${wx} ${wy + h / 2} h${w}" stroke="${acik(p.duvar, 0.2)}" stroke-width=".5"/>
     <path d="M${wx + 0.6} ${wy + 0.8} l1.4 1.6" stroke="#fff" stroke-width=".5" opacity=".6"/>
     <rect x="${wx - 0.6}" y="${wy + h}" width="${w + 1.2}" height="1" fill="${acik(p.duvar, 0.3)}" ${INCE}/>`;
-  if (p.ev === 'kumbet') {
+  if (YORESEL_EVLER[tur]) return YORESEL_EVLER[tur](p, x, y, yer, pencere);
+  if (tur === 'kumbet') {
     // Harran'ın kerpiç kümbet evleri: yan yana iki külah kubbe, aralarında alçak bir duvar.
     const kubbe = (cx, ust, kapi) => `
       <path d="M${cx - 7} ${yer} L${cx - 7} ${ust + 15} Q${cx - 7} ${ust + 3} ${cx} ${ust} Q${cx + 7} ${ust + 3} ${cx + 7} ${ust + 15} L${cx + 7} ${yer} Z" fill="${hacim(p.duvar)}" ${CIZGI}/>
@@ -210,7 +219,7 @@ function ev(p, x, y) {
       baca: null,
     };
   }
-  if (p.ev === 'ahsap') {
+  if (tur === 'ahsap') {
     // Karadeniz ve Doğu Anadolu: taş temel üstünde ahşap ev, sırtı cepheye koşut beşik çatı.
     const karli = p.agac === 'karli';
     const tahta = [16, 18.5, 21].map((dy) => `M${x + 3} ${y + dy}h26`).join('');
@@ -238,6 +247,7 @@ function ev(p, x, y) {
         <rect x="${x + 26}" y="${y + 3}" width="6.5" height="11.5" fill="${koyu(p.cati, 0.3)}" opacity=".35"/>
         ${kar}`,
       baca: [x + 8.5, y - 10],
+      isiklar: [[x + 8.5, y + 18.7], [x + 23.5, y + 18.7]],
     };
   }
   // Marmara, Ege, Akdeniz, İç Anadolu: sıvalı ya da badanalı ev, kiremit kırma çatı.
@@ -264,8 +274,218 @@ function ev(p, x, y) {
       <path d="M${x + 11} ${y + 4} h10" stroke="${koyu(p.cati, 0.4)}" stroke-width="1.1"/>
       <path d="M${x + 2.5} ${y + 15.5} h27" stroke="${acik(p.cati, 0.35)}" stroke-width=".6" opacity=".7"/>`,
     baca: [x + 24.3, y - 8],
+    isiklar: [[x + 8.5, y + 21.6], [x + 23.5, y + 21.6]],
   };
 }
+
+// ── Yöresel evler ───────────────────────────────────────
+// Her biri (p, x, y, yer, pencere) alır; { cizim, baca, isiklar } döner (birim cinsinden).
+const YORESEL_EVLER = {
+  // Osmanlı konağı (Safranbolu, Amasya, Beypazarı, Marmara köyleri): taş zemin kat, üstte
+  // sıvalı ve ahşap çatkılı çıkma kat, ortada cumba, geniş saçaklı kiremit çatı.
+  konak(p, x, y, yer) {
+    const tas = '#b5ab98';
+    const siva = '#f4ecdc';
+    const agac = '#5b3a24';
+    const cati = '#b5543a';
+    const cerceve = (wx, wy, w, h) => `<rect x="${wx}" y="${wy}" width="${w}" height="${h}" fill="${hacim('#2f3d4f')}" ${INCE}/>
+      <path d="M${wx + w / 2} ${wy} v${h}" stroke="${siva}" stroke-width=".5"/><rect x="${wx - 0.5}" y="${wy + h}" width="${w + 1}" height=".9" fill="${agac}"/>`;
+    return {
+      cizim: `${golge(x + 17, yer, 16, 3, 30)}
+        <rect x="${x + 3}" y="${y + 22}" width="26" height="${yer - y - 22}" fill="${hacim(tas)}" ${CIZGI}/>
+        <path d="M${x + 3} ${y + 25} h26 M${x + 3} ${y + 28} h26 M${x + 8} ${y + 22} v3 M${x + 15} ${y + 22} v3 M${x + 23} ${y + 22} v3 M${x + 11} ${y + 25} v3 M${x + 19} ${y + 25} v3 M${x + 26} ${y + 25} v3 M${x + 7} ${y + 28} v3 M${x + 21} ${y + 28} v3" stroke="${koyu(tas, 0.3)}" stroke-width=".45"/>
+        <path d="M${x + 5} ${yer} v-6 q2.5 -3 5 0 v6 z" fill="${hacim('#6e4a2a')}" ${INCE}/>
+        ${cerceve(x + 21, y + 24.5, 3.4, 3.6)}
+        <rect x="${x + 1}" y="${y + 10}" width="30" height="12.4" fill="${hacim(siva)}" ${CIZGI}/>
+        <path d="M${x + 1} ${y + 10.6} h30 M${x + 1} ${y + 21.8} h30 M${x + 1.6} ${y + 10} v12.4 M${x + 30.4} ${y + 10} v12.4 M${x + 1.6} ${y + 21.8} l5 -11.2 M${x + 30.4} ${y + 21.8} l-5 -11.2" stroke="${agac}" stroke-width=".8"/>
+        <path d="M${x + 11} ${y + 22.4} l-1.6 2.6 M${x + 21} ${y + 22.4} l1.6 2.6" stroke="${agac}" stroke-width="1"/>
+        <rect x="${x + 10.5}" y="${y + 10.5}" width="11" height="12.6" fill="${hacim(acik(siva, 0.3))}" ${CIZGI}/>
+        <rect x="${x + 10.5}" y="${y + 21.6}" width="11" height="1.5" fill="${agac}"/>
+        ${cerceve(x + 11.6, y + 13.4, 2.6, 5)}${cerceve(x + 14.7, y + 13.4, 2.6, 5)}${cerceve(x + 17.8, y + 13.4, 2.6, 5)}
+        ${cerceve(x + 4.6, y + 13.6, 3.2, 5)}${cerceve(x + 24.2, y + 13.6, 3.2, 5)}
+        <rect x="${x + 1}" y="${y + 10}" width="30" height="2.4" fill="${GOLGE}" opacity=".22"/>
+        <rect x="${x + 22.5}" y="${y - 9}" width="3.6" height="8" fill="${hacim(siva)}" ${CIZGI}/>
+        <rect x="${x + 22}" y="${y - 10}" width="4.6" height="1.6" fill="${hacim(cati)}" ${INCE}/>
+        <path d="M${x - 0.5} ${y - 6} L${x + 32.5} ${y - 6} L${x + 21} ${y + 2} L${x + 11} ${y + 2} Z" fill="${hacim(acik(cati, 0.16))}" ${CIZGI}/>
+        <path d="M${x + 11} ${y + 2} L${x + 21} ${y + 2} L${x + 32.5} ${y + 11} L${x - 0.5} ${y + 11} Z" fill="${hacim(cati)}" ${CIZGI}/>
+        <path d="M${x - 0.5} ${y - 6} L${x + 11} ${y + 2} L${x - 0.5} ${y + 11} Z" fill="${hacim(acik(cati, 0.28))}" ${CIZGI}/>
+        <path d="M${x + 32.5} ${y - 6} L${x + 21} ${y + 2} L${x + 32.5} ${y + 11} Z" fill="${hacim(koyu(cati, 0.28))}" ${CIZGI}/>
+        <path d="M${x + 6} ${y + 6.5} h20 M${x + 4} ${y - 2} h24" stroke="${koyu(cati, 0.3)}" stroke-width=".6"/>
+        <path d="M${x + 11} ${y + 2} h10" stroke="${koyu(cati, 0.4)}" stroke-width="1.1"/>`,
+      baca: [x + 24.3, y - 10],
+      isiklar: [[x + 13, y + 16], [x + 19, y + 16], [x + 6.2, y + 16], [x + 25.8, y + 16]],
+    };
+  },
+
+  // İç Anadolu köy evi: kerpiç duvar, düz toprak dam, dam kenarında çıkıntı yapan hatıllar,
+  // damda toprağı bastırmak için loğ taşı.
+  kerpic(p, x, y, yer) {
+    const kerpic = '#c9a77a';
+    const dam = '#a88a5e';
+    const hatil = [5, 9.5, 14, 18.5, 23, 27.5].map((hx) => `<rect x="${x + hx}" y="${y + 12}" width="1.6" height="1.6" fill="${hacim('#6e4a2a')}" ${INCE}/>`).join('');
+    const tuglalar = [16, 19.5, 23, 26.5].map((ty, i) => `M${x + 3} ${y + ty} h26 ${[0, 1, 2, 3, 4].map((k) => `M${x + 5 + k * 6 + (i % 2) * 3} ${y + ty} v3.5`).join(' ')}`).join(' ');
+    return {
+      cizim: `${golge(x + 17, yer, 16, 3, 20)}
+        <rect x="${x + 3}" y="${y + 12}" width="26" height="${yer - y - 12}" fill="${hacim(kerpic)}" ${CIZGI}/>
+        <path d="${tuglalar}" stroke="${koyu(kerpic, 0.18)}" stroke-width=".4" opacity=".8"/>
+        <rect x="${x + 3}" y="${y + 12}" width="26" height="2.6" fill="${GOLGE}" opacity=".22"/>
+        <rect x="${x + 6}" y="${y + 17.5}" width="3.4" height="4" fill="${hacim('#2f3d4f')}" ${INCE}/>
+        <rect x="${x + 22.6}" y="${y + 17.5}" width="3.4" height="4" fill="${hacim('#2f3d4f')}" ${INCE}/>
+        <rect x="${x + 13.5}" y="${y + 21}" width="5" height="${yer - y - 21}" fill="${hacim('#5f7fa0')}" ${INCE}/>
+        <path d="M${x + 13} ${y + 20.5} h6" stroke="#6e4a2a" stroke-width="1.2"/>
+        <rect x="${x + 2}" y="${y - 2}" width="28" height="14" fill="${hacim(dam)}" ${CIZGI}/>
+        <path d="M${x + 4} ${y + 2} q4 -1 8 0 t8 0 t8 0 M${x + 5} ${y + 7} q4 -1 8 0 t8 0" fill="none" stroke="${koyu(dam, 0.18)}" stroke-width=".5"/>
+        <rect x="${x + 2}" y="${y + 10.5}" width="28" height="1.6" fill="${acik(dam, 0.25)}"/>
+        ${hatil}
+        <rect x="${x + 7}" y="${y + 1.5}" width="6" height="2.6" rx="1.3" fill="${hacim('#9a958a')}" ${INCE}/>
+        <rect x="${x + 22.5}" y="${y - 3}" width="3.4" height="4.6" fill="${hacim(kerpic)}" ${INCE}/>`,
+      baca: [x + 24.2, y - 3.4],
+      isiklar: [[x + 7.7, y + 19.5], [x + 24.3, y + 19.5]],
+    };
+  },
+
+  // Mardin evi: bal rengi kesme taş, üst katta üç kemerli revak, kemerli kapı ve
+  // pencereler, korkuluklu düz dam. Taşlarda ince oyma şeritler.
+  kesme(p, x, y, yer) {
+    const tas = '#d9b779';
+    const dam = '#e6caa0';
+    const kemer = (kx, ky, w, h, ic = '#3a2a1e') => `<path d="M${kx} ${ky + h} v${-(h - w / 2)} a${w / 2} ${w / 2} 0 0 1 ${w} 0 v${h - w / 2} z" fill="${hacim(ic)}" ${INCE}/>
+      <path d="M${kx - 0.6} ${ky + w / 2} a${w / 2 + 0.6} ${w / 2 + 0.6} 0 0 1 ${w + 1.2} 0" fill="none" stroke="${acik(tas, 0.35)}" stroke-width="1"/>`;
+    const sira = [15, 18, 21, 24, 27].map((ty, i) => `M${x + 2} ${y + ty} h28 ${[0, 1, 2, 3].map((k) => `M${x + 5 + k * 7 + (i % 2) * 3.5} ${y + ty} v3`).join(' ')}`).join(' ');
+    return {
+      cizim: `${golge(x + 17, yer, 16, 3, 22)}
+        <rect x="${x + 2}" y="${y + 12}" width="28" height="${yer - y - 12}" fill="${hacim(tas)}" ${CIZGI}/>
+        <path d="${sira}" stroke="${koyu(tas, 0.2)}" stroke-width=".4"/>
+        <rect x="${x + 2}" y="${y + 12}" width="28" height="2.2" fill="${GOLGE}" opacity=".2"/>
+        ${kemer(x + 5, y + 14, 5, 7)}${kemer(x + 13.5, y + 14, 5, 7)}${kemer(x + 22, y + 14, 5, 7)}
+        <path d="M${x + 3} ${y + 22.2} h26" stroke="${koyu(tas, 0.35)}" stroke-width=".8"/>
+        <path d="M${x + 3} ${y + 23.2} h26" stroke="${acik(tas, 0.3)}" stroke-width=".9" stroke-dasharray="1 1"/>
+        ${kemer(x + 13.4, y + 24, 5.2, yer - y - 24, '#6e4a2a')}
+        ${kemer(x + 5.5, y + 25, 3.2, 4.4)}${kemer(x + 23.3, y + 25, 3.2, 4.4)}
+        <rect x="${x + 1}" y="${y - 3}" width="30" height="15" fill="${hacim(dam)}" ${CIZGI}/>
+        <rect x="${x + 2.6}" y="${y - 1.4}" width="26.8" height="11.8" fill="${koyu(dam, 0.06)}" stroke="${acik(dam, 0.3)}" stroke-width="1"/>
+        <path d="M${x + 1} ${y + 10.5} h30" stroke="${acik(dam, 0.35)}" stroke-width="1"/>
+        <rect x="${x + 7}" y="${y + 11.5}" width="1.4" height="2.4" fill="#8a6a4a"/><rect x="${x + 23.6}" y="${y + 11.5}" width="1.4" height="2.4" fill="#8a6a4a"/>`,
+      baca: null,
+      isiklar: [[x + 7.5, y + 18], [x + 16, y + 18], [x + 24.5, y + 18]],
+    };
+  },
+
+  // Doğu Anadolu köy evi: moloz taş duvar, kalın toprak dam (karlı), kısa taş baca,
+  // kapının yanında odun yığını.
+  toprak(p, x, y, yer) {
+    const tas = '#8f8778';
+    const toprakDam = '#8a7458';
+    const karli = p.agac === 'karli';
+    const taslar = [[6, 18, 3], [12, 17.5, 2.6], [18, 18.4, 3.2], [25, 17.6, 2.8], [8, 23, 2.8], [21, 23.4, 3], [27, 24, 2.4], [5, 28, 2.6], [12, 28.6, 2.2], [24, 28.4, 2.8]]
+      .map(([tx, ty, r]) => `<ellipse cx="${x + tx}" cy="${y + ty}" rx="${r}" ry="${r * 0.7}" fill="${koyu(tas, 0.08)}" stroke="${koyu(tas, 0.3)}" stroke-width=".4"/>`).join('');
+    const kar = karli
+      ? `<path d="M${x + 1} ${y + 1} h30 v13 q-3 2.4 -6 .4 q-4 2.6 -8 .2 q-4 2.4 -8 0 q-3 2.2 -6 .4 q-1.5 .8 -2 0 Z" fill="${hacim('#f4f8fb')}"/>`
+      : '';
+    return {
+      cizim: `${golge(x + 17, yer, 16, 3, 18)}
+        <rect x="${x + 3}" y="${y + 15}" width="26" height="${yer - y - 15}" fill="${hacim(tas)}" ${CIZGI}/>
+        ${taslar}
+        <rect x="${x + 6.5}" y="${y + 19.5}" width="3.4" height="3.4" fill="${hacim('#2f3d4f')}" ${INCE}/>
+        <rect x="${x + 14}" y="${y + 21}" width="5" height="${yer - y - 21}" fill="${hacim('#5b3a24')}" ${INCE}/>
+        <path d="M${x + 22} ${yer} h6 v-3 h-6 z M${x + 22.4} ${yer - 3} h5.2 v-2.6 h-5.2 z" fill="${hacim('#8a5a2b')}" ${INCE}/>
+        <rect x="${x + 1}" y="${y + 1}" width="30" height="14" fill="${hacim(toprakDam)}" ${CIZGI}/>
+        <path d="M${x + 4} ${y + 5} l1 -1.6 l1 1.6 M${x + 15} ${y + 9} l1 -1.6 l1 1.6 M${x + 25} ${y + 4} l1 -1.6 l1 1.6" stroke="#6a7a4a" stroke-width=".6" fill="none"/>
+        ${kar}
+        <rect x="${x + 21}" y="${y - 4}" width="4" height="6.5" fill="${hacim(tas)}" ${CIZGI}/>
+        ${karli ? `<rect x="${x + 20.6}" y="${y - 4.6}" width="4.8" height="1.6" rx=".8" fill="#f4f8fb"/>` : ''}`,
+      baca: [x + 23, y - 4.6],
+      isiklar: [[x + 8.2, y + 21.2]],
+    };
+  },
+};
+
+// ── İl simgeleri ────────────────────────────────────────
+// Saat kulesi, kule, kale ya da taş köprü; (x, y) kapladığı alanın sol üst köşesidir.
+// Kırmızı çizgiler: ibadethane, heykel ya da put çizilmez.
+const SIMGELER = {
+  // Taş saat kulesi: kare gövde, dört yüzünde saat, üstte kurşun külahlı köşk.
+  saat_kulesi(p, x, y) {
+    const tas = '#d8ccb0';
+    const yer = y + 31;
+    const cx = x + 16;
+    return `${golge(cx + 1, yer, 9, 2.6, 52)}
+      <rect x="${cx - 9}" y="${yer - 5}" width="18" height="5" fill="${hacim(koyu(tas, 0.1))}" ${CIZGI}/>
+      <rect x="${cx - 6.5}" y="${y - 22}" width="13" height="${yer - 5 - (y - 22)}" fill="${hacim(tas)}" ${CIZGI}/>
+      <rect x="${cx + 2.5}" y="${y - 22}" width="4" height="${yer - 5 - (y - 22)}" fill="${koyu(tas, 0.25)}" opacity=".45"/>
+      <path d="M${cx - 6.5} ${y - 4} h13 M${cx - 6.5} ${y + 10} h13" stroke="${koyu(tas, 0.3)}" stroke-width=".7"/>
+      <path d="M${cx - 1.6} ${yer - 5} v-6 q1.6 -2.4 3.2 0 v6 z" fill="${hacim('#5b3a24')}" ${INCE}/>
+      <rect x="${cx - 1}" y="${y + 2}" width="2" height="4" rx="1" fill="#2f3d4f"/>
+      <rect x="${cx - 7.6}" y="${y - 24}" width="15.2" height="2.6" fill="${hacim(acik(tas, 0.1))}" ${INCE}/>
+      <circle cx="${cx}" cy="${y - 14}" r="4.6" fill="${hacim('#fbf7ec')}" stroke="${koyu(tas, 0.5)}" stroke-width=".8"/>
+      <path d="M${cx} ${y - 14} v-3 M${cx} ${y - 14} l2.2 1" stroke="#2b2433" stroke-width=".7"/>
+      <rect x="${cx - 5.5}" y="${y - 33}" width="11" height="9" fill="${hacim(tas)}" ${CIZGI}/>
+      <path d="M${cx - 3.5} ${y - 24} v-6 q1.2 -1.6 2.4 0 v6 M${cx + 1.1} ${y - 24} v-6 q1.2 -1.6 2.4 0 v6" fill="#2f3d4f"/>
+      <path d="M${cx - 7} ${y - 33} L${cx} ${y - 43} L${cx + 7} ${y - 33} Z" fill="${hacim('#7d8794')}" ${CIZGI}/>
+      <path d="M${cx} ${y - 43} L${cx + 7} ${y - 33} L${cx + 2.5} ${y - 33} Z" fill="#4a525e" opacity=".5"/>
+      <path d="M${cx} ${y - 43} v-4" stroke="${ALTIN_KAPI}" stroke-width="1"/><circle cx="${cx}" cy="${y - 47.5}" r="1.1" fill="${metal(ALTIN_KAPI)}"/>`;
+  },
+
+  // Galata Kulesi: yuvarlak taş gövde, üst katta seyir balkonu, sivri kurşun külah.
+  kule(p, x, y) {
+    const tas = '#cbbfa5';
+    const yer = y + 31;
+    const cx = x + 16;
+    const r = 9;
+    const bant = (by) => `<path d="M${cx - r} ${by} q${r} 2.4 ${2 * r} 0" fill="none" stroke="${koyu(tas, 0.3)}" stroke-width=".7"/>`;
+    return `${golge(cx + 1, yer, 11, 3, 60)}
+      <path d="M${cx - r} ${yer - 1} v${-(yer - 1 - (y - 26))} h${2 * r} v${yer - 1 - (y - 26)} q${-r} 3 ${-2 * r} 0 z" fill="${hacim(tas)}" ${CIZGI}/>
+      <path d="M${cx + 3} ${y - 26} h6 v${yer - 1 - (y - 26)} q-3 1.4 -6 1.8 z" fill="${koyu(tas, 0.25)}" opacity=".45"/>
+      ${bant(y + 2)}${bant(y + 16)}${bant(y - 12)}
+      <path d="M${cx - 1.8} ${yer} v-6 q1.8 -2.6 3.6 0 v6 z" fill="${hacim('#5b3a24')}" ${INCE}/>
+      ${[y + 6, y - 6, y - 19].map((wy) => `<rect x="${cx - 1}" y="${wy}" width="2" height="4" rx="1" fill="#2f3d4f"/>`).join('')}
+      <path d="M${cx - r - 2} ${y - 26} h${2 * r + 4} v2.6 q${-r - 2} 2.6 ${-2 * r - 4} 0 z" fill="${hacim(acik(tas, 0.15))}" ${CIZGI}/>
+      <path d="M${cx - r + 0.5} ${y - 26} v-6 h${2 * r - 1} v6" fill="${hacim(tas)}" ${CIZGI}/>
+      ${[-6, -2, 2, 6].map((dx) => `<rect x="${cx + dx - 0.9}" y="${y - 31}" width="1.8" height="4" rx=".9" fill="#2f3d4f"/>`).join('')}
+      <path d="M${cx - r - 1} ${y - 32} L${cx} ${y - 54} L${cx + r + 1} ${y - 32} Z" fill="${hacim('#6e7884')}" ${CIZGI}/>
+      <path d="M${cx} ${y - 54} L${cx + r + 1} ${y - 32} L${cx + 3} ${y - 32} Z" fill="#424a55" opacity=".5"/>
+      <path d="M${cx} ${y - 54} v-4" stroke="${ALTIN_KAPI}" stroke-width="1"/><circle cx="${cx}" cy="${y - 58.5}" r="1.1" fill="${metal(ALTIN_KAPI)}"/>`;
+  },
+
+  // Kale: mazgallı sur, iki yanında burç, ortada ahşap kanatlı kemerli kapı ve sancak.
+  kale(p, x, y) {
+    const tas = koyu(p.kayaRenk, 0.05);
+    const yer = y + 31;
+    const mazgal = (mx, my, w) => Array.from({ length: Math.floor(w / 4) }, (_, i) =>
+      `<rect x="${mx + i * 4}" y="${my - 2.6}" width="2.4" height="2.6" fill="${hacim(tas)}" ${INCE}/>`).join('');
+    const burc = (bx) => `<rect x="${bx}" y="${y - 16}" width="12" height="${yer - (y - 16)}" fill="${hacim(tas)}" ${CIZGI}/>
+      <rect x="${bx + 8}" y="${y - 16}" width="4" height="${yer - (y - 16)}" fill="${koyu(tas, 0.3)}" opacity=".4"/>
+      ${mazgal(bx, y - 16, 13)}
+      <rect x="${bx + 5}" y="${y - 6}" width="2" height="4" rx="1" fill="#2b2433"/>`;
+    const taslar = [y - 2, y + 6, y + 14, y + 22].map((ty) => `M${x + 8} ${ty} h32`).join('');
+    return `${golge(x + 25, yer, 24, 3.2, 26)}
+      <rect x="${x + 6}" y="${y - 4}" width="36" height="${yer - (y - 4)}" fill="${hacim(tas)}" ${CIZGI}/>
+      <path d="${taslar}" stroke="${koyu(tas, 0.25)}" stroke-width=".5"/>
+      ${mazgal(x + 7, y - 4, 34)}
+      <path d="M${x + 19} ${yer} v-12 q5 -8 10 0 v12 z" fill="#2b2433" ${CIZGI}/>
+      <path d="M${x + 19.6} ${yer} v-11.6 q4.4 -7 8.8 0 v11.6 z" fill="${hacim('#6e4a2a')}"/>
+      <path d="M${x + 24} ${yer} v-15" stroke="#3a2516" stroke-width=".7"/>
+      ${burc(x)}${burc(x + 36)}
+      <path d="M${x + 6} ${y - 18.6} v-12" stroke="#5b3a24" stroke-width=".9"/>
+      <path class="sancak" d="M${x + 6} ${y - 30.6} q4 -1 8 .6 q-4 1.6 -8 3.4 z" fill="#c8102e" ${INCE}/>`;
+  },
+
+  // Taş köprü: küçük bir derenin üstünden geçen sivri kemerli, eşek sırtı taş köprü.
+  kopru(p, x, y) {
+    const tas = '#c2b49a';
+    const su = '#3b8fb0';
+    return `
+      <path d="M${x + 14} ${y - 2} q-3 10 -1 18 q2 10 0 16 h20 q-2 -6 0 -16 q2 -8 -1 -18 z" fill="${karistir(p.zemin, p.yol, 0.55)}"/>
+      <path d="M${x + 16.5} ${y - 2} q-2.4 10 -.6 18 q1.6 10 0 16 h15 q-1.6 -6 0 -16 q1.6 -8 -.8 -18 z" fill="${hacim(su)}"/>
+      <path d="M${x + 19} ${y + 4} q2 -1 4 0 M${x + 22} ${y + 26} q2 -1 4 0 M${x + 20} ${y + 15} q2 -1 4 0" fill="none" stroke="#eaf7fb" stroke-width=".6" opacity=".8"/>
+      ${golge(x + 26, y + 26, 22, 3, 6)}
+      <path d="M${x - 1} ${y + 22} Q${x + 24} ${y + 2} ${x + 49} ${y + 22} L${x + 49} ${y + 27} L${x + 34} ${y + 27} Q${x + 24} ${y + 4} ${x + 14} ${y + 27} L${x - 1} ${y + 27} Z" fill="${hacim(tas)}" ${CIZGI}/>
+      <path d="M${x + 15.5} ${y + 27} Q${x + 24} ${y + 7} ${x + 32.5} ${y + 27}" fill="none" stroke="${acik(tas, 0.3)}" stroke-width="1.2"/>
+      <path d="M${x - 1} ${y + 22} Q${x + 24} ${y + 2} ${x + 49} ${y + 22}" fill="none" stroke="${koyu(tas, 0.3)}" stroke-width="1.6"/>
+      <path d="M${x - 1} ${y + 17} Q${x + 24} ${y - 3} ${x + 49} ${y + 17} L${x + 49} ${y + 22} Q${x + 24} ${y + 2} ${x - 1} ${y + 22} Z" fill="${hacim(koyu(tas, 0.06))}" ${CIZGI}/>
+      <path d="M${x + 4} ${y + 18} l0 3 M${x + 12} ${y + 13.5} l0 3 M${x + 20} ${y + 10.5} l0 3 M${x + 28} ${y + 10.5} l0 3 M${x + 36} ${y + 13.5} l0 3 M${x + 44} ${y + 18} l0 3" stroke="${koyu(tas, 0.3)}" stroke-width=".5"/>`;
+  },
+};
 
 // Uzun otlar: iki tonlu tutamlar, arada bir çiçek.
 function yabani(p, x, y) {
@@ -520,6 +740,8 @@ export function haritaKatmanlari(harita) {
   const tanimlar = []; // üst katmanla paylaşılan uzun yapıların çizimleri
   const nesneler = [];
   const bacalar = [];
+  const isiklar = []; // gece yanan pencereler ve meşaleler (karo birimiyle)
+  const yore = yoreselGorunum(harita.plaka, harita.bolge);
   // Yapıyı ekler. `taban`: yapının zemine değdiği satır (çizim sırası ona göre: arkadaki
   // önce). `uzun` verilirse yapı üst katmana da girer: { x0, x1, ust } birim cinsinden kutu.
   const yapiEkle = (cizim, x, taban, uzun = null) => {
@@ -564,10 +786,21 @@ export function haritaKatmanlari(harita) {
   for (const e of evleriBul(harita)) {
     const px = e.x * T;
     const py = e.y * T;
-    const { cizim, baca } = ev(p, px, py);
+    const { cizim, baca, isiklar: pencereler } = ev(p, px, py, yore.ev);
     yapiEkle(cizim, e.x, e.y + 1, { x0: px - 1, x1: px + 2 * T + 1, ust: py - 10 });
     if (baca) bacalar.push({ x: baca[0] / T, y: baca[1] / T });
+    isiklar.push(...pencereler.map((i) => ({ ...i, tur: 'pencere' })));
   }
+  if (harita.simge) {
+    const { x, y, tur } = harita.simge;
+    const boy = SIMGE_BOYU[tur];
+    yapiEkle(SIMGELER[tur](p, x * T, y * T), x, y + boy.y - 1, { x0: x * T - 2, x1: (x + boy.g) * T + 2, ust: y * T - 60 });
+  }
+  if (harita.kervansaray) {
+    const k = harita.kervansaray;
+    isiklar.push({ x: k.x + 2.6 / T, y: k.y + 8.6 / T, tur: 'mesale' }, { x: k.x + 13.4 / T, y: k.y + 8.6 / T, tur: 'mesale' });
+  }
+  if (harita.dukkan) isiklar.push({ x: harita.dukkan.x + 0.48, y: harita.dukkan.y + 0.69, tur: 'ocak' });
   ustler.sort((a, b) => a.sira - b.sira);
   // Zeminin büyük ölçekli renk değişimi: üç karoluk ızgarada yumuşak kenarlı lekeler
   // (açık ve koyu çimen, kuru ot, toprak). Tek desenin tekrarını gözden saklar.
@@ -640,7 +873,7 @@ export function haritaKatmanlari(harita) {
   const onEk = `c${(++katmanSayaci).toString(36)}h-`;
   const c = boyalariCoz(konturla(`<defs>${tanimlar.join('')}</defs>${desenler(p)}${zemin.join('')}${parcalar.join('')}${ustler.map((u) => u.cizim).join('')}`), onEk);
   const u = boyalariCoz(ust, onEk);
-  return { alt: `<defs>${c.tanimlar}</defs>${c.icerik}`, ust: u.icerik, nesneler, bacalar };
+  return { alt: `<defs>${c.tanimlar}</defs>${c.icerik}`, ust: u.icerik, nesneler, bacalar, isiklar };
 }
 
 let katmanSayaci = 0;

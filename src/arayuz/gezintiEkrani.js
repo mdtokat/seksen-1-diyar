@@ -524,6 +524,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     if (tur === 'tuccar') return secenekler.tuccarGoster?.(g.tuccar);
     if (tur === 'muhtar' || tur === 'ahi_baba') return secenekler.gorevVerenGoster?.(tur);
     if (tur === 'cesme') return bildirimGoster(ekran, M.cesme);
+    if (tur === 'simge') return bildirimGoster(ekran, sablon(M.simge, { ad: harita.simge.ad }));
   }
 
   function kapidanGec(kapi) {
