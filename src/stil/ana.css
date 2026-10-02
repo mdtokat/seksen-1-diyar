@@ -2159,6 +2159,17 @@ use.agac.sallan {
   }
 }
 
+/* Gökyüzü tuvalleri (gokyuzuKatmani.js): hava (kar, yağmur, sis) ve günün ışığı (gece,
+   şafak, akşam). Işık tuvali yarım çözünürlüktedir; büyütülünce yumuşar. */
+.hava-tuvali,
+.isik-tuvali {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
 /* Atmosfer: dünyanın üstünde, arayüzün altında duran ışık ve renk katmanı. Sol üstten
    ılık güneş vurur, sağ alt serin gölgede kalır, kenarlar hafifçe kararır; ::before her
    bölgenin havasını (Karadeniz nemli ve serin, Güneydoğu sıcak, Doğu Anadolu soğuk)

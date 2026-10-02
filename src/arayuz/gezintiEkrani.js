@@ -56,6 +56,7 @@ import { kartliZaferMi, zaferKartiHtml } from './zaferKarti.js';
 import { karakterDugmesiniCiz } from './karakterDugmesi.js';
 import { haritaKatmanlari, kapiKatmani, KARO_BOYU } from './cizimler/karolar.js';
 import { ortamKur } from './ortam.js';
+import { gokyuzuKur } from './gokyuzuKatmani.js';
 import { oyuncuCizimi, halkCizimi, tuccarCizimi } from './cizimler/karakterler.js';
 import { dusmanCizimi } from './cizimler/dusmanlar.js';
 import { verenIsareti } from '../oyun/gorevler.js';
@@ -161,6 +162,8 @@ export function gezintiEkrani(kap, depo, secenekler) {
           </svg>
           <div class="hava-katmani" aria-hidden="true"></div>
         </div>
+        <canvas class="hava-tuvali" aria-hidden="true"></canvas>
+        <canvas class="isik-tuvali" aria-hidden="true"></canvas>
         <div class="atmosfer" data-bolge="${il.bolge}" aria-hidden="true"></div>
         <div class="durum-gostergesi" aria-live="off"><div class="gosterge-cubuklari"></div><ul class="etki-listesi"></ul></div>
         <div class="gezinti-araclari">
@@ -209,6 +212,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
   let mesgul = false; // başka ile geçerken, bayılınca ya da zafer kartı açıkken oyun durur
   let yuruyorZaman = null;
   let ortam = null; // haritanın kıpırtısı (ortam.js); ekran kurulunca başlar
+  let gokyuzu = null; // günün ışığı ve hava (gokyuzuKatmani.js)
   const zamanlayicilar = [];
 
   // ── Figürler ──
@@ -469,6 +473,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     ekran.style.setProperty('--karo', `${T}px`);
     dunya.classList.add('anlik');
     ortam?.yenile();
+    gokyuzu?.boyut();
     oyuncuyuCiz();
     dusmanlariCiz();
     halkiCiz();
@@ -1441,6 +1446,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
   const aboneliktenCik = depo.abone(ustCubuguCiz);
   ustCubuguCiz(depo.al());
   ortam = ortamKur({ ekran, harita, katmanlar, T: () => T, kamera: () => kameraKutusu, azHareket });
+  gokyuzu = gokyuzuKur({ ekran, harita, katmanlar, T: () => T, oyuncuEl: oyuncuFiguru, dusmanlar: () => g.dusmanlar, azHareket });
   const gozlemci = new ResizeObserver(boyutla);
   gozlemci.observe(alan);
   boyutla();
@@ -1448,6 +1454,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
 
   return () => {
     ortam.kapat();
+    gokyuzu.kapat();
     zamanlayicilar.forEach(clearInterval);
     clearTimeout(yuruyorZaman);
     gozlemci.disconnect();
