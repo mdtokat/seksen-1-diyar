@@ -1009,7 +1009,11 @@ export function haritaKatmanlari(harita) {
   const onEk = `c${(++katmanSayaci).toString(36)}h-`;
   const c = boyalariCoz(saydamligiYay(konturla(`<defs>${tanimlar.join('')}</defs>${desenler(p)}${zemin.join('')}${parcalar.join('')}${ustler.map((u) => u.cizim).join('')}`)), onEk);
   const u = boyalariCoz(ust, onEk);
-  return { alt: `<defs>${c.tanimlar}</defs>${c.icerik}`, ust: u.icerik, nesneler, bacalar, isiklar };
+  // ustKullanim(nesneler): verilen yapıların üst katman çizimi (gezinti ekranı yalnız yiğidin
+  // yakınındakileri koyar; bütün harita üst katmanda olunca her kare pahalılaşıyordu).
+  const ustKullanim = (secilen) => [...new Set(secilen.map((o) => o.cizgi))].map((r) => `<g clip-path="url(#${onEk}s${r})">${secilen
+    .filter((o) => o.cizgi === r).map((o) => `<use href="#${onEk}n${o.n}" data-n="${o.n}"${o.agac ? ' class="agac"' : ''}/>`).join('')}</g>`).join('');
+  return { alt: `<defs>${c.tanimlar}</defs>${c.icerik}`, ust: u.icerik, ustTanimlar: boyalariCoz(`<defs>${kirpmalar}</defs>`, onEk).icerik, ustKullanim, nesneler, bacalar, isiklar };
 }
 
 let katmanSayaci = 0;

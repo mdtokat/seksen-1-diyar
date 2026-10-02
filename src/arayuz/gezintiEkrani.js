@@ -157,7 +157,8 @@ export function gezintiEkrani(kap, depo, secenekler) {
           <div class="yer-katmani" aria-hidden="true"></div>
           <div class="figur-katmani"></div>
           <svg class="ust-katman" viewBox="0 0 ${GENISLIK * KARO_BOYU} ${YUKSEKLIK * KARO_BOYU}" aria-hidden="true">
-            ${katmanlar.ust}
+            ${katmanlar.ustTanimlar}
+            <g class="yakin-yapilar"></g>
             <g class="kapilar"></g>
           </svg>
           <div class="hava-katmani" aria-hidden="true"></div>
@@ -392,6 +393,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     figurKonumla(oyuncuFiguru, g.oyuncu.x, g.oyuncu.y);
     yoldasiCiz();
     ortam?.konum(g.oyuncu);
+    ustKatmaniYenile();
     ortuleniSaydamla();
   }
 
@@ -399,7 +401,23 @@ export function gezintiEkrani(kap, depo, secenekler) {
   // Üst katmandaki bir yapı (ağaç tepesi, ev çatısı) yiğidi ya da hedefteki düşmanı
   // örtüyorsa yarı saydam olur ki arkada kalan görünsün. Yapılar taban satırlarına göre
   // dizinlenir; bir figürü yalnız 0–3 satır önündeki yapılar örtebilir.
-  const ustKullanimlari = new Map([...ustKatman.querySelectorAll('use[data-n]')].map((u) => [Number(u.dataset.n), u]));
+  // Üst katmanda yalnız yiğidin yakınındaki ev, simge ve meydan binaları durur (ağaçlar
+  // yakında salınan ağaç olarak figür katmanındadır, ortam.js). Yiğit birkaç karo
+  // uzaklaşınca yenilenir.
+  const yakinYapilarG = ustKatman.querySelector('.yakin-yapilar');
+  const yapilar = katmanlar.nesneler.filter((o) => !o.agac);
+  let ustKullanimlari = new Map();
+  let ustMerkez = null;
+  function ustKatmaniYenile() {
+    if (ustMerkez && Math.abs(ustMerkez.x - g.oyuncu.x) + Math.abs(ustMerkez.y - g.oyuncu.y) < 3) return;
+    ustMerkez = { ...g.oyuncu };
+    const yakin = azHareket
+      ? katmanlar.nesneler // salınım yoksa ağaçlar da burada
+      : yapilar;
+    yakinYapilarG.innerHTML = katmanlar.ustKullanim(yakin.filter((o) => Math.abs(o.x - g.oyuncu.x) <= 10 && Math.abs(o.y - g.oyuncu.y) <= 12));
+    ustKullanimlari = new Map([...yakinYapilarG.querySelectorAll('use[data-n]')].map((u) => [Number(u.dataset.n), u]));
+    saydamlar = new Set();
+  }
   const satirdakiYapilar = new Map();
   for (const o of katmanlar.nesneler) {
     if (!satirdakiYapilar.has(o.cizgi)) satirdakiYapilar.set(o.cizgi, []);

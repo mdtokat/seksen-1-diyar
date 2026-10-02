@@ -8,8 +8,10 @@
 import { KARO } from '../oyun/gezinti.js';
 import { KARO_BOYU } from './cizimler/karolar.js';
 
-const SALINIM_X = 6; // yiğitten bu kadar karo yakındaki ağaçlar salınır (görünen alan kadar)
-const SALINIM_Y = 8;
+const SALINIM_X = 8; // yiğitten bu kadar karo yakındaki ağaçlar salınır (görünen alandan geniş)
+const SALINIM_Y = 10;
+const SALINIM_ADIMI = 3; // salınan ağaçlar yiğit bu kadar karo uzaklaşınca yeniden seçilir
+const EN_COK_SALINAN = 30; // her salınan ağaç ayrı bir katmandır; ormanda en yakın bu kadarı salınır
 const DUMAN_X = 9; // bu kadar yakındaki bacalar tüter
 const DUMAN_Y = 11;
 const EN_COK_IZ = 16;
@@ -77,9 +79,17 @@ export function ortamKur({ ekran, harita, katmanlar, T, kamera, azHareket }) {
     figurler.appendChild(svg);
     return svg;
   }
+  // Her değişiklik büyük harita SVG'sini yeniden boyatır; bu yüzden küme her adımda değil,
+  // yiğit SALINIM_ADIMI karo uzaklaşınca yenilenir (alan, görünenden geniş tutulur).
+  let salinimMerkezi = null;
   function agaclariSalla() {
+    if (salinimMerkezi && Math.abs(salinimMerkezi.x - oyuncu.x) + Math.abs(salinimMerkezi.y - oyuncu.y) < SALINIM_ADIMI) return;
+    salinimMerkezi = { ...oyuncu };
+    const uzaklik = (o) => Math.hypot(o.x - oyuncu.x, (o.y - oyuncu.y) * 0.8);
     const yakin = new Set(agaclar
       .filter((o) => Math.abs(o.x - oyuncu.x) <= SALINIM_X && Math.abs(o.y - oyuncu.y) <= SALINIM_Y)
+      .sort((a, b) => uzaklik(a) - uzaklik(b))
+      .slice(0, EN_COK_SALINAN)
       .map((o) => o.n));
     for (const [n, el] of sallanan) {
       if (yakin.has(n)) continue;
@@ -239,6 +249,7 @@ export function ortamKur({ ekran, harita, katmanlar, T, kamera, azHareket }) {
       agacUse.get(n)?.forEach((u) => u.classList.remove('gizli'));
     }
     sallanan.clear();
+    salinimMerkezi = null;
     piriltiMerkezi = null;
     canliParcalar();
     dumanlariTuttur();

@@ -1884,7 +1884,6 @@ h3 {
   overflow: visible;
   pointer-events: none;
   transform-origin: 50% 82%;
-  will-change: transform;
   animation: ruzgar 3.4s ease-in-out infinite alternate;
   transition: opacity 0.25s;
 }
