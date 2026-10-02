@@ -86,6 +86,7 @@ function desenler(p) {
       <path d="M4 9 q3 -1.6 6 0 q3 1.6 6 0 M31 5 q2.5 -1.4 5 0 M22 21 q3 -1.6 6 0 q3 1.6 6 0 M44 30 q2.5 -1.4 5 0 q2.5 1.4 5 0 M7 37 q3 -1.6 6 0 M27 47 q3 -1.6 6 0 q3 1.6 6 0" fill="none" stroke="${acik(p.su, 0.4)}" stroke-width=".7" stroke-linecap="round" opacity=".7"/>
       <circle cx="20" cy="30" r=".5" fill="#fff" opacity=".7"/><circle cx="46" cy="40" r=".5" fill="#fff" opacity=".6"/>
     </pattern>
+    ${tarlaDeseni(p)}
     <pattern id="@meydan" width="16" height="16" patternUnits="userSpaceOnUse">
       <rect width="16" height="16" fill="${meydan}"/>
       <rect x=".5" y=".5" width="7" height="7" rx="1" fill="${acik(meydan, 0.25)}"/>
@@ -94,6 +95,25 @@ function desenler(p) {
       <rect x=".5" y="8.5" width="7" height="7" rx="1" fill="${koyu(meydan, 0.04)}"/>
       <path d="M0 8 h16 M8 0 v16" stroke="#c4b89e" stroke-width=".6"/>
     </pattern>`;
+}
+
+// Tarla desenleri (veri/yoresel.js → tarla): sıra sıra ekin. Her biri yatay (@tarla) ve
+// dikey (@tarlaD) sıralarla tanımlanır ki komşu tarlalar ayrı görünsün.
+const TARLALAR = {
+  bugday: { toprak: '#c9a24f', sira: (y) => `<path d="M0 ${y} h16" stroke="#e6c46a" stroke-width="2.4"/>${[1, 4, 7, 10, 13].map((x) => `<path d="M${x} ${y + 1} l.6 -2.6 M${x + 1.5} ${y + 1} l-.4 -2.4" stroke="#a8802f" stroke-width=".5"/>`).join('')}` },
+  pamuk: { toprak: '#8a6e4a', sira: (y) => `<path d="M0 ${y} h16" stroke="#6f8f45" stroke-width="2.6"/>${[2, 6.5, 10, 14].map((x) => `<circle cx="${x}" cy="${y - 0.4}" r="1" fill="#fbf8f0"/>`).join('')}` },
+  cay: { toprak: '#6b5038', sira: (y) => `<path d="M0 ${y + 1.6} h16" stroke="#4a3624" stroke-width=".8"/>${[0, 4, 8, 12, 16].map((x) => `<ellipse cx="${x}" cy="${y}" rx="2.4" ry="1.7" fill="#3f7a3a"/><ellipse cx="${x - 0.6}" cy="${y - 0.6}" rx="1.2" ry=".7" fill="#6fa85a"/>`).join('')}` },
+  bag: { toprak: '#b89a6a', sira: (y) => `<path d="M0 ${y} h16" stroke="#7a5a3a" stroke-width=".4"/>${[2, 8, 14].map((x) => `<path d="M${x} ${y + 0.8} v-2.4" stroke="#6e4a2a" stroke-width=".6"/><ellipse cx="${x}" cy="${y - 0.6}" rx="2.6" ry="1.5" fill="#6a8f3a"/><circle cx="${x + 1}" cy="${y + 0.3}" r=".6" fill="#6a3a7a"/>`).join('')}` },
+  aycicegi: { toprak: '#7a8a45', sira: (y) => `<path d="M0 ${y} h16" stroke="#5f7a35" stroke-width="2.2"/>${[2, 6, 10, 14].map((x) => `<circle cx="${x}" cy="${y - 0.4}" r="1.5" fill="#f2c218"/><circle cx="${x}" cy="${y - 0.4}" r=".65" fill="#6e4a2a"/>`).join('')}` },
+  gul: { toprak: '#8a7050', sira: (y) => `<path d="M0 ${y} h16" stroke="#557a3a" stroke-width="2.4"/>${[2, 5.5, 9, 12.5, 15].map((x, i) => `<circle cx="${x}" cy="${y - 0.4}" r=".85" fill="${i % 2 ? '#e07ab0' : '#c94f86'}"/>`).join('')}` },
+};
+
+function tarlaDeseni(p) {
+  if (!p.tarla) return '';
+  const t = TARLALAR[p.tarla];
+  const ic = `<rect width="16" height="16" fill="${t.toprak}"/>${t.sira(3)}${t.sira(11)}`;
+  return `<pattern id="@tarla" width="16" height="16" patternUnits="userSpaceOnUse">${ic}</pattern>
+    <pattern id="@tarlaD" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(90)">${ic}</pattern>`;
 }
 
 // ── Doğa ────────────────────────────────────────────────
@@ -108,7 +128,17 @@ const golge = (cx, cy, rx, ry = rx * 0.38, boy = 0) => {
   return `<ellipse cx="${gx}" cy="${gy}" rx="${s1(rx * 0.7 + boy * 0.42)}" ry="${s1(ry * 1.15)}" transform="rotate(22 ${gx} ${gy})" fill="${isilti(GOLGE)}" opacity=".36"/>${temas}`;
 };
 
-function agac(p, x, y) {
+// Meyve bahçesi ağaçları (veri/yoresel.js): yaprak rengi, meyve rengi, boy ve meyve sıklığı.
+const MEYVE_AGACLARI = {
+  kayisi: { yaprak: '#6f9a4a', meyve: '#f08a2a', boy: 0.95, cicek: true },
+  elma: { yaprak: '#5f8f42', meyve: '#d9483b', boy: 0.95 },
+  narenciye: { yaprak: '#2f6a36', meyve: '#f59a1b', boy: 0.85 },
+  fistik: { yaprak: '#8a9a5f', meyve: '#c2504a', boy: 0.8, salkim: true },
+};
+
+function agac(p, x, y, tur = p.agac) {
+  if (tur === 'findik') return findikOcagi(p, x, y);
+  if (MEYVE_AGACLARI[tur]) return meyveAgaci(MEYVE_AGACLARI[tur], x, y, p.agac === 'karli');
   const cx = x + T / 2;
   const alt = y + T - 2;
   const o = 1.12 + karma(x, y, 1) * 0.3; // boy farkı (ağaçlar yiğitten uzundur)
@@ -151,6 +181,46 @@ function agac(p, x, y) {
         <circle cx="-2" cy="-16.5" r="2.4" fill="#fff" opacity=".2"/>
         ${karma(x, y, 5) < 0.12 ? '<circle cx="2.5" cy="-12" r="1" fill="#d9483b"/><circle cx="-3" cy="-9.5" r="1" fill="#d9483b"/>' : ''}`);
   }
+}
+
+// Meyve ağacı: kısa gövde, yuvarlak ve sık taç, dallarda meyveler (kayısıda bir iki çiçek).
+// Karlı illerde (Malatya, Iğdır) meyve yerine bembeyaz çiçek açar.
+function meyveAgaci(m0, x, y, karli = false) {
+  const m = karli ? { ...m0, meyve: '#fff4f6', salkim: false, cicek: true } : m0;
+  const cx = x + T / 2;
+  const alt = y + T - 2;
+  const o = (1.02 + karma(x, y, 1) * 0.2) * m.boy;
+  const renk = karma(x, y, 2) < 0.5 ? m.yaprak : koyu(m.yaprak, 0.1);
+  const meyveler = Array.from({ length: 7 }, (_, i) => {
+    const a = karma(x, y, 50 + i) * Math.PI * 2;
+    const r = 3 + karma(x, y, 60 + i) * 4;
+    const mx = s1(Math.cos(a) * r);
+    const my = s1(-13 + Math.sin(a) * r * 0.75);
+    return m.salkim
+      ? `<circle cx="${mx}" cy="${my}" r=".75" fill="${m.meyve}"/><circle cx="${s1(mx + 0.9)}" cy="${s1(my + 0.5)}" r=".75" fill="${m.meyve}"/>`
+      : `<circle cx="${mx}" cy="${my}" r="1.05" fill="${kure(m.meyve)}"/>`;
+  }).join('');
+  const cicek = m.cicek ? `<circle cx="-4" cy="-17" r=".9" fill="#fff"/><circle cx="3.5" cy="-11" r=".8" fill="#fde2ea"/>` : '';
+  return golge(cx + 1, alt, 5, 2, 17 * o) + `<g transform="translate(${cx} ${alt}) scale(${s1(o * 100) / 100})">
+    <path d="M-1.3 0 Q-1.6 -4 -1 -7 L1 -7 Q1.4 -4 1.3 0 Z" fill="#6e5b45" ${INCE}/>
+    <path d="M-1 -6 L-4 -9 M1 -6.5 L3.5 -9.5" stroke="#6e5b45" stroke-width="1"/>
+    <ellipse cx="0" cy="-13" rx="8.4" ry="7" fill="${hacim(renk)}" ${CIZGI}/>
+    <ellipse cx="-3" cy="-15.5" rx="3.6" ry="2.4" fill="${acik(renk, 0.25)}" opacity=".7"/>
+    ${meyveler}${cicek}</g>`;
+}
+
+// Fındık ocağı: dipten çıkan çok gövdeli, alçak ve geniş bir çalı öbeği.
+function findikOcagi(p, x, y) {
+  const cx = x + T / 2;
+  const alt = y + T - 2;
+  const o = 0.95 + karma(x, y, 1) * 0.2;
+  const renk = karma(x, y, 2) < 0.5 ? '#4f7f3a' : '#5a8a40';
+  return golge(cx + 1, alt, 7, 2.4, 12 * o) + `<g transform="translate(${cx} ${alt}) scale(${s1(o * 100) / 100})">
+    <path d="M-3 0 L-4.5 -7 M-1 0 L-1.4 -8 M1 0 L1.6 -8 M3 0 L4.6 -7" stroke="#6e5b45" stroke-width="1"/>
+    <ellipse cx="-4" cy="-9" rx="4.6" ry="4" fill="${hacim(koyu(renk, 0.08))}" ${CIZGI}/>
+    <ellipse cx="4.2" cy="-9" rx="4.6" ry="4" fill="${hacim(koyu(renk, 0.12))}" ${CIZGI}/>
+    <ellipse cx="0" cy="-12" rx="5.4" ry="4.4" fill="${hacim(renk)}" ${CIZGI}/>
+    <circle cx="-2" cy="-10" r=".8" fill="#b08a4a"/><circle cx="2.5" cy="-12.5" r=".8" fill="#b08a4a"/><circle cx="5" cy="-8.5" r=".8" fill="#b08a4a"/></g>`;
 }
 
 // Ağaç rengine hafif ton farkı: kimi daha sarımsı, kimi daha koyu.
@@ -727,7 +797,8 @@ export function haritaKatmani(harita) {
 //        kalındığını bulmak ve yakındaki ağaçları rüzgârda sallamak için.
 //   bacalar: dumanı tüten bacaların ağızları (karo birimiyle).
 export function haritaKatmanlari(harita) {
-  const p = PALET[harita.bolge];
+  const yore = yoreselGorunum(harita.plaka, harita.bolge);
+  const p = { ...PALET[harita.bolge], tarla: yore.tarla };
   const { genislik: G, yukseklik: Y } = harita;
   const karo = (x, y) => (x < 0 || y < 0 || x >= G || y >= Y ? null : harita.karolar[y * G + x]);
   const YOLSU = new Set([KARO.YOL, KARO.KAPI]);
@@ -741,7 +812,22 @@ export function haritaKatmanlari(harita) {
   const nesneler = [];
   const bacalar = [];
   const isiklar = []; // gece yanan pencereler ve meşaleler (karo birimiyle)
-  const yore = yoreselGorunum(harita.plaka, harita.bolge);
+  // Tarlalar: haritayı 4×3 karoluk parsellere bölüp kimini ekine ayırır (meydandan uzakta).
+  // Oyunda çimen sayılır (yürünür); yalnız görünüşü değişir. Çay bahçeleri hep yatay
+  // sıralıdır (yamaçta teraslar).
+  const m0 = harita.meydan;
+  const tarlaYonu = (x, y) => {
+    if (!p.tarla) return null;
+    const px = Math.floor((x + harita.plaka) / 4);
+    const py = Math.floor((y + harita.plaka) / 3);
+    if (karma(px, py, 41) > 0.34) return null;
+    if (x >= m0.x1 - 3 && x <= m0.x2 + 3 && y >= m0.y1 - 3 && y <= m0.y2 + 3) return null;
+    return p.tarla === 'cay' || karma(px, py, 42) < 0.5 ? 'yatay' : 'dikey';
+  };
+  const tarlaKaro = (x, y, yon) => {
+    const t = karo(x, y);
+    return (t === KARO.CIM || t === KARO.YABANI) && tarlaYonu(x, y) === yon;
+  };
   // Yapıyı ekler. `taban`: yapının zemine değdiği satır (çizim sırası ona göre: arkadaki
   // önce). `uzun` verilirse yapı üst katmana da girer: { x0, x1, ust } birim cinsinden kutu.
   const yapiEkle = (cizim, x, taban, uzun = null) => {
@@ -761,6 +847,8 @@ export function haritaKatmanlari(harita) {
       const py = y * T;
       if (MEYDANLIK.has(t)) {
         meydanlar.push(kare(px, py));
+      } else if ((t === KARO.CIM || t === KARO.YABANI) && tarlaYonu(x, y)) {
+        // tarla: aşağıda tek parça çizilir
       } else if (t === KARO.CIM) {
         if (karma(x, y, 8) < 0.07) {
           const i = Math.floor(karma(x, y, 9) * ciceklar.length);
@@ -772,7 +860,12 @@ export function haritaKatmanlari(harita) {
         parcalar.push(yabani(p, px, py));
       }
       const meydanYapisi = { x0: px - 2, x1: px + T + 2, ust: py - 10 };
-      if (t === KARO.AGAC) yapiEkle(agac(p, px, py), x, y, p.agac === 'cali' ? null : { x0: px - 5, x1: px + T + 5, ust: py - 18, agac: true });
+      if (t === KARO.AGAC) {
+        // Bahçe ağaçları (kayısı, fındık, narenciye…) ilin yöresine göre karışır
+        const kenarda = x === 0 || y === 0 || x === G - 1 || y === Y - 1;
+        const tur = yore.agac && !kenarda && karma(x, y, 40) < yore.agac[1] ? yore.agac[0] : p.agac;
+        yapiEkle(agac(p, px, py, tur), x, y, tur === 'cali' ? null : { x0: px - 5, x1: px + T + 5, ust: py - 18, agac: true });
+      }
       else if (t === KARO.KAYA) yapiEkle(kaya(p, px, py), x, y, p.kaya === 'peri' ? { x0: px, x1: px + T, ust: py - 8 } : null);
       else if (t === KARO.CESME) yapiEkle(cesme(px, py), x, y);
       else if (t === KARO.TEZGAH) yapiEkle(tezgah(px, py), x, y);
@@ -828,11 +921,15 @@ export function haritaKatmanlari(harita) {
   };
   const yol = bolgeKonturu(yolUye, G, Y, { R: 6, pay: 1 });
   const kum = karistir(p.zemin, p.yol, 0.55);
+  const tarlalar = ['yatay', 'dikey'].map((yon) => bolgeKonturu((x, y) => tarlaKaro(x, y, yon), G, Y, { R: 2 }));
   const zemin = [
     `<rect width="${G * T}" height="${Y * T}" fill="url(#@cim)"/>`,
     [...lekeler].map(([renk, l]) => `<g fill="${isilti(renk)}" opacity=".7">${l.join('')}</g>`).join(''),
     `<rect width="${G * T}" height="${Y * T}" fill="url(#@cim2)"/>`,
     ciceklar.map((d, i) => (d.length ? `<path d="${d.join('')}" fill="${p.cicek[i]}"/>` : '')).join(''),
+    tarlalar.map((d, i) => (d ? `<path d="${d}" fill="none" stroke="${koyu(p.zemin, 0.3)}" stroke-width="2.2" opacity=".45"/>
+      <path d="${d}" fill="url(#${i ? '@tarlaD' : '@tarla'})"/>
+      <path d="${d}" fill="none" stroke="${acik(p.zemin, 0.2)}" stroke-width=".6" opacity=".6"/>` : '')).join(''),
     su ? `<clipPath id="@suKes"><path d="${su}"/></clipPath>
       <path d="${su}" fill="${kum}" stroke="${kum}" stroke-width="7" stroke-linejoin="round" opacity=".9"/>
       <path d="${su}" fill="none" stroke="${koyu(kum, 0.35)}" stroke-width="3.2" stroke-linejoin="round" opacity=".7"/>

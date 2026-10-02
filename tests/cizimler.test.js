@@ -327,3 +327,13 @@ describe('yoldaş çizimleri', () => {
     }
   });
 });
+
+describe('yöresel bahçe ve tarla', () => {
+  it('tarlası olan ilde tarla deseni, bahçesi olan ilde meyve ağacı çizilir', () => {
+    const konya = haritaKatmani(ilHaritasiUret(42));
+    expect(konya).toMatch(/id="[^"]*tarla"/);
+    const malatya = haritaKatmani(ilHaritasiUret(44));
+    expect(malatya).toContain('#fff4f6'); // karda çiçek açmış kayısılar
+    expect(haritaKatmani(ilHaritasiUret(64))).not.toMatch(/id="[^"]*tarla"/);
+  });
+});
