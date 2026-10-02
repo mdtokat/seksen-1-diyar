@@ -1,6 +1,6 @@
 // Karakter: stat hesapları, XP eğrisi, seviye atlama ve stat puanları.
 // Saf oyun mantığı — DOM'a dokunmaz.
-import { siniflar, STAT_PUANI_SEVIYE_BASI, STAT_PUANI_DEGERI, DAL_SEVIYESI } from '../veri/siniflar.js';
+import { siniflar, STAT_PUANI_SEVIYE_BASI, STAT_PUANI_DEGERI, DAL_SEVIYESI, YOLDAS_SEVIYESI } from '../veri/siniflar.js';
 import { esyaBilgisi } from './rota.js';
 
 export const STATLAR = ['can', 'nefes', 'guc', 'savunma', 'ceviklik'];
@@ -85,6 +85,11 @@ export function yemekBereketi(oyuncu) {
   const p = siniflar[oyuncu?.sinif]?.pasif;
   if (p?.tur !== 'yemek_bereketi') return 1;
   return 1 + (dalBilgisi(oyuncu)?.pasif?.yemek ?? p.yemek);
+}
+
+// Oyuncunun yoldaşı (YOLDAS_SEVIYESI'nde katılır) ya da null.
+export function yoldasBilgisi(oyuncu) {
+  return oyuncu?.seviye >= YOLDAS_SEVIYESI ? siniflar[oyuncu.sinif]?.yoldas ?? null : null;
 }
 
 // Oyuncu şimdi dal seçebilir mi (seviyesi yetti ve henüz seçmedi)?

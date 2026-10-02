@@ -423,3 +423,14 @@ export function yankesiciBedeni(renk) {
     <path d="M62.5 28.5 l5 1.4 M69 29.8 l4 -1.2" stroke="#2b2620" stroke-width="1.8"/>
   </g>`;
 }
+
+// Alperen'in yoldaşı mürit: sakalsız genç bir derviş; kısa külah, kahve hırka, elinde
+// su testisi. Yoldaş çizimi olarak küçük gösterilir (yoldaslar.js).
+export function muritIcerigi() {
+  return `${golge(24)}
+    ${govde({ kaftan: '#8a6a4a', kaftanKoyu: '#5e4632', kusak: '#5f8a4a', salvar: '#6e5b45', cizme: '#7b5236' })}
+    ${kol('M72 50 Q82 50 86 58 L82 64 Q78 58 73 60 Z', '#8a6a4a', [84, 60])}${TASINAN.testi}
+    ${bas({ sac: '#5b3a24', kas: '#5b3a24' })}
+    <path d="M50 27 Q50 9 60 6 Q70 9 70 27 Z" fill="${hacim('#e8dcc0')}"/>
+    <path d="M48.5 23.5 Q60 21 71.5 23.5 L71.5 28.5 Q60 26 48.5 28.5 Z" fill="${hacim('#5f8a4a')}"/>`;
+}

@@ -45,6 +45,15 @@
 //   ekHasar: { turler, carpan } → bu türlerdeki düşmanlara her vuruş bu çarpanla iner.
 export const DAL_SEVIYESI = 20;
 
+// Yoldaş (yoldas): bu seviyede her sınıfa bir yoldaş katılır; haritada yiğidin peşinden
+// gelir ve savaşta kendi bekleme süresiyle (düşman tıkı) yardım eder (catisma.js).
+//   eylem: 'vurus'  → yiğidin hedefine (yoksa en yakın saldırgana) `menzil` karo içinde vurur,
+//          'alan'   → yiğidin `menzil` karo çevresindeki bütün saldırganlara vurur,
+//          'sersem' → yiğidin `menzil` karo çevresindeki en yakın saldırgana vurur, `sersem` tık sersemletir,
+//          'sifa'   → savaşta yiğidin canını `can`, can yerindeyse nefesini `nefes` oranında yeniler.
+//   carpan: vuruşun yiğidin gücüne çarpanı, bekleme: iki yardım arası (tık), ucar: haritada uçar.
+export const YOLDAS_SEVIYESI = 8;
+
 export const STAT_PUANI_SEVIYE_BASI = 3;
 
 // Dağıtılan bir stat puanının statı ne kadar artırdığı.
@@ -61,6 +70,7 @@ export const siniflar = {
       serdengecti: { ad: 'Serdengeçti', ikon: '🔥', tarif: 'Gözünü budaktan sakınmayan öncü; yalnızca saldırmayı bilir.', statlar: { guc: 0.15 }, kritikSansi: 0.05, pasif: { guc: 0.35 } },
       sipahi: { ad: 'Sipahi', ikon: '🛡️', tarif: 'Zırhlı atlı; dayanıklılığıyla cepheyi tutar, kolay kolay sarsılmaz.', statlar: { savunma: 0.2, can: 0.1 }, korunma: 0.15 },
     },
+    yoldas: { anahtar: 'at', ad: 'Kırat', tur: 'At', eylem: 'alan', menzil: 1, carpan: 0.45, bekleme: 12, tarif: 'Akıncının sadık atı; yiğidin yanı başına sokulan düşmanlara çifte atar.' },
     pasif: { anahtar: 'gozu_pek', ad: 'Gözü Pek', tur: 'can_esigi', esik: 0.35, guc: 0.2, aciklama: 'Canı %35\'in altına düşünce yılmaz, daha da hırslanır: gücü %20 artar.' },
     baslangic: { can: 120, nefes: 30, guc: 12, savunma: 10, ceviklik: 6 },
     seviyeArtisi: { can: 12, nefes: 3, guc: 2, savunma: 2, ceviklik: 1 },
@@ -84,6 +94,7 @@ export const siniflar = {
       nisanci: { ad: 'Nişancı', ikon: '🎯', tarif: 'Tek oku tek düşmana; uzaktan, sessiz ve ölümcül.', statlar: { ceviklik: 0.1 }, kritikHasari: 0.25, pasif: { hasar: 0.3 } },
       avci: { ad: 'Avcı', ikon: '🐺', tarif: 'Sürülerle boğuşmaya alışık dağ avcısı; okları kalabalığa yağar.', statlar: { can: 0.1 }, alanCarpani: 0.3, ekHasar: { turler: ['hayvan'], carpan: 1.25 } },
     },
+    yoldas: { anahtar: 'dogan', ad: 'Tuğrul', tur: 'Doğan', eylem: 'vurus', menzil: 6, carpan: 0.7, bekleme: 14, ucar: true, tarif: 'Gökten süzülen doğan; altı karo içindeki hedefe pençeleriyle dalar.' },
     pasif: { anahtar: 'uzak_nisan', ad: 'Uzak Nişan', tur: 'uzak_nisan', uzaklik: 3, hasar: 0.15, aciklama: 'Üç karo ve daha uzaktaki düşmana attığı oklar %15 daha ağır iner.' },
     baslangic: { can: 90, nefes: 40, guc: 11, savunma: 6, ceviklik: 12 },
     seviyeArtisi: { can: 11, nefes: 4, guc: 2, savunma: 1, ceviklik: 2 },
@@ -107,6 +118,7 @@ export const siniflar = {
       dervis: { ad: 'Derviş', ikon: '🌿', tarif: 'Gönül ehli bir yolcu; sabrı ve sükûnetiyle dayanır, çabuk toparlanır.', statlar: { nefes: 0.2 }, sifaCarpani: 0.3, pasif: { nefes: 0.18 } },
       gazi: { ad: 'Gazi', ikon: '⚔️', tarif: 'Asasını silah gibi kullanan yiğit; zalim cinlerin ve ifritlerin korkulu rüyası.', statlar: { guc: 0.15, savunma: 0.1 }, ekHasar: { turler: ['cin', 'ifrit'], carpan: 1.2 } },
     },
+    yoldas: { anahtar: 'murit', ad: 'Kemal', tur: 'Mürit', eylem: 'sifa', can: 0.05, nefes: 0.08, bekleme: 18, tarif: 'Genç bir mürit; savaşta yiğidin yarasını sarar, yorulunca su verir.' },
     pasif: { anahtar: 'gonul_gucu', ad: 'Gönül Gücü', tur: 'zafer_nefesi', nefes: 0.1, aciklama: 'Yendiği her düşmanla gönlü ferahlar; nefesinin %10\'u yenilenir.' },
     baslangic: { can: 85, nefes: 70, guc: 9, savunma: 7, ceviklik: 8 },
     seviyeArtisi: { can: 8, nefes: 7, guc: 2, savunma: 1, ceviklik: 1 },
@@ -131,6 +143,7 @@ export const siniflar = {
       sapanci: { ad: 'Sapancı', ikon: '🪨', tarif: 'Taşı kıl payı şaşmaz; Bacıyân\'ın en keskin gözlüsü.', statlar: { guc: 0.1, ceviklik: 0.1 }, kritikHasari: 0.2 },
       sifaci: { ad: 'Şifacı', ikon: '🌼', tarif: 'Otları, merhemleri, şifalı aşları bilir; kendine de yoldaşına da derman olur.', statlar: { can: 0.15 }, sifaCarpani: 0.3, pasif: { yemek: 0.6 } },
     },
+    yoldas: { anahtar: 'kangal', ad: 'Karabaş', tur: 'Kangal', eylem: 'sersem', menzil: 1, carpan: 0.5, sersem: 3, bekleme: 12, tarif: 'Sivas kangalı; Bacıya sokulan düşmanı ısırıp bir an yerine çakar.' },
     pasif: { anahtar: 'bereket', ad: 'Bereket', tur: 'yemek_bereketi', yemek: 0.3, aciklama: 'Ahi ocağında yetişmiştir; yediği her yemek %30 daha çok yeniler.' },
     baslangic: { can: 100, nefes: 50, guc: 10, savunma: 8, ceviklik: 10 },
     seviyeArtisi: { can: 10, nefes: 5, guc: 2, savunma: 1, ceviklik: 2 },

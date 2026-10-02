@@ -17,8 +17,12 @@
 // Gezinti kaydındaki düşmanların çatışma alanları: bekleme (vuruşa kalan tık), kizgin
 // (oyuncu ona vurdu), vurdu (oyuncuya en az bir kez isabet ettirdi), sersem (yürüyemeyeceği
 // ve vuramayacağı tık sayısı).
-import { dusmanMenzili, oyuncuHamlesi, yetenekBul, sersemSuresi, pasifOzellik, savasci, dusmanHamlesi, dusmanToparlan, TOPLU_HASAR_CARPANI, EN_COK_SALDIRGAN } from './savas.js';
+import { dusmanMenzili, oyuncuHamlesi, yetenekBul, sersemSuresi, pasifOzellik, savasci, yoldasVurusu, dusmanHamlesi, dusmanToparlan, TOPLU_HASAR_CARPANI, EN_COK_SALDIRGAN } from './savas.js';
 import { menzildeMi, meydandaMi, mesafe, yolBul } from './gezinti.js';
+import { yoldasBilgisi } from './karakter.js';
+
+// Gezintinin (ve savaşın) bir tıkının süresi (ms): oyuncu bir karo yürür, düşmanlar bir tık oynar.
+export const TIK_MS = 170;
 
 // Tık cinsinden: iki vuruş arası (oyuncu ve düşman) ve menzile yeni giren düşmanın hazırlığı.
 export const BEKLEME = { oyuncu: 5, dusman: 6, hazirlik: 2 };
@@ -160,6 +164,64 @@ export function dusmanlariToparla(dusmanlar, oyuncu) {
     return { ...d, dusman: t, kizgin: false, vurdu: false };
   });
   return degisti ? sonuc : dusmanlar;
+}
+
+// Yoldaşın savaşta yardımı (her düşman tıkında bir kez çağrılır). `bekleme`: bir sonraki
+// yardıma kalan tık. Yoldaş yalnızca saldırgan düşmanlara ya da yiğidin seçtiği hedefe
+// (`hedefId`) dokunur; `guvende` (meydan, dokunulmazlık) iken bir şey yapmaz. Yapacak bir şey
+// bulamazsa hazır bekler (bekleme 0 kalır). Vurduğu düşman kızar; düşenler `dusenler`de döner.
+// Mürit can (yoksa nefes) yeniler, ama yalnızca yakında (6 karo) saldırgan varken.
+// Sonuç: { durum, dusmanlar, bekleme, olaylar ([{ tip: 'yoldas', id?, hasar | miktar … }]), dusenler }.
+export const YOLDAS_SAVAS_UZAKLIGI = 6;
+export function yoldasHamlesi(durum, dusmanlar, oyuncu, rng, { bekleme = 0, hedefId = null, guvende = false, vurulamaz = () => false } = {}) {
+  const y = yoldasBilgisi(durum.oyuncu);
+  const sonuc = { durum, dusmanlar, bekleme: Math.max(0, bekleme - 1), olaylar: [], dusenler: [] };
+  if (!y || bekleme > 0 || guvende || durum.oyuncu.can <= 0) return sonuc;
+  const uygun = dusmanlar.filter((d) => !vurulamaz(d) && d.dusman.can > 0 && (saldirganMi(d) || d.id === hedefId));
+  const yakin = (menzil) => uygun.filter((d) => mesafe(d, oyuncu) <= menzil).sort((a, b) => mesafe(a, oyuncu) - mesafe(b, oyuncu));
+
+  if (y.eylem === 'sifa') {
+    if (!yakin(YOLDAS_SAVAS_UZAKLIGI).length) return sonuc;
+    const s = savasci(durum);
+    let yenilenen = null;
+    if (s.can < s.canEnCok * 0.9) yenilenen = 'can';
+    else if (s.nefes < s.nefesEnCok * 0.7) yenilenen = 'nefes';
+    if (!yenilenen) return sonuc;
+    const enCok = yenilenen === 'can' ? s.canEnCok : s.nefesEnCok;
+    const miktar = Math.min(enCok - s[yenilenen], Math.round(enCok * y[yenilenen]));
+    return {
+      ...sonuc,
+      bekleme: y.bekleme,
+      durum: { ...durum, oyuncu: { ...durum.oyuncu, [yenilenen]: s[yenilenen] + miktar } },
+      olaylar: [{ tip: 'yoldas', kim: 'yoldas', etki: 'sifa', yenilenen, miktar }],
+    };
+  }
+
+  let hedefler = [];
+  if (y.eylem === 'alan') hedefler = yakin(y.menzil);
+  else {
+    const secili = uygun.find((d) => d.id === hedefId && mesafe(d, oyuncu) <= y.menzil);
+    const ilk = secili ?? yakin(y.menzil)[0];
+    hedefler = ilk ? [ilk] : [];
+  }
+  if (!hedefler.length) return sonuc;
+
+  const yeniler = new Map();
+  const olaylar = [];
+  for (const kayit of hedefler) {
+    const r = yoldasVurusu(durum, kayit.dusman, rng, { carpan: y.carpan, sersem: y.sersem ?? 0 });
+    olaylar.push({ ...r.olay, id: kayit.id });
+    const sersem = Math.max(kayit.sersem ?? 0, r.olay.sersem ?? 0);
+    yeniler.set(kayit.id, { ...kayit, dusman: r.hedef, kizgin: true, kovaliyor: !kayit.sabit, ...(sersem ? { sersem } : {}) });
+  }
+  const dusenler = [...yeniler.values()].filter((k) => k.dusman.can <= 0);
+  return {
+    ...sonuc,
+    bekleme: y.bekleme,
+    olaylar,
+    dusenler,
+    dusmanlar: dusmanlar.filter((k) => !dusenler.some((x) => x.id === k.id)).map((k) => yeniler.get(k.id) ?? k),
+  };
 }
 
 // Atılma (Akın Hamlesi): yiğidin hedefin yanına atılacağı karo. Hedefe en kısa yolun son

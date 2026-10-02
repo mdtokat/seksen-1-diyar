@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { sinifCizimi, oyuncuCizimi, ekipmanGorunumu, SINIF_CIZIMLERI, halkCizimi, tuccarCizimi } from '../src/arayuz/cizimler/karakterler.js';
 import { karistir, acik, koyu, renkFarki, svgSar, hacim } from '../src/arayuz/cizimler/ortak.js';
 import { esyalar } from '../src/veri/esyalar.js';
+import { yoldasCizimi, YOLDAS_CIZIMLERI } from '../src/arayuz/cizimler/yoldaslar.js';
 import { haritaKatmani } from '../src/arayuz/cizimler/karolar.js';
 import { ilHaritasiUret } from '../src/oyun/gezinti.js';
 import { dusmanCizimi, DUSMAN_CIZIMLERI } from '../src/arayuz/cizimler/dusmanlar.js';
@@ -242,6 +243,20 @@ describe('kuşanılan eşyalar figürde görünür', () => {
       expect(sinifCizimi(s), s).not.toContain(EFSANE_HALESI);
       expect(sinifCizimi(s, { ekipman: tum('nadir') }), s).not.toContain(EFSANE_HALESI);
       expect(sinifCizimi(s, { ekipman: { zirh: { nadirlik: 'efsanevi', renk: '#d4a537' } } }), s).toContain(EFSANE_HALESI);
+    }
+  });
+});
+
+describe('yoldaş çizimleri', () => {
+  it('her sınıfın yoldaşının emojisiz, boyaları çözülmüş bir çizimi var', () => {
+    const anahtarlar = Object.values(siniflar).map((s) => s.yoldas.anahtar);
+    expect([...YOLDAS_CIZIMLERI].sort()).toEqual([...anahtarlar].sort());
+    for (const a of anahtarlar) {
+      const svg = yoldasCizimi(a);
+      expect(svg, a).toMatch(/^<svg[^>]*viewBox="0 0 120 120"/);
+      expect(svg, a).not.toMatch(EMOJI);
+      expect(svg, a).not.toMatch(/undefined|NaN/);
+      boyalarCozulmus(svg, a);
     }
   });
 });

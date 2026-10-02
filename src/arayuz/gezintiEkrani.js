@@ -18,11 +18,11 @@ import { bolgeler } from '../veri/bolgeler.js';
 import { metinler } from '../veri/metinler.js';
 import { arinmaYuzdesi, seyahatKontrol, bolgeAcikMi, bossDurumu, bossKosullari, finalDurumu, finalKosullari, finalOnkosulBolgesi } from '../oyun/ilerleme.js';
 import { dusmanlar as dusmanVerisi } from '../veri/dusmanlar.js';
-import { siniflar, DAL_SEVIYESI } from '../veri/siniflar.js';
+import { siniflar, DAL_SEVIYESI, YOLDAS_SEVIYESI } from '../veri/siniflar.js';
 import { yemekler } from '../veri/yemekler.js';
 import { gorevler as gorevVerisi } from '../veri/gorevler.js';
 import { sesAcikMi, sesAyarla, sesCal } from './ses.js';
-import { statlar, dalSecebilirMi } from '../oyun/karakter.js';
+import { statlar, dalSecebilirMi, yoldasBilgisi } from '../oyun/karakter.js';
 import {
   yurunurMu,
   yolBul,
@@ -44,7 +44,8 @@ import {
   ozelDusmanlariGuncelle,
 } from '../oyun/gezinti.js';
 import { eylemKontrol, eylemMenzili, yetenekBul, dusmanMenzili, canEsigiEtkinMi, pasifOzellik } from '../oyun/savas.js';
-import { BEKLEME, hedefBul, oyuncuVurur, dusmanlarVurur, dusmanlariToparla, atilmaYeri, saldirganMi } from '../oyun/catisma.js';
+import { BEKLEME, hedefBul, oyuncuVurur, dusmanlarVurur, dusmanlariToparla, atilmaYeri, saldirganMi, yoldasHamlesi, TIK_MS } from '../oyun/catisma.js';
+import { yoldasCizimi } from './cizimler/yoldaslar.js';
 import { zaferUygula, yenilgiUygula, yankesiciCalmasi } from '../oyun/kesif.js';
 import { kisayolEylemi, bosKisayollar } from '../oyun/kisayollar.js';
 import { yankesiciBelir, yankesicileriCek } from '../oyun/yankesici.js';
@@ -65,7 +66,7 @@ const ilHaritasi = new Map(iller.map((il) => [il.plaka, il]));
 const bolgeHaritasi = new Map(bolgeler.map((b) => [b.anahtar, b]));
 const IL_ADLARI = Object.fromEntries(iller.map((il) => [il.plaka, kacis(il.ad)]));
 
-const ADIM_MS = 170; // oyuncunun bir karo yürüme süresi
+const ADIM_MS = TIK_MS; // oyuncunun bir karo yürüme süresi
 const DUSMAN_MS = ADIM_MS; // düşman tıkı: hızları gezinti.js → DAVRANIS'ta tık başına verilir
 const TAKIP_UYARI_ARALIGI = 4000; // "peşine takıldı" bildirimleri arasındaki en az süre (ms)
 const MERMI_HIZI = 45; // uzaktan vuruşun bir karo yol alma süresi (ms)
@@ -205,6 +206,12 @@ export function gezintiEkrani(kap, depo, secenekler) {
   oyuncuFiguru.className = 'harita-figuru oyuncu-figuru';
   oyuncuFiguru.innerHTML = `<div class="figur-ic">${oyuncuCizimi(depo.al().oyuncu)}</div>`;
   figurKatmani.appendChild(oyuncuFiguru);
+  // Yoldaş (Sv 8'de katılır): yiğidin bir adım ardından gelir; doğan omzunun üstünde uçar
+  const yoldasFiguru = document.createElement('div');
+  yoldasFiguru.className = 'harita-figuru yoldas-figuru';
+  yoldasFiguru.hidden = true;
+  figurKatmani.appendChild(yoldasFiguru);
+  let yoldasAnahtari = null;
   const dusmanFigurleri = new Map();
   const halkFigurleri = new Map();
   let sonTakipUyarisi = -Infinity;
@@ -241,7 +248,9 @@ export function gezintiEkrani(kap, depo, secenekler) {
   // Figür karosunun ortasına, ayakları karonun altına gelecek biçimde yerleşir.
   // Boss ve mini boss figürleri daha büyüktür.
   function figurKonumla(el, x, y) {
-    const boy = el.classList.contains('ozel-figur') ? 2.2 : 1.6;
+    let boy = 1.6;
+    if (el.classList.contains('ozel-figur')) boy = 2.2;
+    else if (el.classList.contains('yoldas-figuru')) boy = 1.15;
     el.style.transform = `translate3d(${(x + 0.5 - boy / 2) * T}px, ${(y + 0.85 - boy) * T}px, 0)`;
     el.style.zIndex = String(10 + y); // aşağıdaki figür öndekidir
   }
@@ -365,6 +374,26 @@ export function gezintiEkrani(kap, depo, secenekler) {
     oyuncuFiguru.classList.toggle('sola', g.yon === -1);
     oyuncuFiguru.classList.toggle('dokunulmaz', g.dokunulmaz > 0);
     figurKonumla(oyuncuFiguru, g.oyuncu.x, g.oyuncu.y);
+    yoldasiCiz();
+  }
+
+  // Yoldaşın figürü: yiğidin bir önceki karosunda (uzak kaldıysa yanına gelir); uçan yoldaş
+  // yiğidin üstünde süzülür.
+  function yoldasiCiz() {
+    const y = yoldasBilgisi(depo.al().oyuncu);
+    yoldasFiguru.hidden = !y;
+    if (!y) return;
+    if (yoldasAnahtari !== y.anahtar) {
+      yoldasAnahtari = y.anahtar;
+      yoldasFiguru.innerHTML = `<div class="figur-ic">${yoldasCizimi(y.anahtar)}</div>`;
+      yoldasFiguru.classList.toggle('yoldas-ucan', Boolean(y.ucar));
+      yoldasFiguru.title = `${y.ad} (${y.tur})`;
+    }
+    if (!g.yoldasYeri || mesafe(g.yoldasYeri, g.oyuncu) > 2) g.yoldasYeri = { ...g.oyuncu };
+    yoldasFiguru.classList.toggle('sola', g.yon === -1);
+    if (y.ucar) return figurKonumla(yoldasFiguru, g.oyuncu.x + 0.45 * (g.yon || 1), g.oyuncu.y - 0.9);
+    const ayni = g.yoldasYeri.x === g.oyuncu.x && g.yoldasYeri.y === g.oyuncu.y;
+    figurKonumla(yoldasFiguru, g.yoldasYeri.x - (ayni ? 0.6 * (g.yon || 1) : 0), g.yoldasYeri.y);
   }
 
   // ── Kamera ──
@@ -824,6 +853,11 @@ export function gezintiEkrani(kap, depo, secenekler) {
       titret(oyuncuFiguru, 'parilti', 1200);
       bildirimGoster(ekran, sablon(S.sonuc.seviyeAtladin, { seviye: o.seviyeler.at(-1) }), { tur: 'kutlama', sure: 3500 });
       for (const y of o.yeniYetenekler) bildirimGoster(ekran, sablon(S.sonuc.yeniYetenek, { yetenek: y.ad }), { tur: 'kutlama', sure: 3500 });
+      if (o.seviyeler.includes(YOLDAS_SEVIYESI)) {
+        const y = yoldasBilgisi(depo.al().oyuncu);
+        if (y) bildirimGoster(ekran, sablon(S.sonuc.yoldasKatildi, { ad: y.ad, tur: y.tur }), { tur: 'kutlama', sure: 4500 });
+        yoldasiCiz();
+      }
       if (dalSecebilirMi(depo.al().oyuncu) && o.seviyeler.includes(DAL_SEVIYESI)) {
         bildirimGoster(ekran, S.sonuc.dalSecebilirsin, { tur: 'kutlama', sure: 4500 });
       }
@@ -1013,6 +1047,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
       }
       return false;
     }
+    g.yoldasYeri = { ...g.oyuncu };
     g.oyuncu = hedef;
     if (g.dokunulmaz > 0) g.dokunulmaz--;
     oyuncuFiguru.classList.add('yuruyor');
@@ -1092,10 +1127,48 @@ export function gezintiEkrani(kap, depo, secenekler) {
       for (const { id, olay } of r.olaylar) dusmanOlayiniGoster(g.dusmanlar.find((d) => d.id === id), olay);
       karsiKoy(r.olaylar.map(({ id }) => g.dusmanlar.find((d) => d.id === id)));
     }
+    if (!r.bayildi) yoldasTuru(guvende);
+    if (mesgul) return;
     g.halk = halkiYurut(harita, g.halk, g.oyuncu, g.dusmanlar, rng);
     dusmanlariCiz();
     halkiCiz();
     if (r.bayildi) bayil(g.dusmanlar.filter((d) => yankesiciMi(d) && d.vurdu).length);
+  }
+
+  // Yoldaşın tıkı: beklemesi dolduysa yardım eder (vurur, sersemletir ya da iyileştirir).
+  function yoldasTuru(guvende) {
+    if (!yoldasBilgisi(depo.al().oyuncu)) return;
+    const r = yoldasHamlesi(depo.al(), g.dusmanlar, g.oyuncu, rng, {
+      bekleme: g.yoldasBekleme ?? 0, hedefId: g.hedefId, guvende, vurulamaz: muhurluMu,
+    });
+    g.yoldasBekleme = r.bekleme;
+    if (!r.olaylar.length) return;
+    const onceki = g.dusmanlar;
+    g.dusmanlar = r.dusmanlar;
+    depo.ayarla(r.durum);
+    for (const olay of r.olaylar) {
+      if (olay.etki === 'sifa') {
+        sesCal('yemek');
+        titret(yoldasFiguru, 'parilti', 600);
+        yaziUcur(oyuncuFiguru, `+${olay.miktar}`, olay.yenilenen === 'nefes' ? 'nefes' : 'sifa');
+        continue;
+      }
+      const kayit = onceki.find((d) => d.id === olay.id);
+      const el = dusmanFigurleri.get(olay.id);
+      if (!kayit || !el) continue;
+      hamleEt(yoldasFiguru, g.yoldasYeri ?? g.oyuncu, kayit);
+      if (olay.kacindi) {
+        yaziUcur(el, S.sahne.siyrildi, 'bilgi');
+        continue;
+      }
+      sesCal('vurus');
+      vurusGoster(el);
+      titret(el, 'vuruldu', 420);
+      yaziUcur(el, `-${olay.hasar}`, 'hasar');
+      if (olay.sersem) yaziUcur(el, S.sahne.sersem, 'bilgi');
+      if (olay.evre) oyuncuOlayiniGoster(olay.evre, r.dusmanlar.find((d) => d.id === olay.id) ?? kayit);
+    }
+    for (const dusen of r.dusenler) dusmanYenildi(dusen);
   }
 
   // Vurulan yiğit karşılık verir: hedefi yoksa kendisine vuranların en yakınını hedef alır;

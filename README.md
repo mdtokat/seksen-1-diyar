@@ -58,6 +58,11 @@ Savaş ayrı bir ekranda değil, **il haritasında, gerçek zamanlı** geçer.
 
 ### Seviye ve ekipman
 - Her seviyede statların kendiliğinden artar ve **3 stat puanı** dağıtırsın (👤 karakter ekranı). Yeni yetenekler 5, 12, 20, 32, 38 ve 45. seviyelerde açılır. Son ikisi her sınıfın ustalık yetenekleridir: Akıncı'da *Kalkan Savuruşu* (çevresini vurup sersemletir) ve *Akın Coşkusu* (vurdukça can kazandırır), Kemankeş'te *Yaylım Ateşi* (iki karo çevreye ok yağdırır) ve *Delici Ok* (zırhı deler), Alperen'de *Işık Çemberi* (iki karo çevresine ışık yayar) ve *Çınar Sükûneti* (korunur ve canını yeniler).
+- **Yoldaş (Sv 8):** her sınıfa bir yoldaş katılır; haritada yiğidin bir adım ardından gelir ve savaşta kendi aralığıyla yardım eder. Yalnızca sana saldıranlara ya da hedef aldığın düşmana dokunur; meydanda bir şey yapmaz. Karakter ekranında ne yaptığı ve ne sıklıkla yardım ettiği yazar.
+  - Akıncı: **Kırat** (at) yanı başındaki bütün saldırganlara çifte atar.
+  - Kemankeş: **Tuğrul** (doğan) omzunun üstünde süzülür; altı karo içindeki hedefine dalar.
+  - Alperen: **Kemal** (mürit) savaşta yaranı sarar, canın yerindeyse su verip nefesini yeniler.
+  - Bacı: **Karabaş** (kangal) yanına sokulan düşmanı ısırıp bir an sersemletir.
 - **Uzmanlık (Sv 20):** her sınıf iki yoldan birini seçer; seçim kalıcıdır. Seçilmemiş uzmanlık, dağıtılmamış stat puanı gibi karakter düğmesinde işaretlenir.
   - Akıncı: **Serdengeçti** (güç +%15, kritik şansı +%5, Gözü Pek %35) ya da **Sipahi** (savunma +%20, can +%10, korunma yetenekleri %15 daha çok korur).
   - Kemankeş: **Nişancı** (çeviklik +%10, kritik hasarı +0,25, Uzak Nişan %30) ya da **Avcı** (can +%10, alan vuruşları çevredekilere %30 daha ağır, hayvanlara %25 fazla hasar).
