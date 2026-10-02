@@ -55,6 +55,7 @@ import { yuvaDugmeleri } from './kisayolYuvalari.js';
 import { kartliZaferMi, zaferKartiHtml } from './zaferKarti.js';
 import { karakterDugmesiniCiz } from './karakterDugmesi.js';
 import { haritaKatmanlari, kapiKatmani, KARO_BOYU } from './cizimler/karolar.js';
+import { ortamKur } from './ortam.js';
 import { oyuncuCizimi, halkCizimi, tuccarCizimi } from './cizimler/karakterler.js';
 import { dusmanCizimi } from './cizimler/dusmanlar.js';
 import { verenIsareti } from '../oyun/gorevler.js';
@@ -207,6 +208,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
   let tutulanYon = null; // basılı tutulan yön tuşu
   let mesgul = false; // başka ile geçerken, bayılınca ya da zafer kartı açıkken oyun durur
   let yuruyorZaman = null;
+  let ortam = null; // haritanın kıpırtısı (ortam.js); ekran kurulunca başlar
   const zamanlayicilar = [];
 
   // ── Figürler ──
@@ -385,6 +387,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     figurKonumla(oyuncuFiguru, g.oyuncu.x, g.oyuncu.y);
     yoldasiCiz();
     ortuleniSaydamla();
+    ortam?.konum(g.oyuncu);
   }
 
   // ── Derinlik ──
@@ -445,7 +448,9 @@ export function gezintiEkrani(kap, depo, secenekler) {
     const x = sinirla((g.oyuncu.x + 0.5) * T - r.width / 2, dunyaG, r.width);
     const y = sinirla((g.oyuncu.y + 0.5) * T - r.height / 2, dunyaY, r.height);
     dunya.style.transform = `translate3d(${-x}px, ${-y}px, 0)`;
+    kameraKutusu = { x, y, w: r.width, h: r.height };
   }
+  let kameraKutusu = { x: 0, y: 0, w: 0, h: 0 };
 
   function boyutla() {
     const r = alan.getBoundingClientRect();
@@ -454,6 +459,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
     dunya.style.height = `${YUKSEKLIK * T}px`;
     ekran.style.setProperty('--karo', `${T}px`);
     dunya.classList.add('anlik');
+    ortam?.yenile();
     oyuncuyuCiz();
     dusmanlariCiz();
     halkiCiz();
@@ -1087,6 +1093,7 @@ export function gezintiEkrani(kap, depo, secenekler) {
       return false;
     }
     g.yoldasYeri = { ...g.oyuncu };
+    ortam?.adim(g.oyuncu, hedef);
     g.oyuncu = hedef;
     if (g.dokunulmaz > 0) g.dokunulmaz--;
     oyuncuFiguru.classList.add('yuruyor');
@@ -1366,12 +1373,14 @@ export function gezintiEkrani(kap, depo, secenekler) {
   }
   const aboneliktenCik = depo.abone(ustCubuguCiz);
   ustCubuguCiz(depo.al());
+  ortam = ortamKur({ ekran, harita, katmanlar, T: () => T, kamera: () => kameraKutusu, azHareket });
   const gozlemci = new ResizeObserver(boyutla);
   gozlemci.observe(alan);
   boyutla();
   zamanlayicilar.push(setInterval(adim, ADIM_MS), setInterval(dusmanTuru, DUSMAN_MS));
 
   return () => {
+    ortam.kapat();
     zamanlayicilar.forEach(clearInterval);
     clearTimeout(yuruyorZaman);
     gozlemci.disconnect();

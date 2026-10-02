@@ -1870,6 +1870,295 @@ h3 {
   overflow: hidden;
 }
 
+/* ── Kıpırdayan ortam (ortam.js) ── */
+/* Yiğidin yakınındaki ağaçlar rüzgârda salınır (alt ve üst katmandaki eşi birlikte). */
+use.agac.sallan {
+  animation: ruzgar 3.4s ease-in-out infinite alternate;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+@keyframes ruzgar {
+  from { transform: skewX(-1.8deg); }
+  to { transform: skewX(1.6deg); }
+}
+
+/* Su yüzündeki dalgacıklar ağır ağır kayar; çeşmenin suyu akar, yalakta halka yayılır. */
+.karo-katmani .dalga {
+  animation: dalga 7s ease-in-out infinite alternate;
+}
+
+@keyframes dalga {
+  to { transform: translate(6px, 2px); }
+}
+
+.akan-su {
+  animation: akan-su 0.5s linear infinite;
+}
+
+@keyframes akan-su {
+  to { stroke-dashoffset: -2; }
+}
+
+.su-halkasi {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: su-halkasi 1.3s ease-out infinite;
+}
+
+@keyframes su-halkasi {
+  from { transform: scale(0.4); opacity: 1; }
+  to { transform: scale(1.5); opacity: 0; }
+}
+
+/* Meşale, demirci ocağı ve kale pencereleri titreşir. */
+.mesale,
+.ocak {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: titresim 1.6s steps(1) infinite;
+}
+
+.alev {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: alev 0.45s ease-in-out infinite alternate;
+}
+
+@keyframes titresim {
+  0% { opacity: 0.85; transform: scale(1); }
+  15% { opacity: 1; transform: scale(1.08); }
+  35% { opacity: 0.75; transform: scale(0.95); }
+  55% { opacity: 0.95; transform: scale(1.04); }
+  75% { opacity: 0.8; transform: scale(0.98); }
+}
+
+@keyframes alev {
+  from { transform: scaleY(0.8) skewX(-4deg); }
+  to { transform: scaleY(1.15) skewX(4deg); }
+}
+
+/* Bacadan tüten duman: üç bulutçuk sırayla yükselip dağılır, rüzgârla sağa kayar. */
+.duman-kaynagi {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.duman-kaynagi i {
+  position: absolute;
+  left: calc(var(--karo, 36px) * -0.18);
+  top: calc(var(--karo, 36px) * -0.18);
+  width: calc(var(--karo, 36px) * 0.36);
+  height: calc(var(--karo, 36px) * 0.36);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(222 220 216 / 0.95), rgb(200 198 196 / 0.6) 40%, rgb(200 198 196 / 0) 70%);
+  opacity: 0;
+  animation: duman 3.9s ease-out infinite;
+  animation-delay: var(--d, 0s);
+}
+
+.duman-kaynagi i:nth-child(2) { animation-delay: calc(var(--d, 0s) - 1.3s); }
+.duman-kaynagi i:nth-child(3) { animation-delay: calc(var(--d, 0s) - 2.6s); }
+
+@keyframes duman {
+  0% { transform: translate(0, 0) scale(0.4); opacity: 0; }
+  15% { opacity: 0.85; }
+  100% { transform: translate(calc(var(--karo, 36px) * 0.7), calc(var(--karo, 36px) * -1.5)) scale(2.4); opacity: 0; }
+}
+
+/* Gökteki bulutların yerdeki yumuşak gölgesi. */
+.bulut-golgesi {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(18 22 40 / 0.17), rgb(18 22 40 / 0.1) 55%, rgb(18 22 40 / 0));
+  animation: bulut linear forwards;
+}
+
+@keyframes bulut {
+  0% { transform: translateX(0); opacity: 0; }
+  8%, 92% { opacity: 1; }
+  100% { transform: translateX(var(--yol)); opacity: 0; }
+}
+
+/* Uzaktan geçen kuş sürüsü (ekrana bağlı, haritayla kaymaz). */
+.kus-surusu {
+  position: absolute;
+  left: -80px;
+  width: 80px;
+  height: 40px;
+  animation: kus-uc linear forwards;
+}
+
+/* Sağdan gelen sürü aynalanır: aynalı uzayda sağa gitmek ekranda sola gitmektir. */
+.kus-surusu.sagdan {
+  left: auto;
+  right: -80px;
+  scale: -1 1;
+}
+
+@keyframes kus-uc {
+  to { transform: translate(var(--yol), var(--sapma)); }
+}
+
+.kus {
+  position: absolute;
+  width: 13px;
+  height: 8px;
+  opacity: 0.7;
+  animation: kanat 0.32s ease-in-out infinite alternate;
+}
+
+.kus svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes kanat {
+  from { transform: scaleY(1); }
+  to { transform: scaleY(-0.5); }
+}
+
+/* Kelebek: iki kanadı çırpar, çiçekten çiçeğe gezinir, sonra uzaklaşır. */
+.kelebek {
+  position: absolute;
+  width: calc(var(--karo, 36px) * 0.26);
+  height: calc(var(--karo, 36px) * 0.18);
+  margin: calc(var(--karo, 36px) * -0.09) 0 0 calc(var(--karo, 36px) * -0.13);
+  animation: kelebek-gez 11s ease-in-out forwards;
+}
+
+.kelebek.ters {
+  animation-name: kelebek-gez-ters;
+}
+
+.kelebek i {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  border-radius: 60% 20% 60% 30%;
+  background: var(--renk);
+  box-shadow: inset 0 0 0 1px rgb(43 36 51 / 0.35);
+  animation: kelebek-kanat 0.18s ease-in-out infinite alternate;
+}
+
+.kelebek i:first-child {
+  left: 0;
+  transform-origin: 100% 50%;
+}
+
+.kelebek i:last-child {
+  right: 0;
+  border-radius: 20% 60% 30% 60%;
+  transform-origin: 0 50%;
+}
+
+@keyframes kelebek-kanat {
+  to { transform: scaleX(0.25); }
+}
+
+@keyframes kelebek-gez {
+  0% { transform: translate(0, 0); opacity: 0; }
+  8% { opacity: 1; }
+  25% { transform: translate(calc(var(--karo, 36px) * 0.8), calc(var(--karo, 36px) * -0.4)); }
+  45% { transform: translate(calc(var(--karo, 36px) * 0.3), calc(var(--karo, 36px) * 0.5)); }
+  65% { transform: translate(calc(var(--karo, 36px) * 1.3), calc(var(--karo, 36px) * 0.2)); }
+  85% { transform: translate(calc(var(--karo, 36px) * 1.1), calc(var(--karo, 36px) * -0.8)); opacity: 1; }
+  100% { transform: translate(calc(var(--karo, 36px) * 2.4), calc(var(--karo, 36px) * -2.6)); opacity: 0; }
+}
+
+@keyframes kelebek-gez-ters {
+  0% { transform: translate(0, 0); opacity: 0; }
+  8% { opacity: 1; }
+  25% { transform: translate(calc(var(--karo, 36px) * -0.7), calc(var(--karo, 36px) * 0.3)); }
+  45% { transform: translate(calc(var(--karo, 36px) * -0.2), calc(var(--karo, 36px) * -0.6)); }
+  65% { transform: translate(calc(var(--karo, 36px) * -1.2), calc(var(--karo, 36px) * -0.1)); }
+  85% { transform: translate(calc(var(--karo, 36px) * -0.9), calc(var(--karo, 36px) * 0.6)); opacity: 1; }
+  100% { transform: translate(calc(var(--karo, 36px) * -2.2), calc(var(--karo, 36px) * -2.4)); opacity: 0; }
+}
+
+/* Ayak izi: iki küçük taban izi; yavaşça siliniyor. */
+.ayak-izi {
+  position: absolute;
+  width: calc(var(--karo, 36px) * 0.3);
+  height: calc(var(--karo, 36px) * 0.24);
+  margin: calc(var(--karo, 36px) * -0.12) 0 0 calc(var(--karo, 36px) * -0.15);
+  rotate: var(--aci);
+  animation: iz-sil 7s linear forwards;
+}
+
+.ayak-izi::before,
+.ayak-izi::after {
+  content: '';
+  position: absolute;
+  width: 34%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgb(60 44 30 / 0.4);
+}
+
+.ayak-izi::before { left: 0; top: -20%; }
+.ayak-izi::after { right: 0; top: 20%; }
+
+.ayak-izi.karda::before,
+.ayak-izi.karda::after {
+  background: rgb(110 130 170 / 0.42);
+  box-shadow: inset 0 1px 1px rgb(60 70 110 / 0.35);
+}
+
+@keyframes iz-sil {
+  0%, 55% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Adımda kalkan toz (karda kar serpintisi). */
+.toz {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.toz i {
+  position: absolute;
+  left: calc(var(--karo, 36px) * -0.1);
+  top: calc(var(--karo, 36px) * -0.1);
+  width: calc(var(--karo, 36px) * 0.2);
+  height: calc(var(--karo, 36px) * 0.2);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(214 190 150 / 0.75), rgb(214 190 150 / 0) 70%);
+  animation: toz 0.6s ease-out forwards;
+}
+
+.toz.karda i {
+  background: radial-gradient(circle, rgb(250 252 255 / 0.95), rgb(250 252 255 / 0) 70%);
+}
+
+.toz i:nth-child(1) { --dx: -0.35; --dy: -0.12; }
+.toz i:nth-child(2) { --dx: 0.05; --dy: -0.28; }
+.toz i:nth-child(3) { --dx: 0.4; --dy: -0.1; }
+
+@keyframes toz {
+  from { transform: translate(0, 0) scale(0.5); opacity: 0.9; }
+  to {
+    transform: translate(calc(var(--karo, 36px) * (var(--dx) - var(--yon, 0) * 0.3)), calc(var(--karo, 36px) * var(--dy))) scale(1.8);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  use.agac.sallan,
+  .karo-katmani .dalga,
+  .akan-su,
+  .su-halkasi,
+  .mesale,
+  .ocak,
+  .alev {
+    animation: none;
+  }
+}
+
 /* Atmosfer: dünyanın üstünde, arayüzün altında duran ışık ve renk katmanı. Sol üstten
    ılık güneş vurur, sağ alt serin gölgede kalır, kenarlar hafifçe kararır; ::before her
    bölgenin havasını (Karadeniz nemli ve serin, Güneydoğu sıcak, Doğu Anadolu soğuk)

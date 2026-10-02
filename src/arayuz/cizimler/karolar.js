@@ -78,9 +78,12 @@ function desenler(p) {
     </pattern>
     <pattern id="@su" width="56" height="56" patternUnits="userSpaceOnUse">
       <rect width="56" height="56" fill="${koyu(p.su, 0.14)}"/>
-      <path d="M4 9 q3 -1.6 6 0 q3 1.6 6 0 M31 5 q2.5 -1.4 5 0 M22 21 q3 -1.6 6 0 q3 1.6 6 0 M44 30 q2.5 -1.4 5 0 q2.5 1.4 5 0 M7 37 q3 -1.6 6 0 M27 47 q3 -1.6 6 0 q3 1.6 6 0" fill="none" stroke="${acik(p.su, 0.4)}" stroke-width=".7" stroke-linecap="round" opacity=".7"/>
       <path d="M14 27 q2.5 1.4 5 0 M40 14 q2.5 1.4 5 0 M48 46 q2 1.2 4 0 M2 50 q2 1.2 4 0" fill="none" stroke="${koyu(p.su, 0.3)}" stroke-width=".7" stroke-linecap="round" opacity=".5"/>
       <circle cx="38" cy="8" r=".7" fill="#fff" opacity=".75"/><circle cx="16" cy="40" r=".55" fill="#fff" opacity=".6"/><circle cx="50" cy="24" r=".5" fill="#fff" opacity=".6"/>
+    </pattern>
+    <pattern id="@dalga" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M4 9 q3 -1.6 6 0 q3 1.6 6 0 M31 5 q2.5 -1.4 5 0 M22 21 q3 -1.6 6 0 q3 1.6 6 0 M44 30 q2.5 -1.4 5 0 q2.5 1.4 5 0 M7 37 q3 -1.6 6 0 M27 47 q3 -1.6 6 0 q3 1.6 6 0" fill="none" stroke="${acik(p.su, 0.4)}" stroke-width=".7" stroke-linecap="round" opacity=".7"/>
+      <circle cx="20" cy="30" r=".5" fill="#fff" opacity=".7"/><circle cx="46" cy="40" r=".5" fill="#fff" opacity=".6"/>
     </pattern>
     <pattern id="@meydan" width="16" height="16" patternUnits="userSpaceOnUse">
       <rect width="16" height="16" fill="${meydan}"/>
@@ -284,6 +287,8 @@ function cesme(x, y) {
     <path d="M${x + 5.5} ${y + 7} Q${x + 8} ${y + 4} ${x + 10.5} ${y + 7}" fill="none" stroke="#f7efdc" stroke-width=".6"/>
     <circle cx="${x + 8}" cy="${y + 8}" r=".9" fill="${metal('#d4a537')}"/>
     <path d="M${x + 8} ${y + 8.6} L${x + 8} ${y + 12}" stroke="#cfeef6" stroke-width="1"/>
+    <path class="akan-su" d="M${x + 8} ${y + 8.6} L${x + 8} ${y + 12}" stroke="#fff" stroke-width=".7" stroke-dasharray=".8 1.2" opacity=".9"/>
+    <ellipse class="su-halkasi" cx="${x + 8}" cy="${y + 12.6}" rx="1.6" ry=".6" fill="none" stroke="#fff" stroke-width=".4"/>
     <rect x="${x + 2.5}" y="${y + 11.5}" width="11" height="3.2" rx=".8" fill="${hacim('#3b8fb0')}" ${CIZGI}/>
     <path d="M${x + 4} ${y + 12.6} h8" stroke="#cfeef6" stroke-width=".6"/>`;
 }
@@ -320,7 +325,7 @@ function dukkan(x, y) {
     <rect x="${x + 3}" y="${y + 1}" width="10" height="4" rx="1" fill="${hacim('#d4a537')}" ${CIZGI}/>
     <path d="M${x + 5.5} ${y + 3} l2 -1 l2 1 l2 -1" fill="none" stroke="${LACI}" stroke-width=".6"/>
     <rect x="${x + 5.5}" y="${y + 8.5}" width="4.5" height="6.5" fill="#3a2516" ${INCE}/>
-    <circle cx="${x + 7.75}" cy="${y + 11}" r="2" fill="${isilti('#f08a2a')}"/>
+    <circle class="ocak" cx="${x + 7.75}" cy="${y + 11}" r="2.4" fill="${isilti('#f08a2a')}"/>
     <path d="M${x + 10.5} ${y + 12} h4.5 l-1 1.6 h-.8 v1.4 h-1 v-1.4 h-.8 Z" fill="${metal('#6b7280')}" ${INCE}/>`;
 }
 
@@ -335,7 +340,10 @@ function kervansaray(x, y) {
     <path d="M${x + 4} ${y + 15} L${x + 4} ${y + 8.5} Q${x + 8} ${y + 3.5} ${x + 12} ${y + 8.5} L${x + 12} ${y + 15} Z" fill="#3a2516" ${CIZGI}/>
     <path d="M${x + 4.5} ${y + 8.5} Q${x + 8} ${y + 4.5} ${x + 11.5} ${y + 8.5}" fill="none" stroke="#2aa7a7" stroke-width="1.3"/>
     <path d="M${x + 4} ${y + 2} h8" stroke="#2aa7a7" stroke-width="1" stroke-dasharray="1 1"/>
-    <rect x="${x - 0.5}" y="${y + 5}" width="2" height="3" rx="1" fill="#2b2620"/><rect x="${x + 14.5}" y="${y + 5}" width="2" height="3" rx="1" fill="#2b2620"/>`;
+    <rect x="${x - 0.5}" y="${y + 5}" width="2" height="3" rx="1" fill="#2b2620"/><rect x="${x + 14.5}" y="${y + 5}" width="2" height="3" rx="1" fill="#2b2620"/>
+    ${[x + 2.6, x + 13.4].map((mx) => `<path d="M${mx} ${y + 13} v-3.4" stroke="#5b3a24" stroke-width=".8"/>
+      <circle class="mesale" cx="${mx}" cy="${y + 8.6}" r="3.4" fill="${isilti('#f5a623')}"/>
+      <path class="alev" d="M${mx - 0.8} ${y + 9.8} q-.2 -1.6 .8 -2.8 q1 1.2 .8 2.8 z" fill="#ffd36b"/>`).join('')}`;
 }
 
 // Görev verenler (Faz 9): stilize, edepli, sade figürler.
@@ -392,7 +400,7 @@ function kaleCizimi(x, y) {
     <rect x="${bx + 8}" y="${y - 30}" width="4" height="40" fill="${koyuTas}" opacity=".5"/>
     <path d="M${bx} ${y - 30} v-4 h3 v4 h3 v-4 h3 v4 h3 v-4" fill="none" stroke="${LACI}" stroke-width=".8"/>
     <rect x="${bx + 4}" y="${y - 20}" width="4" height="6" rx="2" fill="#f2c94c"/>
-    <circle cx="${bx + 6}" cy="${y - 17}" r="5" fill="${isilti('#f2c94c')}"/>
+    <circle class="mesale" cx="${bx + 6}" cy="${y - 17}" r="5" fill="${isilti('#f2c94c')}"/>
     <path d="M${bx + 6} ${y - 34} v-12 l9 3 l-9 3" fill="#6a4c93" stroke="${LACI}" stroke-width=".6"/>`;
   return `<ellipse cx="${cx + 3}" cy="${y + T + 2}" rx="36" ry="7" fill="${LACI}" opacity=".22"/>
     <rect x="${cx - 26}" y="${y - 18}" width="52" height="30" fill="${hacim(tas)}" ${CIZGI}/>
@@ -596,6 +604,7 @@ export function haritaKatmanlari(harita) {
       <path d="${su}" fill="${kum}" stroke="${kum}" stroke-width="7" stroke-linejoin="round" opacity=".9"/>
       <path d="${su}" fill="none" stroke="${koyu(kum, 0.35)}" stroke-width="3.2" stroke-linejoin="round" opacity=".7"/>
       <path d="${su}" fill="url(#@su)"/>
+      <g clip-path="url(#@suKes)"><path class="dalga" d="${su}" fill="url(#@dalga)" stroke="url(#@dalga)" stroke-width="12"/></g>
       <g clip-path="url(#@suKes)" fill="none" stroke-linejoin="round">
         ${[30, 25, 20, 16, 12, 9, 6, 3.5].map((g) => `<path d="${su}" stroke="${acik(p.su, 0.3)}" stroke-width="${g}" opacity=".16"/>`).join('')}
         <path d="${su}" stroke="#f4fbfd" stroke-width="1.6" opacity=".8"/>
